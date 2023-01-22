@@ -11,7 +11,7 @@ from . import constants as con
 from .commons import MyMessages, get_mousepos_on_msg, point_in_rect
 from .enums import ControlType, ViewMode
 from .events import EventArgs
-from .apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, LPNMHDR, LPNMSELCHANGE, LPNMVIEWCHANGE, NMHDR, WPARAM, LPARAM
+from .apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, LPNMHDR, LPNMSELCHANGE, LPNMVIEWCHANGE, NMHDR, WPARAM, LPARAM, SUBCLASSPROC
 from . import apis as api
 from .colors import Color
 from datetime import datetime, date
@@ -170,7 +170,8 @@ class CalendarBox(Control):
 
 # End CalendarBox
 
-@WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+# @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+@SUBCLASSPROC
 def cal_wnd_proc(hw, msg, wp, lp, scID, refData):
     # printWinMsg(msg)
     cal = cal_dict[hw]

@@ -2,7 +2,7 @@
 # Created on 23-Nov-2022 17:09:20
 
 from ctypes.wintypes import HWND, UINT
-from ctypes import WINFUNCTYPE, byref
+from ctypes import byref
 # import ctypes as ctp
 
 from .control import Control
@@ -10,7 +10,7 @@ from . import constants as con
 from .commons import MyMessages
 from .enums import ControlType, TextAlignment, LabelBorder, LabelAlignment
 # from .events import EventArgs
-from .apis import SIZE, LRESULT, UINT_PTR, DWORD_PTR, WPARAM, LPARAM
+from .apis import SIZE, LRESULT, UINT_PTR, DWORD_PTR, WPARAM, LPARAM, SUBCLASSPROC
 from . import apis as api
 from .colors import Color
 
@@ -46,6 +46,7 @@ class Label(Control):
         self._txt_align = LabelAlignment.MIDLEFT
         self._border_style = LabelBorder.NONE
         self._dw_align_flag = 0
+        self._has_brush = True
 
         Label._count += 1
 
@@ -53,6 +54,7 @@ class Label(Control):
     # -region Public funcs
     def create_handle(self):
         if self._border_style != LabelBorder.NONE: self._adjustBorder()
+        self._bkg_brush = api.CreateSolidBrush(self._bg_color.ref)
         self._isAutoSizeNeeded()
         self._create_control()
         if self._hwnd:
@@ -117,6 +119,9 @@ class Label(Control):
         api.SetWindowPos(self._hwnd, None, self._xpos, self._ypos, self._width, self._height, con.SWP_NOMOVE)
         if redraw: api.InvalidateRect(self._hwnd, None, True)
 
+
+    def reset_brush(self): self._bk_brush = api.CreateSolidBrush(self._bg_color.ref)
+
     # -endregion Private funcs
 
     # -region Properties
@@ -154,7 +159,8 @@ class Label(Control):
 
 #End Label
 
-@WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+# @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+@SUBCLASSPROC
 def lb_wnd_proc(hw, msg, wp, lp, scID, refData):
     # printWinMsg(msg)
     lb = label_dict[hw]
@@ -168,7 +174,7 @@ def lb_wnd_proc(hw, msg, wp, lp, scID, refData):
             # hdc = HDC(wp)
             if lb._draw_flag & 1: api.SetTextColor(wp, lb._fg_color.ref)
             api.SetBkColor(wp, lb._bg_color.ref)
-            return api.CreateSolidBrush(lb._bg_color.ref)
+            return lb._bkg_brush
 
         case con.WM_SETFOCUS: lb._got_focus_handler()
         case con.WM_KILLFOCUS: lb._lost_focus_handler()

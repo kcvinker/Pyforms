@@ -10,7 +10,7 @@ import ctypes as ctp
 
 from .enums import ControlType
 from .commons import Font, MyMessages
-from .apis import INITCOMMONCONTROLSEX, WPARAM, LPARAM, SUBCLASSPROC, UINT_PTR, DWORD_PTR
+from .apis import INITCOMMONCONTROLSEX, WPARAM, LPARAM, SUBCLASSPROC, UINT_PTR, DWORD_PTR, DWORD
 from . import apis as api
 from . import constants as con
 from .events import EventArgs, MouseEventArgs, KeyEventArgs, KeyPressEventArgs
@@ -71,11 +71,14 @@ class Control:
     _ctl_id = 101
     _subclass_id = 1001
     icc = InitComCtls()
-    __slots__ = ("tvar", "name", "_hwnd", "_text", "_width", "_height", "_style", "_ex_style", "_h_inst", "_visible", "_cls_name", "_cid",
-                    "_xpos", "_ypos", "_parent", "_is_created", "_is_textable", "_lbtn_down", "_rbtn_down", "_is_mouse_entered", "_ctl_type",
-                    "_font", "_fg_color", "_bg_color", "_draw_flag", "_on_mouse_enter", "on_mouse_down", "on_mouse_up", "on_right_mouse_down",
-                    "on_right_mouse_up", "on_right_click", "_on_mouse_leave", "on_double_click", "on_mouse_wheel", "on_mouse_move", "on_mouse_hover",
-                    "on_key_down", "on_key_up", "on_key_press", "on_paint", "on_got_focus", "on_lost_focus", "on_click")
+    __slots__ = ("tvar", "name", "_hwnd", "_text", "_width", "_height", "_style", "_ex_style", "_h_inst", "_visible",
+                 "_cls_name", "_cid", "_xpos", "_ypos", "_parent", "_is_created", "_is_textable", "_lbtn_down",
+                 "_rbtn_down", "_is_mouse_entered", "_ctl_type", "_font", "_fg_color", "_bg_color", "_draw_flag",
+                 "_has_brush", "_bkg_brush",
+                  "_on_mouse_enter", "on_mouse_down", "on_mouse_up", "on_right_mouse_down", "on_right_mouse_up",
+                  "on_right_click", "_on_mouse_leave", "on_double_click", "on_mouse_wheel", "on_mouse_move",
+                  "on_mouse_hover", "on_key_down", "on_key_up", "on_key_press", "on_paint", "on_got_focus",
+                  "on_lost_focus", "on_click")
 
 
     def __init__(self) -> None:
@@ -102,6 +105,7 @@ class Control:
         self._fg_color = Color(0)
         self._bg_color = Color(0)
         self._draw_flag = 0
+        self._has_brush = False
         self.tvar = 1 # Only for testing purpose. Can be deleted at last
 
         # print("iccex ", Control._iccex.dwICC)
@@ -159,17 +163,17 @@ class Control:
         We can use this single function to create all of our controls.
         """
         self._set_ctl_id()
-        self._hwnd = api.CreateWindowEx(  self._ex_style,
-                                                self._cls_name,
-                                                self._text,
-                                                self._style,
-                                                self._xpos,
-                                                self._ypos,
-                                                self._width,
-                                                self._height,
-                                                self._parent._hwnd,
-                                                self._cid,
-                                                self._parent.wnd_class.hInstance, None )
+        self._hwnd = api.CreateWindowEx( DWORD(self._ex_style),
+                                            self._cls_name,
+                                            self._text,
+                                           DWORD(self._style),
+                                            self._xpos,
+                                            self._ypos,
+                                            self._width,
+                                            self._height,
+                                            self._parent._hwnd,
+                                            self._cid,
+                                            self._parent.wnd_class.hInstance, None )
 
         if self._hwnd:
             self._is_created = True
@@ -274,11 +278,13 @@ class Control:
     def handle(self):
         """Returns the hwnd of this control"""
         return self._hwnd
+    #------------------------------------------------------HANDLE
 
     @property
     def parent(self):
         """Returns the parent Form of this control"""
         return self._parent
+    #------------------------------------------------------PARENT
 
 
     @property
@@ -293,7 +299,7 @@ class Control:
         self._font = value
         if self._is_created:
             pass
-    #-------------------------------------------------[1]------
+    #-------------------------------------------------FONT
 
     @property
     def text(self):
@@ -303,7 +309,7 @@ class Control:
     def text(self, value:str):
         self._text = value
         if self._is_created and self._is_textable: self._set_ctrl_text(value)
-    #--------------------------------------------------------------------------[2]------
+    #----------------------------------------------------------------TEXT
 
 
     @property
@@ -314,7 +320,7 @@ class Control:
         self._xpos = value
         if self._is_created:
             pass
-    #--------------------------------------------[3]-----
+    #--------------------------------------------XPOS
 
     @property
     def ypos(self): return self._ypos
@@ -324,7 +330,7 @@ class Control:
         self._ypos = value
         if self._is_created:
             pass
-    #--------------------------------------------[4]----
+    #--------------------------------------------YPOS
 
     @property
     def width(self): return self._width
@@ -334,7 +340,7 @@ class Control:
         self._width = value
         if self._is_created:
             pass
-    #--------------------------------------------[5]-----
+    #--------------------------------------------WIDTH
 
     @property
     def height(self): return self._height
@@ -344,7 +350,7 @@ class Control:
         self._height = value
         if self._is_created:
             pass
-    #--------------------------------------------[6]------
+    #--------------------------------------------HEIGHT
 
     @property
     def visibile(self): return self._visibile
@@ -354,17 +360,21 @@ class Control:
         self._visibile = value
         if self._is_created:
             pass
-    #--------------------------------------------[7]---------
+    #--------------------------------------------VISIBLE
 
     @property
     def back_color(self): return self._bg_color
 
     @back_color.setter
-    def back_color(self, value : int):
-        self._bg_color.update_color(value)
+    def back_color(self, value):
+        if isinstance(value, int):
+            self._bg_color.update_color(value)
+        elif isinstance(value, Color):
+            self._bg_color = value
         if not self._draw_flag & (1 << 1): self._draw_flag += 2
+        if self._is_created and self._has_brush: self._bkg_brush =api.CreateSolidBrush(self._bg_color.ref)
         self._manage_redraw()
-    #--------------------------------------------[8]---------
+    #--------------------------------------------BACK_COLOR
 
     @property
     def fore_color(self): return self._fg_color.value

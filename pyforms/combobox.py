@@ -11,7 +11,7 @@ from .commons import MyMessages, get_mousepos_on_msg, point_in_rect
 from .enums import ControlType
 from .events import EventArgs
 # from .apis import DefSubclassProc, RemoveWindowSubclass, COMBOBOXINFO, SetWindowSubclass, SendMessage
-from .apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, COMBOBOXINFO, WPARAM, LPARAM
+from .apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, COMBOBOXINFO, WPARAM, LPARAM, SUBCLASSPROC
 # from .apis import LRESULT, SetBkColor, SetTextColor
 from . import apis as api
 from .colors import Color
@@ -247,7 +247,8 @@ class ComboBox(Control):
 
 
 
-@WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+# @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+@SUBCLASSPROC
 def cmb_wnd_proc(hw, msg, wp, lp, scID, refData):
     # printWinMsg(msg)
     cmb = cmb_dict[hw]

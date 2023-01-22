@@ -1,24 +1,24 @@
 
 # Created on 22-Nov-2022 00:54:20
 
-from ctypes.wintypes import HWND, UINT, HDC
-from ctypes import WINFUNCTYPE
+# from ctypes.wintypes import HWND, UINT, HDC
+from ctypes import byref
 # import ctypes as ctp
 
 
 from .control import Control
 from .commons import MyMessages
 from .enums import ControlType, TextCase, TextType, TextAlignment
-from .apis import LRESULT, UINT_PTR, DWORD_PTR, WPARAM, LPARAM
+from .apis import SUBCLASSPROC
 from . import apis as api
 from .colors import Color
 from . import constants as con
-# from . import winmsgs
-import sys
+from . import winmsgs
+# import sys
 
 tb_dict = {}
-tb_style = con.WS_CHILD | con.WS_VISIBLE | con.ES_LEFT | con.WS_TABSTOP | con.ES_AUTOHSCROLL | con.WS_MAXIMIZEBOX | con.WS_OVERLAPPED
-tb_ex_style = con.WS_EX_LEFT | con.WS_EX_LTRREADING  | con.WS_EX_CLIENTEDGE | con.WS_EX_NOPARENTNOTIFY
+tb_style = con.WS_CHILD | con.WS_VISIBLE | con.ES_LEFT | con.WS_TABSTOP | con.ES_AUTOHSCROLL
+tb_ex_style = con.WS_EX_LEFT | con.WS_EX_LTRREADING | con.WS_EX_CLIENTEDGE
 
 
 class TextBox(Control):
@@ -28,7 +28,7 @@ class TextBox(Control):
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 23) -> None:
         super().__init__()
-        self._cls_name = "Edit"
+        self._cls_name = "EDIT"
         self.name = f"TextBox_{TextBox._count}"
         self._ctl_type = ControlType.TEXT_BOX
         self._parent = parent
@@ -38,21 +38,22 @@ class TextBox(Control):
         self._xpos = xpos
         self._ypos = ypos
         self._is_textable = True
-        self._style = tb_style
-        self._ex_style = tb_ex_style
+        self._style = 0x50010080 | con.WS_CLIPCHILDREN
+        self._ex_style = 0x00000204
 
         # self._fg_color = Color(0)
         self._bg_color = Color(0xFFFFFF)
-        self._bk_brush = api.CreateSolidBrush(self._bg_color.ref)
+
 
         # self._draw_mode = ControlDrawMode.NO_DRAW
-        # self._draw_flag = 0
+        self._draw_flag = 0
         self._multi_line = False
         self._hide_sel = False
         self._read_only = False
         self._txt_case = TextCase.NORMAL
         self._txt_type = TextType.NORMAL
         self._txt_align = TextAlignment.LEFT
+        # self._bk_brush = HBRUSH(0)
         # self._text = "ert"
 
         TextBox._count += 1
@@ -61,10 +62,17 @@ class TextBox(Control):
         self._set_style()
         self._create_control()
         if self._hwnd:
+            # self._parent.tbdraw_dict[self._hwnd] = self._tb_color_msg_handler
             tb_dict[self._hwnd] = self
+
             self._set_subclass(tb_wnd_proc)
             self._set_font_internal()
+            # api.InvalidateRect(self._hwnd, None, False)
+            # rc = api.get_client_rect(self._hwnd)
+            api.RedrawWindow(self._hwnd, None, None, con.RDW_FRAME| con.RDW_INVALIDATE)
+
             # print("edit hwnd ", self._hwnd)
+            # print(f"{sizeof(c_longlong) = }, {sizeof(c_long) = }, {sizeof(c_void_p) = }")
 
 
     def _set_style(self):
@@ -87,11 +95,17 @@ class TextBox(Control):
         elif self._txt_align == TextAlignment.RIGHT:
             self._style |= con.ES_RIGHT
 
-    def _tb_color_msg_handler(self, wp):
-        hdc = HDC(wp)
-        api.SetBkMode(hdc, 1) # TRANSPARENT
-        res = api.CreateSolidBrush(self._bg_color.clrRef)
-        # print(f"{type(res) = }")
+        self._bk_brush = api.CreateSolidBrush(self._bg_color.ref)
+
+
+    # def _tb_color_msg_handler(self, wp):
+    #     if self._draw_flag:
+    #         if self._draw_flag & 1: api.SetTextColor(wp, self._fg_color.ref)
+    #         if self._draw_flag & 2: api.SetBkColor(wp, self._bg_color.ref)
+    #         # if self._draw_flag == 1:
+    #         #     return api.GetStockObject(con.DC_BRUSH)
+    #         # else:
+    #     return self._bk_brush
 
 
     @Control.text.getter
@@ -111,7 +125,8 @@ class TextBox(Control):
 
 #End TextBox
 
-@WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+# @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+@SUBCLASSPROC
 def tb_wnd_proc(hw, msg, wp, lp, scID, refData):
     # printWinMsg(msg)
     # winmsgs.log_msg(msg)
@@ -134,10 +149,11 @@ def tb_wnd_proc(hw, msg, wp, lp, scID, refData):
         case con.WM_MOUSEMOVE: tb._mouse_move_handler(msg, wp, lp)
         case con.WM_MOUSELEAVE: tb._mouse_leave_handler()
 
-        # case MyMessages.LABEL_COLOR:
-        #     print("lbl clr")
-        #     api.DefSubclassProc(hw, msg, wp, lp)
-        #     return 0
+        case MyMessages.LABEL_COLOR:
+            return tb._bk_brush
+            # print("lbl clr")
+            # api.DefSubclassProc(hw, msg, wp, lp)
+            # return 0
 
         case MyMessages.EDIT_COLOR:
             if tb._draw_flag:
@@ -146,31 +162,28 @@ def tb_wnd_proc(hw, msg, wp, lp, scID, refData):
                 # if tb._draw_flag == 1:
                 #     return api.GetStockObject(con.DC_BRUSH)
                 # else:
+            # tb._parent._tb_brush = HBRUSH(tb._bk_brush)
             return tb._bk_brush
 
+        # case con.WM_PAINT:
+        #     return 0#api.DefSubclassProc(hw, msg, wp, lp)
 
-        case MyMessages.CTL_COMMAND:
-            ncode = api.HIWORD(wp)
-            match ncode:
-                case con.EM_GETRECT:
-                    return 1
-                case con.EM_SETRECT:
-                    return 1
-
-        # case con.WM_NCPAINT:
-        #     return 0
+        # case con.WM_ERASEBKGND:
+        #     return api.DefSubclassProc(hw, msg, wp, lp)
 
 
-        # case con.WM_GETTEXT:
-        #     # This is a hack. We can save lot of CPU time by this.
-        #     # If we manually get the text with GetWindowText function, it take 250+ us.
-        #     # But in this way, getting the text will take only 4-5 us.
+        # case MyMessages.CTL_COMMAND:
+        #     ncode = api.HIWORD(wp)
+        #     match ncode:
+        #         case con.EM_GETRECT:
 
-        #     api.DefSubclassProc(hw, msg, wp, lp)
-        #     tb._text = cast(lp, ctp.c_wchar_p).value
+        #         case con.EM_SETRECT:
+        #             return 1
 
-        # case MyMessages.CTRL_NOTIFY:
-        #     tb.log("notify msg")
+        case _: return api.DefSubclassProc(hw, msg, wp, lp)
+
+
+
 
 
 

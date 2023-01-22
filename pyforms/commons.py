@@ -35,7 +35,7 @@ class Font:
     __slots__ = ("_name", "_size", "_weight", "_italics", "_underLine", "_hwnd")
 
     def __init__(   self, name: str = "Tahoma",
-                    size: int = 11,
+                    size: int = 12,
                     weight: FontWeight = FontWeight.NORMAL,
                     italics: bool = False,
                     underLine: bool = False) -> None:
@@ -167,9 +167,9 @@ class MyMessages:
     COMBO_TB_COLOR = 9007
     LIST_COLOR = 9008
     CTL_COMMAND = 9009
-    BTN_COLOR = 9010
-    HORI_SCROLL = 9011
-    VERT_SCROLL = 9012
+    HORI_SCROLL = 9010
+    VERT_SCROLL = 9011
+    TREENODE_NOTIFY = 9012 # A tree node notify it's tree view control about changes
 
 
 

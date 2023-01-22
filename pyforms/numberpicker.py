@@ -12,7 +12,7 @@ from .commons import MyMessages
 from .enums import ControlType, TextAlignment, ControlDrawMode
 from .events import EventArgs
 from . import apis as api
-from .apis import LRESULT, UINT_PTR, DWORD_PTR, WPARAM, LPARAM
+from .apis import LRESULT, UINT_PTR, DWORD_PTR, WPARAM, LPARAM, SUBCLASSPROC
 from .colors import Color, clamp
 
 from horology import Timing
@@ -315,7 +315,8 @@ class NumberPicker(Control):
 #End NumberPicker
 
 
-@WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+# @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+@SUBCLASSPROC
 def np_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     # printWinMsg(msg)
     np = nump_dict[hw]

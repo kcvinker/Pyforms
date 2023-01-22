@@ -16,6 +16,7 @@ DWORD_PTR = ULONG_PTR
 WPARAM = UINT_PTR
 LPARAM = LONG_PTR
 PUINT = POINTER(UINT)
+HTREEITEM = HANDLE
 
 WNDPROC = WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM)
 SUBCLASSPROC = WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
@@ -374,7 +375,41 @@ class APPBARDATA(Structure):
 
 LPAPPBARDATA = POINTER(APPBARDATA)
 
+class TVITEMEXW(Structure):
+    _fields_ = [
+        ("mask", UINT),
+        ("hItem", HTREEITEM),
+        ("state", UINT),
+        ("stateMask", UINT),
+        ("pszText", LPCWSTR),
+        ("cchTextMax", INT),
+        ("iImage", INT),
+        ("iSelectedImage" , INT),
+        ("cChildren", INT),
+        ("lParam", LPARAM),
+        ("iIntegral", INT),
+        ("uStateEx", UINT),
+        ("hwnd", HWND),
+        ("iExpandedImage", INT),
+        ("iReserved", INT),
+    ]
+LPTVITEMEXW = POINTER(TVITEMEXW)
 
+class TVINSERTSTRUCT(Structure):
+    _fields_ = [
+        ("hParent", HTREEITEM),
+        ("hInsertAfter", HTREEITEM),
+        ("itemEx", TVITEMEXW),
+    ]
+
+class NMTVCUSTOMDRAW(Structure):
+    _fields_ = [
+        ("nmcd", NMCUSTOMDRAW),
+        ("clrText", COLORREF),
+        ("clrTextBk", COLORREF),
+        ("iLevel", INT),
+    ]
+LPNMTVCUSTOMDRAW = POINTER(NMTVCUSTOMDRAW)
 # -endregion Structures
 
 
@@ -760,6 +795,11 @@ GetCurrentObject = windll.gdi32.GetCurrentObject
 """ [HDC, UINT: The object type to be queried] -> HGDIOBJ"""
 GetCurrentObject.argtypes = [HDC, UINT]
 GetCurrentObject.restype = HGDIOBJ
+
+TextOut = windll.gdi32.TextOutW
+""" [HDC, INT - x, INT - y, LPCWSTR - text, INT - len(text)] -> BOOL"""
+TextOut.argtypes = [HDC, INT, INT, LPCWSTR, INT]
+TextOut.restype = BOOL
 
 
 

@@ -153,6 +153,7 @@ class TickPosition(Enum): # For TrackBar
     BOTH = 5
 
 class ChannelStyle(Enum):
+    DEFAULT = 0
     CLASSIC = 1
     OUTLINE = 2
 
@@ -171,6 +172,17 @@ class ListViewStyle(Enum):
     SMALL_ICON = 2
     LIST_VIEW = 3
     TILE_VIEW = 4
+
+class NodeOp(Enum): # Used in TreeView
+    ADD_NODE = 0
+    INSERT_NODE = 1
+    ADD_CHILD = 2
+    INSERT_CHILD = 3
+
+class ProgressBarStyle(Enum):
+    BLOCK_STYLE = 0
+    MARQUEE_STYLE = 1
+
 
 
 class Keys(Enum):

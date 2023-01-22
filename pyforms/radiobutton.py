@@ -4,12 +4,12 @@
 # RadioButton module - Created on 09-Dec-2022 16:03:20
 
 from ctypes.wintypes import HWND, UINT
-from ctypes import WINFUNCTYPE, byref, cast, addressof
+from ctypes import byref, cast, addressof
 
 from .control import Control
 from .commons import MyMessages
 from .enums import ControlType
-from .apis import LRESULT, UINT_PTR, DWORD_PTR, LPNMCUSTOMDRAW, WPARAM, LPARAM
+from .apis import LRESULT, UINT_PTR, DWORD_PTR, LPNMCUSTOMDRAW, WPARAM, LPARAM, SUBCLASSPROC
 from . import apis as api
 from .colors import Color, RgbColor
 from . import constants as con
@@ -97,7 +97,8 @@ class RadioButton(Control):
 
 #End RadioButton
 
-@WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+# @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+@SUBCLASSPROC
 def rb_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     # printWinMsg(msg)
     rb = rb_dict[hw]

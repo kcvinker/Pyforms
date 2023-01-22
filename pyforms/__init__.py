@@ -8,8 +8,12 @@ from .calendarbox import CalendarBox
 from .checkbox import CheckBox
 from .radiobutton import RadioButton
 from .datetimepicker import DateTimePicker
+from .groupbox import GroupBox
 from .listbox import ListBox
 from .numberpicker import NumberPicker
-from .trackbar import TrackBar
+from .progressbar import ProgressBar
+from .trackbar import TrackBar, ChannelStyle, TickPosition
 from .listview import ListView
+from .treeview import TreeView, TreeNode
+from .colors import Color
 

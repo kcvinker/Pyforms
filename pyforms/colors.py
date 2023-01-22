@@ -15,6 +15,13 @@ import dis
 # COLORREF = TypeVar("COLORREF")
 # COLORREF = TypeVar("COLORREF")
 
+def get_ref(clr: int) -> COLORREF:
+    red = clr >> 16
+    green = (clr & 0x00ff00) >> 8
+    blue = clr & 0x0000ff
+    return int((blue << 16) | (green << 8) | red)
+
+
 class RgbColor:
     __slots__ = ("red", "green", "blue", "int_color", "ref" )
     def __init__(self, clr) -> None:
@@ -101,7 +108,9 @@ class Color:
         ivalue = int((red << 16) | (green << 8) | blue)
         return cls(ivalue)
 
-
+COLOR_BLACK = Color(0x000000)
+COLOR_WHITE = Color(0XFFFFFF)
+# COLOR_FORM = Color(0X000000)
 
 
 
@@ -144,11 +153,7 @@ def clamp(n, minVal = 0, maxVal = 255): return int(max(min(maxVal, n), minVal))
 
 
 
-def get_ref(clr: int) -> COLORREF:
-    red = clr >> 16
-    green = (clr & 0x00ff00) >> 8
-    blue = clr & 0x0000ff
-    return int((blue << 16) | (green << 8) | red)
+
 
 def ref_from_RGB(r, g, b) -> COLORREF: return int((b << 16) | (g << 8) | r)
 

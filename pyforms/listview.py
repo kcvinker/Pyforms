@@ -12,7 +12,7 @@ from . import constants as con
 from .commons import Font, MyMessages, getMousePoints
 from .enums import ControlType, TextAlignment, ListViewStyle
 from .events import EventArgs
-from .apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, LPNMCUSTOMDRAW, LVCOLUMNW, LPLVCOLUMNW, WPARAM, LPARAM
+from .apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, LPNMCUSTOMDRAW, LVCOLUMNW, LPLVCOLUMNW, WPARAM, LPARAM, SUBCLASSPROC
 from . import apis as api
 from .colors import Color
 from .winmsgs import log_msg
@@ -46,12 +46,12 @@ class ListView(Control):
     """ListView control """
     Control.icc.init_comm_ctls(con.ICC_LISTVIEW_CLASSES)
     _count = 1
-    __slots__ = ("_sel_index", "_sel_item", "_edit_label", "_draw_header", "_lbl_hwnd", "_hdr_hwnd", "_item_top_align",
+    __slots__ = ("_sel_index", "_sel_item", "_edit_label", "_lbl_hwnd", "_hdr_hwnd", "_item_top_align",
 					"_hide_sel", "_multi_sel", "_check_box", "_full_row_sel", "_show_grid", "_one_click_act", "_hot_track_sel",
 					"_no_hdr", "_change_hdr_height", "_hdr_draw_font", "_set_cb_last", "_cb_is_last", "_cb_checked",
 					"_hdr_font", "_col_align", "_view_style", "_columns", "_items", "_col_ind_list", "_col_index",
                     "_hdr_height", "_sel_item_index", "sel_sub_index", "_img_list", "_hdr_item_dict", "_hdr_pts", "_mouse_on_hdr",
-                    "_hdr_bg_color", "_hdr_fg_color", "_hdr_bk_brush", "_hdr_odraw", "_hot_hdr",
+                    "_hdr_bg_color", "_hdr_fg_color", "_hdr_bk_brush", "_hdr_odraw", "_hot_hdr", "_col_index",
                     "_hdr_hot_brush", "_hdr_clickable", "_selectable", "_item_index", "_item_drawn" )
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 250, height: int = 200) -> None:
@@ -61,8 +61,8 @@ class ListView(Control):
         self.name = f"ListView_{ListView._count}"
         self._ctl_type = ControlType.LIST_VIEW
         self._parent = parent
-        self._bg_color = Color(parent._bg_color)
-        self._fg_color = Color(parent._fg_color)
+        self._bg_color = Color(0xFFFFFF)
+        self._fg_color = Color(0x000000)
         self._font = parent._font
         self._width = width
         self._height = height
@@ -100,6 +100,7 @@ class ListView(Control):
         self._change_hdr_height = True
         self._hdr_height = 25
         self._hot_hdr = -1
+        self._col_index = 0
 
         # Events
         # self.on_value_changed = 0
@@ -124,15 +125,16 @@ class ListView(Control):
             self._set_subclass(lv_wnd_proc)
             self._set_font_internal()
 
-            if self._col_ind_list:
-                for ci in self._col_ind_list:
-                    api.SendMessage(self._hwnd, con.LVM_INSERTCOLUMNW, ci.index, addressof(ci.lvc))
+            if self._columns:
+                for col in self._columns:
+                    api.SendMessage(self._hwnd, con.LVM_INSERTCOLUMNW, col.index, addressof(col.lvc))
 
             self._hdr_hwnd = api.SendMessage(self._hwnd, con.LVM_GETHEADER, 0, 0)
             # hdr_dict[self._hdr_hwnd] = self # Put ourself inside this dict so that we can appear in hdr_wnd_proc
-            # if not self._hdr_font.handle: self._hdr_font.create_handle(self._hdr_hwnd)# Making sure header font is ready.
+            if not self._hdr_font.handle: self._hdr_font.create_handle(self._hdr_hwnd)# Making sure header font is ready.
             #
-            # print("hdr hwnd ", self._hdr_hwnd)
+            # We are going to send the list view hwnd with this function. So, we can grab it inside
+            # header's wndproc function.
             api.SetWindowSubclass(self._hdr_hwnd, hdr_wnd_proc, ListView._count, self._hwnd)
             if self._bg_color != self._parent._bg_color:
                 api.SendMessage(self._hwnd, con.LVM_SETBKCOLOR, 0, self._bg_color.ref)
@@ -144,11 +146,6 @@ class ListView(Control):
 
             print("lv hwnd ", self._hwnd)
 
-
-            # for i in range(3):
-            #     rc = api.RECT()
-            #     api.SendMessage(self._hdr_hwnd, con.HDM_GETITEMRECT, i, addressof(rc))
-            #     api.print_rct(rc, f" Rect for Item {i}")
 
     #End of Create function-----------------------------------------------
 
@@ -258,6 +255,7 @@ class ListView(Control):
 
 
     def _add_column_internal(self, lvcol):
+        lvcol.index = self._col_index
         lvc = LVCOLUMNW()
         lvc.mask = con.LVCF_TEXT  | con.LVCF_WIDTH | con.LVCF_FMT | con.LVCF_SUBITEM
         lvc.fmt = lvcol.text_align.value
@@ -271,12 +269,13 @@ class ListView(Control):
             lvc.iImage = lvcol.img_index
             if lvcol.img_on_right: lvc.fmt |= con.LVCFMT_BITMAP_ON_RIGHT
 
+        lvcol.lvc = lvc
         if self._is_created:
             api.SendMessage(self._hwnd, con.LVM_INSERTCOLUMNW, lvcol.index, addressof(lvc))
-        else:
-            self._col_ind_list.append(ColAndIndex(lvcol.index, lvc))
+
 
         self._columns.append(lvcol)
+        self._col_index += 1
 
 
     def _add_item_internal(self, item):
@@ -293,8 +292,6 @@ class ListView(Control):
         # lvi.lParam = id(item)
         api.SendMessage(self._hwnd, con.LVM_INSERTITEMW, 0, addressof(lvi))
         self._items.append(item)
-        # print(f"{len(create_unicode_buffer(item.text)) = }, {len(item._text) = }")
-        # print(f"{item._index =}")
 
 
     def _add_subitem_internal(self, subitem: str, item_index: int, sub_index: int, img_index: int = -1):
@@ -310,21 +307,10 @@ class ListView(Control):
         self._items[item_index]._subitems.append(sitem) # Put the subitem in our item's bag.
 
 
-    def _make_hdr_owner_draw(self):
-        hdi = api.HDITEM()
-        for col in self._columns:
-            hdi.mask = HDI_FORMAT
-            hdi.fmt = HDF_OWNERDRAW
-            api.SendMessage(self._hdr_hwnd, con.HDM_SETITEM, col._index, addressof(hdi))
-
-        self._manage_redraw()
-
-
     def _draw_headers(self, nmcd: LPNMCUSTOMDRAW) -> int:
         # Windows's own header drawing is white bkg color.
-        # But with that, listview itself is white bkg. We can't allow it.
+        # But listview itself is white bkg. We can't allow both hdr & listview in white.
         # So, we need to draw it on our own.
-        # TODO: Add font, fore color, image features.
         if nmcd.dwItemSpec != 0: nmcd.rc.left += 1 # Give room for header divider.
         col = self._columns[nmcd.dwItemSpec] # Get our column class
         api.SetBkMode(nmcd.hdc, con.TRANSPARENT)
@@ -332,11 +318,7 @@ class ListView(Control):
         if nmcd.uItemState & con.CDIS_SELECTED:
             api.FillRect(nmcd.hdc, byref(nmcd.rc), self._hdr_bk_brush)
         else:
-            # There is no other ways to check if the header item is under mouse pointer.
-            # if self._mouse_on_hdr and api.PtInRect(byref(nmcd.rc), self._hdr_pts):
-            #     api.FillRect(nmcd.hdc, byref(nmcd.rc), self._hdr_hot_brush)
-            # else:
-            #     api.FillRect(nmcd.hdc, byref(nmcd.rc), self._hdr_bk_brush)
+            # We will draw with a different color if mouse is over this hdr.
             if nmcd.dwItemSpec == self._hot_hdr:
                 api.FillRect(nmcd.hdc, byref(nmcd.rc), self._hdr_hot_brush)
             else:
@@ -345,7 +327,7 @@ class ListView(Control):
         api.SelectObject(nmcd.hdc, self._hdr_font.handle)
         api.SetTextColor(nmcd.hdc, self._hdr_fg_color.ref)
         if self._hdr_clickable and nmcd.uItemState & con.CDIS_SELECTED:
-            # We are mimicing the dot net listview header's nature here.
+            # We are mimicing the dotnet listview header's nature here.
             # They did not resize the overall header item. They just reduce...
             # it for drawing text. That means, text is drawing in a small rect.
             # Thus, viewer thinks like header is pressed a little bit.
@@ -353,18 +335,27 @@ class ListView(Control):
             nmcd.rc.top += 2
 
         api.DrawText(nmcd.hdc, col.text, -1, byref(nmcd.rc), col._hdr_txt_flag )
-        # api.InvalidateRect(self._hdr_hwnd, None, False)
-        # print("fin")
-        # return con.CDRF_NOTIFYPOSTPAINT
 
 
-    def _is_mouse_on_hdr(self, rc):
-        pt = api.POINT()
-        api.GetCursorPos(byref(pt))
-        api.ScreenToClient(self._parent._hwnd, byref(pt))
-        rc = api.RECT(self._xpos + rc.left, self._ypos + rc.top,
-                        rc.right + self._xpos, rc.bottom + self._ypos)
-        return api.PtInRect(byref(rc), pt)
+    #------------------------------------------End
+
+    # def _draw_hdrs_last_part(self):
+
+    #     hrc = RECT()
+    #     api.SendMessage(self._hdr_hwnd, con.HDM_GETITEMRECT, len(self._columns) - 1, addressof(hrc))
+    #     rc = RECT(hrc.right + 1, hrc.top, self.width, hrc.bottom)
+    #     hdc = api.GetDC(self._hwnd)
+    #     api.FillRect(hdc, byref(rc), self._hdr_bk_brush)
+    #     api.ReleaseDC(self._hwnd, hdc)
+
+
+    # def _is_mouse_on_hdr(self, rc): Useless
+    #     pt = api.POINT()
+    #     api.GetCursorPos(byref(pt))
+    #     api.ScreenToClient(self._parent._hwnd, byref(pt))
+    #     rc = rECT(self._xpos + rc.left, self._ypos + rc.top,
+    #                     rc.right + self._xpos, rc.bottom + self._ypos)
+    #     return api.PtInRect(byref(rc), pt)
 
 
 
@@ -404,10 +395,11 @@ class ColumnAlign(Enum):
 
 
 class ListViewColumn:
+
     """Class for representing ListView Column"""
-    _st_index = 0
+
     __slots__ = ("_draw_need", "_is_hot_item", "text", "width", "index", "img_index", "_order", "_hdr_txt_flag",
-                "_bg_color", "_fg_color", "img_on_right", "text_align", "_hdr_txt_align")
+                "_bg_color", "_fg_color", "img_on_right", "text_align", "_hdr_txt_align", "lvc")
 
     def __init__(self, hdr_txt: str, width: int, img:int = -1, img_right: bool = False) -> None:
         self.text = hdr_txt
@@ -415,11 +407,11 @@ class ListViewColumn:
         self.img_index = img
         self.img_on_right = img_right
         self.text_align = ColumnAlign.LEFT
-        self.index = ListViewColumn._st_index
+        self.index = -1
         self._hdr_txt_align = ColumnAlign.CENTER
         self._is_hot_item = False
         self._hdr_txt_flag = con.DT_SINGLELINE | con.DT_VCENTER | con.DT_CENTER | con.DT_NOPREFIX
-        ListViewColumn._st_index += 1
+
 
     # @property
     # def index(self): return self._index
@@ -472,7 +464,8 @@ class ListViewItem:
 #/////////////////////////////////////////////////////////////////////////////////////
 #//             Window Procedure, All actions are happening here                    //
 #/////////////////////////////////////////////////////////////////////////////////////
-@WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+# @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+@SUBCLASSPROC
 def lv_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     # log_msg(msg)
     lv = lv_dict[hw]
@@ -481,11 +474,14 @@ def lv_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             res = api.RemoveWindowSubclass(hw, lv_wnd_proc, scID)
             # print(f"remove subclass for {lv.name}, res - {res}")
 
-        case MyMessages.CTRL_NOTIFY:
+        # case con.WM_PAINT:
+        #     api.DefSubclassProc(hw, msg, wp, lp)
 
-        #     # with Timing("nmhdr time : "):
+
+        #     return 0
+
+        case MyMessages.CTRL_NOTIFY:
             nmh = cast(lp, api.LPNMHDR).contents
-        # #         # nmh = api.LPNMHDR.from_address(lp)
         #     print(nmh.code, " LV notify ", con.NM_CUSTOMDRAW )
             match nmh.code:
         # #         # case con.LVN_ITEMCHANGED:
@@ -504,11 +500,6 @@ def lv_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                 case con.NM_SETFOCUS:pass
                     # print("NM_SETFOCUS = NM_FIRST - 7")
 
-
-
-
-
-
                 case con.NM_CUSTOMDRAW:
                     lvcd = cast(lp, api.LPNMLVCUSTOMDRAW).contents
                     # print(lvcd.nmcd.dwDrawStage, con.CDDS_SUBITEM | con.CDDS_ITEMPOSTPAINT)
@@ -517,12 +508,11 @@ def lv_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                             return con.CDRF_NOTIFYITEMDRAW
 
                         case con.CDDS_ITEMPREPAINT:
-                            # print(lvcd.iSubItem)
-                            return con.CDRF_NOTIFYSUBITEMDRAW
+                            lvcd.clrTextBk = lv._bg_color.ref
+                            lvcd.clrText = lv._fg_color.ref
+                            return con.CDRF_NEWFONT | con.CDRF_DODEFAULT
 
-                        case con.CDDS_SUBITEM | con.CDDS_ITEMPREPAINT:
-                            print(lvcd.iSubItem)
-                            # print("item draw")
+
 
                         # case ITEM_POSTPAINT :
                         #     # print(lvcd.iSubItem)
@@ -544,87 +534,30 @@ def lv_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                     return con.CDRF_DODEFAULT
                 case _: return 0
 
-        # case con.WM_PARENTNOTIFY:
-        #     print("PNF")
+
         case con.WM_NOTIFY:
             nmh = cast(lp, api.LPNMHDR).contents
-
             if nmh.code == con.NM_CUSTOMDRAW:
                 nmcd = cast(lp, api.LPNMCUSTOMDRAW).contents
                 # print(f"{nmcd.dwDrawStage = }, {con.CDDS_ITEMPOSTERASE = }")
                 match nmcd.dwDrawStage:
                     case con.CDDS_PREPAINT: return con.CDRF_NOTIFYITEMDRAW
                     case con.CDDS_ITEMPREPAINT:
-    #                     # There are no messages or notifications for a header control when mouse...
-    #                     # pointer moves from one item to another. But MS is changing the item color...
-    #                     # when mouse moves. So we need to do a hack for that. We collect the x & y...
-    #                     # points in WM_MOUSEMOVE message in header control's wndproc function.
+    #                   # We are taking the opprtunity to draw the headers from Control
                         lv._draw_headers(nmcd)
                         return con.CDRF_SKIPDEFAULT
 
-    # #         else:
-    #             return True
-            # print("header")
-        #     # This message is from header control. We need to process it to make it beautiful.
-        #     nmh = cast(lp, api.LPNMHDR).contents
-
-        #     # print(f"{item = }")
-        #     match nmh.code:
-        #         case con.NM_CUSTOMDRAW:
-        #             nmcd = cast(lp, api.LPNMCUSTOMDRAW).contents
-        #             match nmcd.dwDrawStage:
-        #                 case con.CDDS_PREPAINT: return con.CDRF_NOTIFYITEMDRAW
-        #                 case con.CDDS_ITEMPREPAINT:
-        # #                     # There are no messages or notifications for a header control when mouse...
-        # #                     # pointer moves from one item to another. But MS is changing the item color...
-        # #                     # when mouse moves. So we need to do a hack for that. We collect the x & y...
-        # #                     # points in WM_MOUSEMOVE message in header control's wndproc function.
-        # #                     return lv._draw_headers(nmcd)
-        # #                     # print("no hdr")
-        #                     ism = lv._is_mouse_on_hdr(nmcd.rc)
-        #                     lv._draw_headers(nmcd, ism)
-        #                     return con.CDRF_DODEFAULT
-                        # case con.CDDS_ITEMPOSTPAINT:
-                        #     # print("pp")
-                        #     return con.CDRF_SKIPDEFAULT
-                            # print(f"{ism = }, {nmcd.rc.left = }")
-                # case _: return 0 #api.DefSubclassProc(hw, msg, wp, lp)
-
-
-
-
-
-
-                # case _: print("code : ", con.UINT_MAX - nmh.code)
-        # case con.WM_PARENTNOTIFY:
-        #     print("hdr parent notify")
-
-
-
-
-
-
-        # case con.WM_PAINT:
-        #     ps = api.PAINTSTRUCT()
-        #     api.BeginPaint(hw, byref(ps))
-
-        #     api.EndPaint(hw, byref(ps))
-        #     return 0
-
-        # case con.WM_SETFOCUS: lv._got_focus_handler()
-        # case con.WM_KILLFOCUS: lv._lost_focus_handler()
-        # case con.WM_LBUTTONDOWN: lv._left_mouse_down_handler(msg, wp, lp)
-        # case con.WM_LBUTTONUP: lv._left_mouse_up_handler(msg, wp, lp)
-        # case MyMessages.MOUSE_CLICK: lv._mouse_click_handler()
-        # case con.WM_RBUTTONDOWN: lv._right_mouse_down_handler(msg, wp, lp)
-        # case con.WM_RBUTTONUP: lv._right_mouse_up_handler(msg, wp, lp)
-        # case MyMessages.RIGHT_CLICK: lv._right_mouse_click_handler()
-        # case con.WM_MOUSEWHEEL: lv._mouse_wheel_handler(msg, wp, lp)
-        # case con.WM_MOUSEMOVE: lv._mouse_move_handler(msg, wp, lp)
-        # case con.WM_MOUSELEAVE: lv._mouse_leave_handler()
-        # case _: api.DefSubclassProc(hw, msg, wp, lp)
-        # case con.WM_ERASEBKGND:
-        #     return 0
+        case con.WM_SETFOCUS: lv._got_focus_handler()
+        case con.WM_KILLFOCUS: lv._lost_focus_handler()
+        case con.WM_LBUTTONDOWN: lv._left_mouse_down_handler(msg, wp, lp)
+        case con.WM_LBUTTONUP: lv._left_mouse_up_handler(msg, wp, lp)
+        case MyMessages.MOUSE_CLICK: lv._mouse_click_handler()
+        case con.WM_RBUTTONDOWN: lv._right_mouse_down_handler(msg, wp, lp)
+        case con.WM_RBUTTONUP: lv._right_mouse_up_handler(msg, wp, lp)
+        case MyMessages.RIGHT_CLICK: lv._right_mouse_click_handler()
+        case con.WM_MOUSEWHEEL: lv._mouse_wheel_handler(msg, wp, lp)
+        case con.WM_MOUSEMOVE: lv._mouse_move_handler(msg, wp, lp)
+        case con.WM_MOUSELEAVE: lv._mouse_leave_handler()
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 
@@ -634,7 +567,6 @@ def lv_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
 @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
 def hdr_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     # log_msg(msg)
-
     lv = lv_dict[refData]
     match msg:
         case con.WM_DESTROY:
@@ -649,49 +581,29 @@ def hdr_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                 pos.cy = lv._hdr_height
                 return res
 
-
-
-
-
-        # case HDR_CUST_DRAW:
-#             nmcd = cast(lp, api.LPNMCUSTOMDRAW).contents
-#             match nmcd.dwDrawStage:
-#                 case con.CDDS_PREPAINT: return con.CDRF_NOTIFYITEMDRAW
-#                 case con.CDDS_ITEMPREPAINT:
-# #                     # There are no messages or notifications for a header control when mouse...
-# #                     # pointer moves from one item to another. But MS is changing the item color...
-# #                     # when mouse moves. So we need to do a hack for that. We collect the x & y...
-# #                     # points in WM_MOUSEMOVE message in header control's wndproc function.
-# #                     return lv._draw_headers(nmcd)
-# #                     # print("no hdr")
-#                     ism = lv._is_mouse_on_hdr(nmcd.rc)
-#                     return lv._draw_headers(nmcd, ism)
-
-
         case con.WM_MOUSEMOVE:
-            pt = getMousePoints(lp)
-            hit = api.HDHITTESTINFO(pt)
+            pt = getMousePoints(lp) # Collecting mouse points
+            hit = api.HDHITTESTINFO(pt) # Passing it to this struct
+
+            # This message will return the header item index under the mouse
+            # We can use this index when we draw the header back color.
             lv._hot_hdr = api.SendMessage(hw, con.HDM_HITTEST, 0, addressof(hit) )
-            # print(RET)
 
-        #     # We need to collect the mouse X & Y points to draw the back color for the active item.
-        #     # And we are setting a flag to True. With both these things, we can easily determine...
-        #     # which item is under mouse pointer. Once we know the active item, we can draw it...
-        #     # with a different back color.
-
-
-
+        # Make the hot index to -1, so that our headers are drawn with normal colors after this.
         case con.WM_MOUSELEAVE: lv._hot_hdr = -1
 
+        case con.WM_PAINT:
+            # First, let the control to do it's necessary drawings.
+            api.DefSubclassProc(hw, msg, wp, lp)
 
-        # case con.HDM_GETITEMRECT:
-        #     lv.log(f"HDM_GETITEMRECT {wp = }" )
-        # case con.HDM_ORDERTOINDEX:
-        #     print("HDM_ORDERTOINDEX ", wp)
+            # Now, we can draw the last part of the header.
+            hrc = RECT()
+            api.SendMessage(lv._hdr_hwnd, con.HDM_GETITEMRECT, len(lv._columns) - 1, addressof(hrc))
+            rc = RECT(hrc.right + 1, hrc.top, lv._width, hrc.bottom)
+            hdc = api.GetDC(hw)
+            api.FillRect(hdc, byref(rc), lv._hdr_bk_brush)
+            api.ReleaseDC(hw, hdc)
+            return 0
 
-        # case con.WM_ERASEBKGND: Not Working
-        #     rc = api.RECT()
-        #     api.GetClientRect(hw, byref(rc))
-        #     api.FillRect(wp, byref(rc), lv._hdr_bk_brush)
-        #     return 0
+
     return api.DefSubclassProc(hw, msg, wp, lp)

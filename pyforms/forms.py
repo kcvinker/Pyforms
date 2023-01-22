@@ -8,7 +8,7 @@ from ctypes.wintypes import LPCWSTR, HDC
 from horology import Timing
 from . import constants as con
 from . import apis as api
-from .apis import WNDPROC, RECT, WNDCLASSEX, LPNMHDR, WPARAM, LPARAM, LRESULT
+from .apis import WNDPROC, RECT, WNDCLASSEX, LPNMHDR, WPARAM, LPARAM, LRESULT, HBRUSH
 
 from . import apis as api
 
@@ -26,7 +26,7 @@ class StaticData: # A singleton object which used to hold essential data for a f
     loop_started = False
     screen_width = api.GetSystemMetrics(0) # Need to calculate the form position
     screen_height = api.GetSystemMetrics(1)
-    def_win_color = Color.from_RGB(230, 230, 230)
+    def_win_color = Color(0xf0f0f0)# Color.from_RGB(230, 230, 230)
     curr_form = None
 
 
@@ -45,6 +45,7 @@ pp_counter = 1 # IMPORTANT: This variable is used in `print_pont` function.
 #//////////////////////////////////////////////////////////////
 #//   Main Window Procedure, the heart of this library
 #//////////////////////////////////////////////////////////////
+@WNDPROC
 def wnd_proc_main(hw, message, wParam, lParam) -> LRESULT:
     # print("message ", message) # 36, 129, 130
     # winmsgs.log_msg(message, "Form")
@@ -78,27 +79,36 @@ def wnd_proc_main(hw, message, wParam, lParam) -> LRESULT:
         case con.WM_MOUSEMOVE: frm._formMouseMoveHandler(hw, message, wParam, lParam)
         case con.WM_MOUSELEAVE: frm._formMouseLeaveHandler()
         case con.WM_MOUSEHOVER: frm._formMouseHoverHandler(message, wParam, lParam)
-        case con.WM_SIZING: frm._formSizingHandler(message, wParam, lParam)
-        case con.WM_SIZE: frm._formSizedHandler(message, wParam, lParam)
-        case con.WM_MOVING: frm._formMovingHandler(lParam)
-        case con.WM_MOVE: frm._formMovedHandler(lParam)
-        case con.WM_ERASEBKGND: frm._formEraseBkgHandler(hw, wParam)
+        case con.WM_SIZING:
+            return frm._formSizingHandler(message, wParam, lParam)
+        case con.WM_SIZE:
+            return frm._formSizedHandler(message, wParam, lParam)
+        case con.WM_MOVING: return frm._formMovingHandler(lParam)
+        case con.WM_MOVE: return frm._formMovedHandler(lParam)
+        case con.WM_ERASEBKGND:
+            # print("hwnd From HDC ", api.WindowFromDC(wParam))
+            if frm._draw_flag:
+                frm._formEraseBkgHandler(hw, wParam)
+                return 1
+            # return api.DefWindowProc(hw, message, wParam, lParam)
         case con.WM_SYSCOMMAND: frm._frmSysCommandHandler(wParam)
         case con.WM_CLOSE: frm._formClosingHandler()
         case con.WM_DESTROY: frm._formClosedHandler()
 
 #   -endregion No problem messages
 
-        case con.WM_CTLCOLORBTN:
-            return api.SendMessage(lParam, MyMessages.BTN_COLOR, wParam, lParam)
 
         case con.WM_CTLCOLOREDIT:
-            # print("from main wndproc ", lParam)
+            # Here we need this work around because, otherwise textbox in windows 10...
+            # will not work properly until we click on it.
+            # func = frm.tbdraw_dict.get(lParam, 0)
+            # if func: return func(wParam)
             return api.SendMessage(lParam, MyMessages.EDIT_COLOR, wParam, lParam)
+            # return hbr.value
 
         case con.WM_CTLCOLORSTATIC:
             # win = api.WindowFromDC(wParam)
-            # print("WM_CTLCOLORSTATIC win from dc", win)
+            # print("WM_CTLCOLORSTATIC in main wndproc", lParam)
             return api.SendMessage(lParam, MyMessages.LABEL_COLOR, wParam, lParam)
 
         case con.WM_CTLCOLORLISTBOX:
@@ -132,13 +142,15 @@ def wnd_proc_main(hw, message, wParam, lParam) -> LRESULT:
         case con.WM_NOTIFY:
             nm = cast(lParam, LPNMHDR).contents
             # frm.log("notify msg from ", nm.hwndFrom)
-            # if nm.hwndFrom == frm.lv_hwnd:
-            #     return 0 #frm.lv_func(lParam)
+            # if nm.hwndFrom == frm.trk_hwnd:
+            #     ret = frm.trk_func(lParam)
             # else:
-            return api.SendMessage(nm.hwndFrom, MyMessages.CTRL_NOTIFY, wParam, lParam)
+            return  api.SendMessage(nm.hwndFrom, MyMessages.CTRL_NOTIFY, wParam, lParam)
+            # if nm.hwndFrom == frm.trk_hwnd: frm.log("result of wm notify ", ret)
+            # return ret
 
-        case con.WM_SETFONT:
-            print("wm set font frm")
+        # case con.WM_SETFONT:
+        #     print("wm set font frm")
 
 
 
@@ -157,7 +169,7 @@ def make_window_class(proc):
     wc = WNDCLASSEX()
     wc.cbSize = sizeof(WNDCLASSEX)
     wc.style = con.CS_HREDRAW | con.CS_VREDRAW | con.CS_OWNDC
-    wc.lpfnWndProc = WNDPROC(proc)
+    wc.lpfnWndProc = proc # WNDPROC(proc)
     wc.hInstance = hins
     wc.hCursor =  api.LoadCursor(0, LPCWSTR(con.IDC_ARROW))
     wc.hbrBackground = api.CreateSolidBrush(StaticData.def_win_color.ref)
@@ -180,7 +192,8 @@ class Form(Control):
     __slots__ = (   "cls_str", "_form_pos", "_form_style", "_form_state", "_top_most", "_maximize_box", "_minimizeBox",
                     "_main_win_handle", "_is_main_window", "_is_mouse_tracking", "_draw_mode", "_is_normal_draw", "_upd_rct",
                     "_form_id", "_combo_dict", "on_load", "on_minimized", "on_maximized", "on_restored", "on_closing",
-                    "on_closed", "on_activate", "on_deactivate", "on_moving", "on_moved", "on_sizing", "on_sized", "lv_hwnd", "lv_func"  )
+                    "on_closed", "on_activate", "on_deactivate", "on_moving", "on_moved", "on_sizing", "on_sized",
+                      )
 
     def __init__(self, txt = "", width = 500, height = 400) -> None:
         super().__init__()
@@ -208,7 +221,11 @@ class Form(Control):
         self._is_normal_draw = True
         self._form_id = Form._count + 1000 # A unique ID for all forms.
         self._combo_dict = {} # Combo boxes demands to keep their listbox handle
+        # self.tbdraw_dict = {} # A dictionary for holding textbox coloring functions
         self._upd_rct = 0
+
+
+
 
 
         # Events
@@ -284,7 +301,7 @@ class Form(Control):
             self._is_main_window = True
             StaticData.loop_started = True
             tMsg = api.MSG()
-            while api.GetMessage(byref(tMsg), None, 0, 0) != 0:
+            while api.GetMessage(byref(tMsg), None, 0, 0) > 0:
                 api.TranslateMessage(byref(tMsg))
                 api.DispatchMessage(byref(tMsg))
 
@@ -443,30 +460,30 @@ class Form(Control):
         self._height = ea.formRect.bottom - ea.formRect.top
         if self.on_sizing:
             self.on_sizing(self, ea)
-            return 0
+        return 0
 
 
     def _formSizedHandler(self, msg, wp, lp):
         if self.on_sizing:
             ea = SizeEventArgs(msg, wp, lp)
             self.on_sizing(self, ea)
-            return 0
+        return 0
 
 
     def _formMovingHandler(self, lp):
+        rct = cast(lp, POINTER(RECT)).contents
+        self._xpos = rct.left
+        self._ypos = rct.top
         if self.on_moving:
-            rct = cast(lp, POINTER(RECT)).contents
-            self._xpos = rct.left
-            self._ypos = rct.top
             ea = EventArgs()
             self.on_moving(self, ea)
-            return 0
+            # return 0
         return 0
 
     def _formMovedHandler(self, lp):
+        self._xpos = getMouseXpoint(lp)
+        self._ypos = getMouseYpoint(lp)
         if self.on_moved:
-            self._xpos = getMouseXpoint(lp)
-            self._ypos = getMouseYpoint(lp)
             ea = EventArgs()
             self.on_moved(self, ea)
         return 0
@@ -501,18 +518,20 @@ class Form(Control):
             self.on_closed(self, ea)
 
     def _formEraseBkgHandler(self, hwnd, wp):
-        if self._draw_mode != FormDrawMode.NORMAL:
-            # dch = cast(wp, HDC).value
-            rct = api.get_client_rect(hwnd)
-            # api.GetClientRect(hwnd, byref(rct))
+        # if self._draw_mode != FormDrawMode.NORMAL:
+        # dch = cast(wp, HDC).value
+        rct = api.get_client_rect(hwnd)
+        # api.GetClientRect(hwnd, byref(rct))
 
-            if self._draw_mode == FormDrawMode.COLORED:
-                hbr = api.CreateSolidBrush(self._bkClrRef)
-            else:
-                # with Timing("create gradient speed : "):
-                hbr = create_gradient_brush2( wp, rct, self._mGClr1, self._mGClr2, self._mGt2b )
-            api.FillRect(wp, byref(rct), hbr)
-            api.DeleteObject(hbr)
+        if self._draw_mode == FormDrawMode.COLORED:
+            hbr = api.CreateSolidBrush(self._bkClrRef)
+        else:
+            # with Timing("create gradient speed : "):
+            hbr = create_gradient_brush2( wp, rct, self._mGClr1, self._mGClr2, self._mGt2b )
+        api.FillRect(wp, byref(rct), hbr)
+        api.DeleteObject(hbr)
+
+
 
     # -endregion
 
@@ -579,6 +598,7 @@ class Form(Control):
     def back_color(self, value):
         self._bg_color.update_color(value)
         self._draw_mode = FormDrawMode.COLORED
+        if not self._draw_flag: self._draw_flag = 1
         self._is_normal_draw = False
         self._manage_redraw() # This will re draw the window if needed
 

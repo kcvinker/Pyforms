@@ -249,7 +249,8 @@ class Button(Control):
 
 # TODO : Delete unwanted print commands and other lines
 
-@WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR) # This line is crucial. Without this program will crash.
+# @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR) # This line is crucial. Without this program will crash.
+@SUBCLASSPROC
 def btn_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     # winmsgs.log_msg(msg, "Button")
 
@@ -286,11 +287,7 @@ def btn_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             #     api.SelectObject(wp, hbr)
             #     return hbr
             # else:
-        # case MyMessages.BTN_COLOR:
-        #     if btn._draw_flag:
-        #         return 0
-        #     else:
-        #         return api.CreateSolidBrush(0x0000FF00)
+
 
 
 

@@ -1,19 +1,22 @@
 
 
 import ctypes as ctp
-from ctypes.wintypes import UINT, INT, HANDLE, LPCWSTR, HICON, HWND, WPARAM, LPARAM, DWORD, LPWSTR, LONG
-from ctypes import c_int64, c_uint64, POINTER, WINFUNCTYPE, Structure, byref, sizeof, c_wchar_p
+from ctypes.wintypes import UINT, INT, HANDLE, LPCWSTR, HICON, HWND, WPARAM, LPARAM, DWORD, LPWSTR, LONG, HINSTANCE
+from ctypes import c_longlong, c_ulonglong, POINTER, WINFUNCTYPE, Structure, byref, sizeof, c_wchar_p
 from ctypes import cast, create_unicode_buffer
 from ctypes import windll as wdll
 
 # Required types
-LRESULT = c_int64
+
+LONG_PTR = c_longlong
+UINT_PTR = c_ulonglong
+ULONG_PTR = c_ulonglong
+
+LRESULT = LONG_PTR
 HCURSOR = HICON
-UINT_PTR = c_int64
-DWORD_PTR = c_uint64
-LONG_PTR = c_uint64
-ULONG_PTR = c_uint64
-PUINT = POINTER(UINT)
+DWORD_PTR = ULONG_PTR
+WPARAM = UINT_PTR
+LPARAM = LONG_PTR
 WNDPROC = WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM)
 
 # Declare required dlls
@@ -90,7 +93,7 @@ class WNDCLASSEX(Structure): # tagWNDCLASSEXW
                 ("lpfnWndProc", WNDPROC),
                 ("cbClsExtra", INT),
                 ("cbWndExtra", INT),
-                ("hInstance", HANDLE),
+                ("hInstance", HINSTANCE),
                 ("hIcon", HANDLE),
                 ("hCursor", HANDLE),
                 ("hbrBackground", HANDLE),
@@ -139,7 +142,7 @@ class LVITEMW(Structure):
         ('iIndent', INT),
         ('iGroupId', INT),
         ('cColumns', UINT),
-        ('puColumns', PUINT),
+        ('puColumns', UINT_PTR),
         ('piColFmt', POINTER(INT)),
         ('iGroup', INT)
     ]
@@ -184,6 +187,7 @@ def create_lv(win, hins):
 	# user32.SendMessageW(hlv, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_FULLROWSELECT)
 	return hlv
 
+def create_trackbar(win, hins)
 
 def wnd_proc(hw, message, wParam, lParam):
 	if message == WM_DESTROY:
@@ -217,29 +221,31 @@ wc.lpszClassName = "Python Window"
 user32.RegisterClassExW(ctp.byref(wc))
 
 # All set. Now, create or window.
-hwnd = user32.CreateWindowExW(	0,
+hwnd = user32.CreateWindowExW(	DWORD(0),
 							wc.lpszClassName,
 							"List View Test",
 							WS_OVERLAPPEDWINDOW,
 							500, 100,
 							600, 400,
-							0, 0, wc.hInstance, None)
+							0, 0, HINSTANCE(wc.hInstance), None)
 
 #Now, create listview and add columns & rows.
-hlv = create_lv(hwnd, wc.hInstance)
-add_column(hlv, "Name", 100, 0)
-add_column(hlv, "Job", 250, 1)
-add_column(hlv, "Salary", 100, 2)
+# hlv = create_lv(hwnd, wc.hInstance)
+# add_column(hlv, "Name", 100, 0)
+# add_column(hlv, "Job", 250, 1)
+# add_column(hlv, "Salary", 100, 2)
 
-add_row(hlv, 0, "John Smith", "Manager", 45000)
-add_row(hlv, 1, "Harry Clark", "Accountant", 30000)
-add_row(hlv, 2, "Emily WIlson", "Cashier", 25000)
+# add_row(hlv, 0, "John Smith", "Manager", 45000)
+# add_row(hlv, 1, "Harry Clark", "Accountant", 30000)
+# add_row(hlv, 2, "Emily WIlson", "Cashier", 25000)
+
+
 
 # Okay, let's display the window
 user32.ShowWindow(hwnd, SW_SHOW)
 user32.UpdateWindow(hwnd)
 
-print(f"{sizeof(ctp.c_int) = }, {sizeof(c_int64) = }, {sizeof(ctp.c_size_t) = }, {sizeof(ctp.c_ssize_t) = }")
+# print(f"{sizeof(ctp.c_int) = }, {sizeof(c_int64) = }, {sizeof(ctp.c_size_t) = }, {sizeof(ctp.c_ssize_t) = }")
 
 
 msg_loop()

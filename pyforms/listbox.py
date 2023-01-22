@@ -12,7 +12,7 @@ from . import constants as con
 from .commons import MyMessages
 from .enums import ControlType, DateFormat
 from .events import EventArgs, DateTimeEventArgs
-from .apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, LPNMHDR, LPNMDATETIMECHANGE, WPARAM, LPARAM
+from .apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, LPNMHDR, LPNMDATETIMECHANGE, WPARAM, LPARAM, SUBCLASSPROC
 from . import apis as api
 from .colors import Color
 from datetime import datetime, date
@@ -277,7 +277,8 @@ class ListBox(Control):
 
 # End ListBox
 
-@WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+# @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+@SUBCLASSPROC
 def lbx_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     # printWinMsg(msg)
     lbx = lbx_dict[hw]

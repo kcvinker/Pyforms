@@ -7,7 +7,7 @@
 
 from array import *
 from ctypes.wintypes import HWND, UINT, DWORD
-from ctypes import POINTER, WINFUNCTYPE, Array, byref, addressof, cast
+from ctypes import POINTER, Array, byref, addressof, cast
 from .control import Control
 import ctypes as ct
 
@@ -15,10 +15,11 @@ from . import constants as con
 from .commons import MyMessages
 from .enums import ControlType, TickPosition, ChannelStyle, TrackChange
 from .events import EventArgs
-from .apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, LPNMCUSTOMDRAW, WPARAM, LPARAM
+from .apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, LPNMCUSTOMDRAW, WPARAM, LPARAM, SUBCLASSPROC
 from . import apis as api
 from .colors import Color
-# from .winmsgs import log_msg
+from .winmsgs import log_msg
+from horology import Timing
 
 trk_dict = {}
 trk_style = con.WS_CHILD | con.WS_VISIBLE | con.WS_CLIPCHILDREN | con.TBS_AUTOTICKS
@@ -74,7 +75,7 @@ class TrackBar(Control):
         self._max_range = 100
         self._page_size = self._frequency
         self._line_size = 1
-        self._channel_style = ChannelStyle.OUTLINE
+        self._channel_style = ChannelStyle.DEFAULT
         self._thumb_rc = RECT()
         self._channel_rc = RECT()
         self._my_rect = RECT()
@@ -91,8 +92,9 @@ class TrackBar(Control):
         self._point1 = 0 # Needed for x or y point of tic.
         self._point2 = 0 # Needed for x or y point of tic only when TicPosition.BOTH flag on.
         self._sel_color = Color(0x99ff33)
-        self._channel_color = Color(0xc2c2a3)
+        self._channel_color = Color(0xd0d0e1) #(0xc2d6d6) #(0xc2c2d6)
         self._tic_color = Color(0x3385ff)
+        self._bg_color = Color(parent._bg_color)
         self._sel_brush = 0
 
         # Events
@@ -109,11 +111,14 @@ class TrackBar(Control):
         """Create's TrackBar handle"""
 
         self._set_trk_style()
+        if self._cust_draw: self._prepare_for_custom_draw()
         self._create_control()
         if self._hwnd:
+            print("Track hwnd ", self._hwnd)
             trk_dict[self._hwnd] = self
             self._set_subclass(trk_wnd_proc)
-            if self._cust_draw: self._prepare_for_custom_draw()
+            if self._cust_draw: self._calc_tics()
+
             # self._set_font_internal()
             if self._reversed:
                 api.SendMessage(self._hwnd, con.TBM_SETRANGEMIN, 1, (self._max_range * -1))
@@ -126,9 +131,13 @@ class TrackBar(Control):
 
             api.SendMessage(self._hwnd, con.TBM_SETPAGESIZE, 0, self._page_size)
             api.SendMessage(self._hwnd, con.TBM_SETLINESIZE, 0, self._line_size)
-            if self._cust_draw: self._calc_tics()
+
             if self._sel_range: # We need to prepare a color and a brush
                 self._sel_brush = api.CreateSolidBrush(self._sel_color.ref)
+
+            # api.SendMessage(self._hwnd, con.TBM_SETPOS, True, 1)
+
+            # print(f" style bit {self._style & con.TBS_ENABLESELRANGE}, {con.TBS_ENABLESELRANGE = }")
 
 
 
@@ -312,7 +321,6 @@ class TrackBar(Control):
                     self._point1 = self._thumb_rc.bottom + 1
                     self._point2 = self._thumb_rc.top - 3
 
-
     def fill_channel_rect(self, nm, trc):
         # If show_selection property is enabled in this trackbar,
         # we need to show the area between thumb and channel starting in diff color.
@@ -336,7 +344,7 @@ class TrackBar(Control):
                 rc.left = trc.right
                 rc.right = nm.rc.right - 1
             else:
-                rc.left = nm.rc.left
+                rc.left = nm.rc.left + 1
                 rc.right = trc.left
 
         result = api.FillRect(nm.hdc, byref(rc), self._sel_brush)
@@ -352,6 +360,42 @@ class TrackBar(Control):
     def _prepare_for_custom_draw(self):
         self._channel_pen = api.CreatePen(con.PS_SOLID, 1, self._channel_color.ref)
         self._tic_pen = api.CreatePen(con.PS_SOLID, self._tic_width, self._tic_color.ref)
+
+    def _wm_notify_handler(self, lp):
+        nmh = cast(lp, api.LPNMHDR).contents
+        match nmh.code:
+            case con.NM_CUSTOMDRAW:
+                if self._cust_draw:
+                    nmcd = cast(lp, LPNMCUSTOMDRAW).contents
+                    match nmcd.dwDrawStage:
+                        case con.CDDS_PREPAINT: return con.CDRF_NOTIFYITEMDRAW
+                        case con.CDDS_ITEMPREPAINT:
+                            # print(f"{nmcd.dwItemSpec = }, {con.TBCD_TICS = }, {con.TBCD_CHANNEL = }")
+                            if nmcd.dwItemSpec == con.TBCD_TICS:
+                                if not self._no_tics: self._draw_tics(nmcd.hdc)
+                                # return con.CDRF_SKIPDEFAULT
+
+                            elif nmcd.dwItemSpec == con.TBCD_CHANNEL:
+                                if self._channel_style == ChannelStyle.CLASSIC:
+                                    api.DrawEdge(nmcd.hdc, byref(nmcd.rc), con.EDGE_SUNKEN, con.BF_RECT | con.BF_ADJUST) # 1 style
+                                else:
+                                    api.SelectObject(nmcd.hdc, self._channel_pen)
+                                    api.Rectangle(nmcd.hdc, nmcd.rc.left, nmcd.rc.top, nmcd.rc.right, nmcd.rc.bottom )
+
+                                if self._sel_range: # Fill the selection range
+                                    rc = self._get_thumb_rect()
+                                    if self.fill_channel_rect(nmcd, rc):
+                                        api.InvalidateRect(self._hwnd, byref(nmcd.rc), False)
+                                return con.CDRF_SKIPDEFAULT
+                            else:
+                                return con.CDRF_DODEFAULT
+                    return con.CDRF_DODEFAULT
+                else:
+                    return con.CDRF_DODEFAULT # We don't need to use custom draw
+            case 4294967280: # con.TRBN_THUMBPOSCHANGING:
+                self._track_change = TrackChange.MOUSE_CLICK
+                return con.CDRF_DODEFAULT
+
 
     # -endregion Private funcs
 
@@ -412,7 +456,7 @@ class TrackBar(Control):
     def show_selection(self, value: bool):
         """Get or set the behaviour for highlighting the selection in channel"""
         self._sel_range = value
-        if not self._cust_draw:
+        if value and not self._cust_draw:
             self._cust_draw = True
             # self._prepare_for_custom_draw()
     # #------------------------------------------------------------------------6 SHOW SELECTION
@@ -500,6 +544,8 @@ class TrackBar(Control):
     def tic_color(self, value: int):
         """Set or get the color for tic marks of trackbar"""
         self._tic_color = Color(value)
+        if value and not self._cust_draw:
+            self._cust_draw = True
     # #------------------------------------------------------------------------15 TIC COLOR
 
     @property
@@ -585,12 +631,10 @@ class TicData:
 
 
 
-
-
-@WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+@SUBCLASSPROC # This decorator is essential.
 def trk_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
-    # log_msg(msg)
     trk = trk_dict[hw]
+    # log_msg(msg)
     match msg:
         case con.WM_DESTROY:
             res = api.RemoveWindowSubclass(hw, trk_wnd_proc, scID)
@@ -626,14 +670,12 @@ def trk_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                     if trk.on_dragged: trk.on_dragged(trk, EventArgs())
                     if trk.on_value_changed: trk.on_value_changed(trk, EventArgs())
 
-
                 case  con.THUMB_LINE_HIGH:
                     trk._set_value_internal(api.SendMessage(hw, con.TBM_GETPOS, 0, 0))
                     trk._track_change = TrackChange.ARROW_HIGH
                     # print(trk._track_change)
                     if trk.on_value_changed:
                         trk.on_value_changed(trk, EventArgs())
-
 
                 case con.THUMB_LINE_LOW:
                     trk._set_value_internal(api.SendMessage(hw, con.TBM_GETPOS, 0, 0))
@@ -669,37 +711,50 @@ def trk_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             return trk._bkg_brush
 
         case MyMessages.CTRL_NOTIFY:
-            nmh = cast(lp, api.LPNMHDR).contents
+            nmh = cast(lp, api.LPNMHDR)[0]
             match nmh.code:
                 case con.NM_CUSTOMDRAW:
                     if trk._cust_draw:
-                        nmcd = cast(lp, LPNMCUSTOMDRAW).contents
-                        if nmcd.dwDrawStage == con.CDDS_PREPAINT:
-                            return con.CDRF_NOTIFYITEMDRAW
+                        # with Timing("nmh time: "):
+                        nmcd = cast(lp, LPNMCUSTOMDRAW)[0]
+                        match nmcd.dwDrawStage:
+                            case con.CDDS_PREPAINT: return con.CDRF_NOTIFYITEMDRAW
+                            case con.CDDS_ITEMPREPAINT:
+                                # print(f"{nmcd.dwItemSpec = }, {con.TBCD_TICS = }, {con.TBCD_CHANNEL = }")
+                                if nmcd.dwItemSpec == con.TBCD_CHANNEL:
+                                    if trk._channel_style == ChannelStyle.CLASSIC:
+                                        api.DrawEdge(nmcd.hdc, byref(nmcd.rc), con.EDGE_SUNKEN, con.BF_RECT | con.BF_ADJUST) # 1 style
+                                    elif trk._channel_style == ChannelStyle.OUTLINE:
+                                        api.SelectObject(nmcd.hdc, trk._channel_pen)
+                                        api.Rectangle(nmcd.hdc, nmcd.rc.left, nmcd.rc.top, nmcd.rc.right, nmcd.rc.bottom )
+                                    else:
+                                        return con.CDRF_DODEFAULT
 
-                        if nmcd.dwDrawStage ==  con.CDDS_ITEMPREPAINT:
+                                    if trk._sel_range: # Fill the selection range
+                                        rc = trk._get_thumb_rect()
+                                        if trk.fill_channel_rect(nmcd, rc):
+                                            api.InvalidateRect(hw, byref(nmcd.rc), False)
+                                    return con.CDRF_SKIPDEFAULT
 
-                            if nmcd.dwItemSpec == con.TBCD_TICS:
-                                if not trk._no_tics: trk._draw_tics(nmcd.hdc)
-                                return con.CDRF_SKIPDEFAULT
+                                if nmcd.dwItemSpec == con.TBCD_TICS:
+                                    if not trk._no_tics:
+                                        trk._draw_tics(nmcd.hdc)
+                                        return con.CDRF_SKIPDEFAULT
+                                    else: con.CDRF_DODEFAULT
 
-                            if nmcd.dwItemSpec == con.TBCD_CHANNEL:
-                                if trk._channel_style == ChannelStyle.CLASSIC:
-                                    api.DrawEdge(nmcd.hdc, byref(nmcd.rc), con.EDGE_SUNKEN, con.BF_RECT | con.BF_ADJUST) # 1 style
-                                else:
-                                    api.SelectObject(nmcd.hdc, trk._channel_pen)
-                                    api.Rectangle(nmcd.hdc, nmcd.rc.left, nmcd.rc.top, nmcd.rc.right, nmcd.rc.bottom )
+                                # else: return con.CDRF_DODEFAULT
 
-                                if trk._sel_range: # Fill the selection range
-                                    rc = trk._get_thumb_rect()
-                                    if trk.fill_channel_rect(nmcd, rc):
-                                        api.InvalidateRect(hw, byref(nmcd.rc), False)
 
-                                return con.CDRF_SKIPDEFAULT
+                                # else:pass
+                                    # print("else part")
+                                # return con.CDRF_DODEFAULT
+                        return con.CDRF_DODEFAULT
                     else:
                         return 0 # We don't need to use custom draw
                 case 4294967280: # con.TRBN_THUMBPOSCHANGING:
                     trk._track_change = TrackChange.MOUSE_CLICK
+                    return 0
+            return api.DefSubclassProc(hw, msg, wp, lp)
 
 
         # case con.WM_PAINT:
@@ -726,3 +781,38 @@ def trk_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         case con.WM_MOUSELEAVE: trk._mouse_leave_handler()
 
     return api.DefSubclassProc(hw, msg, wp, lp)
+
+        # Track Messages
+# 1024		TBM_GETPOS
+# 1025		TBM_GETRANGEMIN
+# 1026		TBM_GETRANGEMAX
+# 1027		TBM_GETTIC
+# 1028		TBM_SETTIC
+# 1029		TBM_SETPOS
+# 1030		TBM_SETRANGE
+# 1031		TBM_SETRANGEMIN
+# 1032		TBM_SETRANGEMAX
+# 1033		TBM_CLEARTICS
+# 1034		TBM_SETSEL
+# 1035		TBM_SETSELSTART
+# 1036		TBM_SETSELEND
+# 1038		TBM_GETPTICS
+# 1039		TBM_GETTICPOS
+# 1040		TBM_GETNUMTICS
+# 1041		TBM_GETSELSTART
+# 1042		TBM_GETSELEND
+# 1043		TBM_CLEARSEL
+# 1044		TBM_SETTICFREQ
+# 1045		TBM_SETPAGESIZE
+# 1046		TBM_GETPAGESIZE
+# 1047		TBM_SETLINESIZE
+# 1048		TBM_GETLINESIZE
+# 1049		TBM_GETTHUMBRECT
+# 1050		TBM_GETCHANNELRECT
+# 1051		TBM_SETTHUMBLENGTH
+# 1052		TBM_GETTHUMBLENGTH
+# 1053		TBM_SETTOOLTIPS
+# 1054		TBM_GETTOOLTIPS
+# 1055		TBM_SETTIPSIDE
+# 1056		TBM_SETBUDDY
+# 1057		TBM_GETBUDDY
