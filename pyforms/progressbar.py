@@ -9,7 +9,7 @@ from ctypes import byref, create_unicode_buffer
 from .control import Control
 from . import constants as con
 from .commons import MyMessages
-from .enums import ControlType, ProgressBarStyle
+from .enums import ControlType, ProgressBarStyle, ProgressBarState
 # from .events import EventArgs
 from .apis import LRESULT, SUBCLASSPROC
 from . import apis as api
@@ -25,7 +25,8 @@ pgb_exstyle = 0# con.WS_EX_CLIENTEDGE
 class ProgressBar(Control):
 
     _count = 1
-    __slots__ = ("_bk_brush", "_bar_style", "_vertical", "_min_value", "_max_value", "_step", "_value", "_percentage")
+    __slots__ = ("_bk_brush", "_bar_style", "_vertical", "_min_value", "_max_value", "_step", "_value", "_percentage", "_state",
+                "_speed")
     def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 180, height: int = 25 ) -> None:
         super().__init__()
         self._cls_name = "msctls_progress32"
@@ -46,15 +47,14 @@ class ProgressBar(Control):
         self._draw_flag = 0
 
         self._bar_style = ProgressBarStyle.BLOCK_STYLE
+        self._state = ProgressBarState.NORMAL
         self._vertical = False
         self._min_value = 0
         self._max_value = 100
         self._step = 1
         self._value = 0
+        self._speed = 30
         self._percentage = False
-        # self._draw_perc = False
-
-
         ProgressBar._count += 1
 
 
@@ -74,30 +74,25 @@ class ProgressBar(Control):
 
 
     def increment(self):
+        self._value = self._step if self._value == self._max_value else self._value + self._step
         if self._is_created: api.SendMessage(self._hwnd, con.PBM_STEPIT, 0, 0)
 
+    def start_marquee(self):
+        if self._is_created and self._bar_style == ProgressBarStyle.MARQUEE_STYLE:
+            api.SendMessage(self._hwnd, con.PBM_SETMARQUEE, 1, self._speed)
 
-
-
-
+    def stop_marquee(self):
+        if self._is_created and self._bar_style == ProgressBarStyle.MARQUEE_STYLE:
+            api.SendMessage(self._hwnd, con.PBM_SETMARQUEE, 0, 0)
 
     # -endregion Public funcs
 
     # -region Private funcs
-    # def _adjustBorder(self):
-    #     if self._border_style == ProgressBarBorder.SUNKEN:
-    #         self._style |= con.SS_SUNKEN
-    #     else:
-    #         self._style = con.WS_BORDER
 
     def draw_percentage(self):
         ss = api.SIZE()
-
-
-
-        # rc = api.RECT(left, 3, 25, self.height - 1)
-        value = api.SendMessage(self._hwnd, con.PBM_GETPOS, 0, 0)
-        txt = create_unicode_buffer(f"{value}%")
+        # value = api.SendMessage(self._hwnd, con.PBM_GETPOS, 0, 0)
+        txt = create_unicode_buffer(f"{self._value}%")
         hdc = api.GetDC(self._hwnd)
         api.SelectObject(hdc, self._font._hwnd)
         api.GetTextExtentPoint32(hdc, txt, len(txt), byref(ss))
@@ -105,24 +100,14 @@ class ProgressBar(Control):
         y = (self._height - ss.cy) // 2
         api.SetBkMode(hdc, con.TRANSPARENT)
         api.SetTextColor(hdc, self._fg_color.ref)
-        # api.DrawText(hdc, , -1, byref(rc), con.DT_CENTER| con.DT_SINGLELINE )
         api.TextOut(hdc, x, y, txt, len(txt) )
         api.ReleaseDC(self._hwnd, hdc)
-
-
-
-
-
-
-
 
 
     # -endregion Private funcs
 
     # -region Properties
 
-    # @property
-    # def auto_size(self): return self._auto_size
 
     @property
     def value(self): return self._value
@@ -131,18 +116,43 @@ class ProgressBar(Control):
     def value(self, value: int):
         self._value = value
         if self._is_created: api.SendMessage(self._hwnd, con.PBM_SETPOS, value, 0)
+    #-------------------------------------------------------------------------------[1]
 
     @property
     def step(self): return self._step
 
     @step.setter
     def step(self, value: int): self._step = value
+    #-------------------------------------------------------------------------------[2]
 
-    # @property
-    # def border_style(self): return self._border_style
+    @property
+    def state(self): return self._state
 
-    # @border_style.setter
-    # def border_style(self, value: ProgressBarBorder): self._border_style = value
+    @state.setter
+    def state(self, value: ProgressBarState):
+        self._state = value
+        api.SendMessage(self._hwnd, con.PBM_SETSTATE, value, 0);
+    #-------------------------------------------------------------------------------[3]
+
+    @property
+    def style(self): return self._bar_style
+
+    @style.setter
+    def style(self, value: ProgressBarStyle):
+        if self._bar_style != value and self._is_created:
+            self.value = 0
+            if value == ProgressBarStyle.BLOCK_STYLE:
+                self._style ^= con.PBS_MARQUEE
+                self._style |= con.PBS_SMOOTH
+            else:
+                self._style ^= con.PBS_SMOOTH
+                self._style |= con.PBS_MARQUEE
+
+            api.SetWindowLongPtr(self.handle, con.GWL_STYLE, self._style)
+            if value == ProgressBarStyle.MARQUEE_STYLE:
+                api.SendMessage(self._hwnd, con.PBM_SETMARQUEE, 1, self._speed)
+
+        self._bar_style = value
 
     # -endregion Properties
     dummy = 100
@@ -160,11 +170,12 @@ class ProgressBar(Control):
 @SUBCLASSPROC
 def pgb_wnd_proc(hw, msg, wp, lp, scID, refData):
     # printWinMsg(msg)
-    log_msg(msg)
+    # log_msg(msg)
     pgb = pgb_dict[hw]
     match msg:
         case con.WM_DESTROY:
             api.RemoveWindowSubclass(hw, pgb_wnd_proc, scID)
+            del pgb_dict[hw]
 
         case con.WM_SETFOCUS: pgb._got_focus_handler()
         case con.WM_KILLFOCUS: pgb._lost_focus_handler()
@@ -179,9 +190,7 @@ def pgb_wnd_proc(hw, msg, wp, lp, scID, refData):
         case con.WM_MOUSELEAVE: pgb._mouse_leave_handler()
         case con.WM_PAINT:
             ret = api.DefSubclassProc(hw, msg, wp, lp)
-            if pgb._percentage:
-                pgb.draw_percentage()
-                # pgb._draw_perc = False
+            if pgb._percentage and pgb._bar_style != ProgressBarStyle.MARQUEE_STYLE: pgb.draw_percentage()
             return ret
 
 
