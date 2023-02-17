@@ -7,7 +7,7 @@ from ctypes import byref, create_unicode_buffer
 
 from .control import Control
 from . import constants as con
-from .commons import MyMessages
+from .commons import MyMessages, OPAQUE, TRANSPARENT
 from .enums import ControlType
 # from .events import EventArgs
 from .apis import SUBCLASSPROC
@@ -20,12 +20,12 @@ from .winmsgs import log_msg
 
 gb_dict = {}
 gb_style = con.WS_CHILD | con.WS_VISIBLE | con.BS_GROUPBOX | con.BS_NOTIFY | con.BS_TOP | con.WS_OVERLAPPED |con.WS_CLIPCHILDREN| con.WS_CLIPSIBLINGS
-gb_exstyle = con.WS_EX_RIGHTSCROLLBAR| con.WS_EX_TRANSPARENT| con.WS_EX_CONTROLPARENT
+gb_exstyle = con.WS_EX_RIGHTSCROLLBAR| con.WS_EX_CONTROLPARENT
 
 class GroupBox(Control):
 
     _count = 1
-    __slots__ = ("_bk_brush", "_pen", "_tmp_text", "_txt_size", "_rect")
+    __slots__ = ("_bk_brush", "_pen", "_tmp_text", "_rect", "_txt_width")
     def __init__(self, parent, txt: str = "", xpos: int = 10, ypos: int = 10, width: int = 300, height: int = 300 ) -> None:
         super().__init__()
         self._cls_name = "Button"
@@ -44,27 +44,22 @@ class GroupBox(Control):
         self._style = gb_style
         self._ex_style = gb_exstyle
         self._draw_flag = 0
-
-
+        self._txt_width = 0
         GroupBox._count += 1
 
 
     # -region Public funcs
     def create_handle(self):
         self._bk_brush = api.CreateSolidBrush(self._bg_color.ref);
-        self._pen = api.CreatePen(con.PS_SOLID, 2, self._bg_color.ref)# self._bg_color.ref) 0x000000ff
-        self._tmp_text = self._text
-        self._text = ""
-        # self._isAutoSizeNeeded()
+        self._pen = api.CreatePen(con.PS_SOLID, 2, self._bg_color.ref)
         self._rect = api.RECT(0, 10, self._width, self._height - 2)
         self._create_control()
         if self._hwnd:
             gb_dict[self._hwnd] = self
-
+            self._set_font_internal()
             self._getTextSize()
             self._set_subclass(gb_wnd_proc)
-            # self._make_label()
-            # self._set_font_internal()
+
 
 
     # -endregion Public funcs
@@ -91,12 +86,11 @@ class GroupBox(Control):
     def _getTextSize(self):
         # with Timing("Time for normal hdc  : "):
         hdc = api.GetDC(self._hwnd)
-        self._txt_size = api.SIZE()
+        size = api.SIZE()
         api.SelectObject(hdc, self._font._hwnd)
-        api.GetTextExtentPoint32(hdc, self._tmp_text, len(self._tmp_text), byref(self._txt_size))
+        api.GetTextExtentPoint32(hdc, self._text, len(self._text), byref(size))
         api.ReleaseDC(self._hwnd, hdc)
-        self._txt_size.cx += 10
-        self._txt_size.cy += 10
+        self._txt_width = size.cx + 10
 
 
     def _draw_text(self):
@@ -105,16 +99,16 @@ class GroupBox(Control):
         # back ground looks transparent. If user doesn't change...
         # back color, text will remain fully transparent bkg.
         # If anyone complaints about flickering, consider double buffering.
-        rc = api.RECT(10, 0, self._txt_size.cx, self._txt_size.cy)
         yp = 9
         hdc = api.GetDC(self._hwnd)
         api.SelectObject(hdc, self._pen)
         api.MoveToEx(hdc, 10, yp, None)
-        api.LineTo(hdc, self._txt_size.cx, yp)
+        api.LineTo(hdc, self._txt_width, yp)
+
         api.SetBkMode(hdc, con.TRANSPARENT)
         api.SelectObject(hdc, self._font._hwnd)
         api.SetTextColor(hdc, self._fg_color.ref)
-        api.DrawText(hdc, create_unicode_buffer(self._tmp_text), -1, byref(rc), con.DT_CENTER| con.DT_SINGLELINE )
+        api.TextOut(hdc, 10, 0, create_unicode_buffer(self._text), len(self._text))
         api.ReleaseDC(self._hwnd, hdc)
 
 
@@ -123,8 +117,14 @@ class GroupBox(Control):
 
     # -region Properties
 
-    # @property
-    # def auto_size(self): return self._auto_size
+    @Control.text.setter
+    def text(self, value: str):
+        """Set the text for group box"""
+        self._text = value
+        if self._is_created:
+            self._getTextSize()
+            self._manage_redraw()
+
 
     # @property
     # def multi_line(self): return self._multi_line
@@ -165,6 +165,7 @@ def gb_wnd_proc(hw, msg, wp, lp, scID, refData):
     match msg:
         case con.WM_DESTROY:
             api.RemoveWindowSubclass(hw, gb_wnd_proc, scID)
+            del gb_dict[hw]
 
         # case MyMessages.GROUPBOX_COLOR:
         #     # Whether user selects a back color or not, we must set the back color.
@@ -186,11 +187,20 @@ def gb_wnd_proc(hw, msg, wp, lp, scID, refData):
         case con.WM_MOUSEMOVE: gb._mouse_move_handler(msg, wp, lp)
         case con.WM_MOUSELEAVE: gb._mouse_leave_handler()
 
+        # case MyMessages.LABEL_COLOR:
+        #     if gb._draw_flag & 1:
+        #         print("gb draw")
+
+        #         api.SetTextColor(wp, gb._fg_color.ref)
+        #         api.SetBkMode(wp, TRANSPARENT )
+        #     api.SetBkColor(wp, gb._bg_color.ref)
+        #     return gb._bk_brush
+
         case con.WM_ERASEBKGND:
             if gb._draw_flag:
                 rc = api.get_client_rect(hw)
-                rc.top += 10 # We didn't want to fill the 10 points on top.
-                rc.bottom -= 2 # And 2 points in bottom.
+                # rc.top += 10 # We didn't want to fill the 10 points on top.
+                # rc.bottom -= 2 # And 2 points in bottom.
                 api.FillRect(wp, byref(rc), gb._bk_brush)
                 return 1
             # NOTE: Do not return anything outside the 'if', as it will make every static control a mess.
@@ -202,6 +212,8 @@ def gb_wnd_proc(hw, msg, wp, lp, scID, refData):
             # Now, we can draw the text over this group box.
             gb._draw_text()
             return ret
+
+        case con.WM_GETTEXTLENGTH: return 0
 
 
     return api.DefSubclassProc(hw, msg, wp, lp)
