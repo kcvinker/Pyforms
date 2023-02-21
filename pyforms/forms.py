@@ -1,7 +1,7 @@
 
 # Created on 08-Nov-2022 00:05:26
 # import ctypes
-from ctypes import cast, byref, sizeof, POINTER, pointer
+from ctypes import cast, byref, sizeof, POINTER, pointer, py_object
 from ctypes.wintypes import LPCWSTR, HDC
 # from functools import lru_cache
 
@@ -12,9 +12,9 @@ from .apis import WNDPROC, RECT, WNDCLASSEX, LPNMHDR, WPARAM, LPARAM, LRESULT, H
 
 from . import apis as api
 
-from .control import Control
+from .control import Control, MenuEventData
 from .enums import FormPosition, FormStyle, FormState, FormDrawMode
-from .commons import Font, MyMessages, getMouseXpoint, getMouseYpoint
+from .commons import Font, MyMessages, getMouseXpoint, getMouseYpoint, MyMessages
 from .events import EventArgs, MouseEventArgs, SizeEventArgs
 from .colors import create_gradient_brush2, RgbColor, Color
 from . import winmsgs
@@ -49,51 +49,53 @@ pp_counter = 1 # IMPORTANT: This variable is used in `print_pont` function.
 def wnd_proc_main(hw, message, wParam, lParam) -> LRESULT:
     # print("message ", message) # 36, 129, 130
     # winmsgs.log_msg(message, "Form")
-    frm = form_dict.get(hw, StaticData.curr_form)
+    this = form_dict.get(hw, StaticData.curr_form)
 
     match message:
         case con.WM_NCDESTROY:
-            if frm._is_main_window :
+            if this._is_main_window :
                 api.PostQuitMessage(0)
                 return 1
+        # case con.WM_MENUSELECT:
+        #     print(f"WM_MENUSELECT {lParam = }, {api.LOWORD(wParam) = }")
 
         # case con.WM_GETMINMAXINFO: print("WM_GETMINMAXINFO and hwnd is ", hw)
 
         # case con.WM_PAINT:
         #     frm = get_form(hw)
-        #     frm.on_paint_special()
+        #     this.on_paint_special()
 
 #   -region No problem messages
-        case con.WM_SHOWWINDOW: frm._formShownHandler()
-        case con.WM_ACTIVATEAPP: frm._formActivateHandler(wParam)
-        case con.WM_KEYDOWN | con.WM_SYSKEYDOWN: frm._key_down_handler(wParam)
-        case con.WM_KEYUP | con.WM_SYSKEYUP: frm._key_up_handler(wParam)
-        case con.WM_CHAR: frm._key_press_handler(wParam)
-        case con.WM_LBUTTONDOWN: frm._left_mouse_down_handler(message, wParam, lParam)
-        case con.WM_LBUTTONUP: frm._left_mouse_up_handler(message, wParam, lParam)
-        case MyMessages.MOUSE_CLICK: frm._mouse_click_handler()
-        case con.WM_RBUTTONDOWN: frm._right_mouse_down_handler(message, wParam, lParam)
-        case con.WM_RBUTTONUP: frm._right_mouse_up_handler(message, wParam, lParam)
-        case MyMessages.RIGHT_CLICK: frm._right_mouse_click_handler()
-        case con.WM_MOUSEWHEEL: frm._mouse_wheel_handler(message, wParam, lParam)
-        case con.WM_MOUSEMOVE: frm._formMouseMoveHandler(hw, message, wParam, lParam)
-        case con.WM_MOUSELEAVE: frm._formMouseLeaveHandler()
-        case con.WM_MOUSEHOVER: frm._formMouseHoverHandler(message, wParam, lParam)
+        case con.WM_SHOWWINDOW: this._formShownHandler()
+        case con.WM_ACTIVATEAPP: this._formActivateHandler(wParam)
+        case con.WM_KEYDOWN | con.WM_SYSKEYDOWN: this._key_down_handler(wParam)
+        case con.WM_KEYUP | con.WM_SYSKEYUP: this._key_up_handler(wParam)
+        case con.WM_CHAR: this._key_press_handler(wParam)
+        case con.WM_LBUTTONDOWN: this._left_mouse_down_handler(message, wParam, lParam)
+        case con.WM_LBUTTONUP: this._left_mouse_up_handler(message, wParam, lParam)
+        case MyMessages.MOUSE_CLICK: this._mouse_click_handler()
+        case con.WM_RBUTTONDOWN: this._right_mouse_down_handler(message, wParam, lParam)
+        case con.WM_RBUTTONUP: this._right_mouse_up_handler(message, wParam, lParam)
+        case MyMessages.RIGHT_CLICK: this._right_mouse_click_handler()
+        case con.WM_MOUSEWHEEL: this._mouse_wheel_handler(message, wParam, lParam)
+        case con.WM_MOUSEMOVE: this._formMouseMoveHandler(hw, message, wParam, lParam)
+        case con.WM_MOUSELEAVE: this._formMouseLeaveHandler()
+        case con.WM_MOUSEHOVER: this._formMouseHoverHandler(message, wParam, lParam)
         case con.WM_SIZING:
-            return frm._formSizingHandler(message, wParam, lParam)
+            return this._formSizingHandler(message, wParam, lParam)
         case con.WM_SIZE:
-            return frm._formSizedHandler(message, wParam, lParam)
-        case con.WM_MOVING: return frm._formMovingHandler(lParam)
-        case con.WM_MOVE: return frm._formMovedHandler(lParam)
+            return this._formSizedHandler(message, wParam, lParam)
+        case con.WM_MOVING: return this._formMovingHandler(lParam)
+        case con.WM_MOVE: return this._formMovedHandler(lParam)
         case con.WM_ERASEBKGND:
             # print("hwnd From HDC ", api.WindowFromDC(wParam))
-            if frm._draw_flag:
-                frm._formEraseBkgHandler(hw, wParam)
+            if this._draw_flag:
+                this._formEraseBkgHandler(hw, wParam)
                 return 1
             # return api.DefWindowProc(hw, message, wParam, lParam)
-        case con.WM_SYSCOMMAND: frm._frmSysCommandHandler(wParam)
-        case con.WM_CLOSE: frm._formClosingHandler()
-        case con.WM_DESTROY: frm._formClosedHandler()
+        case con.WM_SYSCOMMAND: this._frmSysCommandHandler(wParam)
+        case con.WM_CLOSE: this._formClosingHandler()
+        case con.WM_DESTROY: this._formClosedHandler()
 
 #   -endregion No problem messages
 
@@ -101,7 +103,7 @@ def wnd_proc_main(hw, message, wParam, lParam) -> LRESULT:
         case con.WM_CTLCOLOREDIT:
             # Here we need this work around because, otherwise textbox in windows 10...
             # will not work properly until we click on it.
-            # func = frm.tbdraw_dict.get(lParam, 0)
+            # func = this.tbdraw_dict.get(lParam, 0)
             # if func: return func(wParam)
             return api.SendMessage(lParam, MyMessages.EDIT_COLOR, wParam, lParam)
             # return hbr.value
@@ -113,7 +115,7 @@ def wnd_proc_main(hw, message, wParam, lParam) -> LRESULT:
 
         case con.WM_CTLCOLORLISTBOX:
             # print("combo list clr")
-            from_combo = frm._combo_dict.get(lParam, 0)
+            from_combo = this._combo_dict.get(lParam, 0)
             if from_combo:
                 return api.SendMessage(from_combo, MyMessages.LIST_COLOR, wParam, lParam)
             else:
@@ -122,7 +124,7 @@ def wnd_proc_main(hw, message, wParam, lParam) -> LRESULT:
 
         case con.WM_COMMAND:
             match api.HIWORD(wParam):
-                case 0: pass # menu commands
+                case 0: return this._menu_click_handler(api.LOWORD(wParam))
                 case 1: pass # accelerator key commands
                 case _:
                     # ctlHwnd = HWND(lParam)
@@ -141,22 +143,32 @@ def wnd_proc_main(hw, message, wParam, lParam) -> LRESULT:
         # case con.WM_HOTKEY: pass
         case con.WM_NOTIFY:
             nm = cast(lParam, LPNMHDR).contents
-            # frm.log("notify msg from ", nm.hwndFrom)
-            # if nm.hwndFrom == frm.trk_hwnd:
-            #     ret = frm.trk_func(lParam)
+            # this.log("notify msg from ", nm.hwndFrom)
+            # if nm.hwndFrom == this.trk_hwnd:
+            #     ret = this.trk_func(lParam)
             # else:
             return  api.SendMessage(nm.hwndFrom, MyMessages.CTRL_NOTIFY, wParam, lParam)
-            # if nm.hwndFrom == frm.trk_hwnd: frm.log("result of wm notify ", ret)
+            # if nm.hwndFrom == this.trk_hwnd: this.log("result of wm notify ", ret)
             # return ret
 
-        # case con.WM_SETFONT:
-        #     print("wm set font frm")
+        case MyMessages.MENU_EVENT_SET:
+            menu = cast(lParam, py_object).value
+            this._menu_event_dict[menu._id] = menu
+
+        # case con.WM_MENUCOMMAND:
+        #     # menu = this._menu_event_dict.get(lParam, 0)
+        #     print(f"WM_MENUCOMMAND {lParam = }, {wParam = }")
+        #     # if menu: menu.on_click(menu, EventArgs())
 
 
 
 
 
-        # case con.WM_PARENTNOTIFY: frm.log("parent notify from - ", lParam)
+
+
+        # case con.WM_PARENTNOTIFY:
+        #     this.log(f"parent notify {api.LOWORD(wParam) = }, {lParam = }" )
+        #     return 0
 
     return api.DefWindowProc(hw, message, wParam, lParam)
 
@@ -174,7 +186,7 @@ def make_window_class(proc):
     wc.hCursor =  api.LoadCursor(0, LPCWSTR(con.IDC_ARROW))
     wc.hbrBackground = api.CreateSolidBrush(StaticData.def_win_color.ref)
     wc.lpszClassName = StaticData.class_name
-
+    print("DTN_FIRST  ", con.DTN_FIRST)
     return wc
 
 
@@ -193,7 +205,7 @@ class Form(Control):
                     "_main_win_handle", "_is_main_window", "_is_mouse_tracking", "_draw_mode", "_is_normal_draw", "_upd_rct",
                     "_form_id", "_combo_dict", "on_load", "on_minimized", "on_maximized", "on_restored", "on_closing",
                     "on_closed", "on_activate", "on_deactivate", "on_moving", "on_moved", "on_sizing", "on_sized",
-                      )
+                     "_menu_event_dict" )
 
     def __init__(self, txt = "", width = 500, height = 400) -> None:
         super().__init__()
@@ -223,6 +235,8 @@ class Form(Control):
         self._combo_dict = {} # Combo boxes demands to keep their listbox handle
         # self.tbdraw_dict = {} # A dictionary for holding textbox coloring functions
         self._upd_rct = 0
+        self._menu_event_dict = {}
+        # self._last_np = None # Last created NumberPicker.
 
 
 
@@ -250,6 +264,7 @@ class Form(Control):
     # -region Public functions
     def create_handle(self):
         """Creating window handle """
+        print("over lapp ", con.WS_OVERLAPPEDWINDOW)
         self._set_location()
         self._set_style()
         StaticData.curr_form = self
@@ -392,11 +407,29 @@ class Form(Control):
             # print("edge ", res)
 
 
+    def _menu_click_handler(self, menu_id):
+        menu = self._menu_event_dict.get(menu_id, 0)
+        if menu:
+            menu.on_click(menu, EventArgs())
+            return 0
+        return 0
+
+    # def _set_number_picker_info(self, np):
+    #     # This is a work around for a strange problem.
+    #     # If we create a single num picker, it will be okay.
+    #     # But if we create another num picker, the first...
+    #     # num picker's edit control get resized. I cannot...
+    #     # find any fix other than this. By this fix, we...
+    #     # are resizing the older num picker's edit and...
+    #     # set the new num picker as last num picker.
+    #     if self._last_np: self._last_np._resize_buddy()
+    #     self._last_np = np
+
 
     # def saveComboInfo(self, ci):
     #     if len(self._cmbInfoList) > 0:
 
-    # -endregion
+    # -endregion private functions
 
     # -region Event handlers
     def _formActivateHandler(self, wp):
