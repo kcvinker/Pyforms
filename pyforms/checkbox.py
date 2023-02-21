@@ -2,16 +2,16 @@
 
 # CheckBox module - Created on 08-Dec-2022 18:49:20
 
-from ctypes.wintypes import HWND, UINT
+
 from ctypes import WINFUNCTYPE, byref, cast, addressof
-# from win32gui import SendMessage
+
 
 from .control import Control
 from .commons import MyMessages
 from .enums import ControlType
-from .apis import LRESULT, UINT_PTR, DWORD_PTR, LPNMCUSTOMDRAW, WPARAM, LPARAM, SUBCLASSPROC
+from .apis import LRESULT, LPNMCUSTOMDRAW, SUBCLASSPROC
 from . import apis as api
-from .colors import Color, RgbColor
+from .colors import Color
 from . import constants as con
 from .events import EventArgs
 
@@ -21,7 +21,7 @@ cb_style = con.WS_CHILD | con.WS_VISIBLE | con.WS_TABSTOP | con.BS_AUTOCHECKBOX
 
 
 class CheckBox(Control):
-
+    """Represents CheckBox control"""
     _count = 1
     __slots__ = ( "_right_align", "_txt_style", "_bg_brush", "_is_checked", "on_checked_changed")
 
@@ -65,7 +65,6 @@ class CheckBox(Control):
 
             ss = api.SIZE()
             api.SendMessage(self._hwnd, con.BCM_GETIDEALSIZE, 0, addressof(ss))
-
             self._width = ss.cx
             self._height = ss.cy
             api.MoveWindow(self._hwnd, self._xpos, self._ypos, self._width, self._height, True)
@@ -90,7 +89,7 @@ class CheckBox(Control):
 
 #End CheckBox
 
-# @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+
 @SUBCLASSPROC
 def cb_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     # printWinMsg(msg)
@@ -98,15 +97,11 @@ def cb_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     match msg:
         case con.WM_DESTROY:
             api.RemoveWindowSubclass(hw, cb_wnd_proc, scID)
-            print("remove subclass of ", cb.name)
+            del cb_dict[hw]
 
         case con.WM_SETFOCUS: cb._got_focus_handler()
         case con.WM_KILLFOCUS: cb._lost_focus_handler()
-        case con.WM_LBUTTONDOWN:
-            # print("lb down")
-            cb._left_mouse_down_handler(msg, wp, lp)
-        # case con.BM_SETSTATE:
-        #     print("bm set ", wp)
+        case con.WM_LBUTTONDOWN: cb._left_mouse_down_handler(msg, wp, lp)
         case con.WM_LBUTTONUP: cb._left_mouse_up_handler(msg, wp, lp)
         case MyMessages.MOUSE_CLICK: cb._mouse_click_handler()
         case con.WM_RBUTTONDOWN: cb._right_mouse_down_handler(msg, wp, lp)
@@ -138,16 +133,9 @@ def cb_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
 
                     return con.CDRF_SKIPDEFAULT
 
-
-
         case MyMessages.CTL_COMMAND:
-            # print("wm cmnd")
             cb._is_checked = bool(api.SendMessage(hw, con.BM_GETCHECK, 0, 0))
             if cb.on_checked_changed: cb.on_checked_changed(cb, EventArgs() )
-
-        # case con.WM_SETFONT:
-        #     print("set font rcvd")
-
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 
