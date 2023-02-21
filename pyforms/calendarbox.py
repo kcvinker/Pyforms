@@ -2,51 +2,49 @@
 # calendarbox module - Created on 30-Nov-2022 00:37:20
 
 from ctypes.wintypes import HWND, UINT, LPCWSTR
-from ctypes import WINFUNCTYPE, byref, sizeof, addressof, create_unicode_buffer, cast, c_uint, c_int, c_short
-# import ctypes as ctp
+from ctypes import addressof, cast
 import sys
 
 from .control import Control
 from . import constants as con
-from .commons import MyMessages, get_mousepos_on_msg, point_in_rect
+from .commons import MyMessages
 from .enums import ControlType, ViewMode
 from .events import EventArgs
-from .apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, LPNMHDR, LPNMSELCHANGE, LPNMVIEWCHANGE, NMHDR, WPARAM, LPARAM, SUBCLASSPROC
+from .apis import RECT, LPNMHDR, LPNMSELCHANGE, LPNMVIEWCHANGE, SUBCLASSPROC
 from . import apis as api
 from .colors import Color
-from datetime import datetime, date
+from datetime import datetime
 # from horology import Timing
 
 cal_dict = {}
 cal_style = con.WS_CHILD | con.WS_VISIBLE
 
-# print("size of cuint ", sizeof(c_uint) )
 
 class CalendarBox(Control):
 
-    """CalendarBox control """
+    """Represents MonthCalendar control """
+
     Control.icc.init_comm_ctls(con.ICC_DATE_CLASSES)
     _count = 1
     __slots__ = ( "_show_week_num", "_no_today_circle", "_no_today", "_no_trail_dates", "_short_date_names",
                     "_fg_color", "_bg_color", "on_selection_committed", "on_list_closed", "_value", "_view_mode", "_old_view",
                      "on_view_changed", "on_selection_changed", "on_value_changed"  )
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 180, height: int = 150) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10) -> None:
         super().__init__()
 
         self._cls_name = "SysMonthCal32"
-        self.name = f"CalendarBox{CalendarBox._count}"
+        self.name = f"CalendarBox_{CalendarBox._count}"
         self._ctl_type = ControlType.CALENDAR_BOX
         self._parent = parent
         self._bg_color = Color(parent._bg_color)
         self._font = parent._font
-        self._width = width
-        self._height = height
+        self._width = 0
+        self._height = 0
         self._xpos = xpos
         self._ypos = ypos
         self._style = cal_style
         self._ex_style = 0
-
         self._show_week_num = False
         self._no_today_circle = False
         self._no_today = False
@@ -73,15 +71,14 @@ class CalendarBox(Control):
         self._create_control()
         if self._hwnd:
             cal_dict[self._hwnd] = self
-            self._is_created = True
             self._set_subclass(cal_wnd_proc)
 
-            # Set the minimum size for date picker
+            # Set the size for CalendarBox, because it is created with zero size
             rc = RECT()
             api.SendMessage(self._hwnd, con.MCM_GETMINREQRECT, 0, addressof(rc))
             api.SetWindowPos(self._hwnd, None, self._xpos, self._ypos, rc.right, rc.bottom, con.SWP_NOZORDER)
 
-            # Get current selection from date picker
+            # Get current selection from Calendar
             st = api.SYSTEMTIME()
             api.SendMessage(self._hwnd, con.MCM_GETCURSEL, 0, addressof(st))
             self._set_value(st)
@@ -98,8 +95,6 @@ class CalendarBox(Control):
 
     def _set_value(self, st):
         self._value = datetime(st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds)
-
-
 
     # -endregion Private funcs
 
@@ -178,7 +173,7 @@ def cal_wnd_proc(hw, msg, wp, lp, scID, refData):
     match msg:
         case con.WM_DESTROY:
             api.RemoveWindowSubclass(hw, cal_wnd_proc, scID)
-            # print("remove subclass for - ", cal.name)
+            del cal_dict[hw]
 
         case MyMessages.CTRL_NOTIFY:
             nm = cast(lp, LPNMHDR).contents
@@ -209,16 +204,5 @@ def cal_wnd_proc(hw, msg, wp, lp, scID, refData):
         case con.WM_MOUSEWHEEL: cal._mouse_wheel_handler(msg, wp, lp)
         case con.WM_MOUSEMOVE: cal._mouse_move_handler(msg, wp, lp)
         case con.WM_MOUSELEAVE: cal._mouse_leave_handler()
-
-        # case MyMessages.EDIT_COLOR:
-        #     if cal._draw_flag:
-        #         if cal._draw_flag & 1: api.SetTextColor(wp, cal._fg_color.ref)
-        #         if cal._draw_flag & 2: api.SetBkColor(wp, cal._bg_color.ref)
-        #         # if cal._draw_flag == 1:
-        #         #     return api.GetStockObject(con.DC_BRUSH)
-        #         # else:
-        #     return cal._bk_brush
-
-
 
     return api.DefSubclassProc(hw, msg, wp, lp)
