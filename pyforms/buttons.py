@@ -1,19 +1,19 @@
 # Created on 10-Nov-2022 16:16:20
 
 
-from ctypes.wintypes import HWND, UINT, HPEN
-from ctypes import WINFUNCTYPE, byref, cast
+from ctypes.wintypes import HPEN
+from ctypes import byref, cast
 
 import horology
-from .apis import LRESULT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR, LPNMCUSTOMDRAW, SUBCLASSPROC
+from .apis import LRESULT, LPNMCUSTOMDRAW, SUBCLASSPROC
 from .control import Control
-from .commons import MyMessages, inflateRect, Timing
+from .commons import MyMessages, inflateRect
 from .enums import ControlType
-from . import winmsgs
+# from . import winmsgs
 from . import apis as api
-from .colors import Color, RgbColor, ButtonGradientColors, create_gradient_brush2
+from .colors import Color, RgbColor, create_gradient_brush2
 from . import constants as con
-# from functools import cache
+
 
 btnDic = {}
 btnStyle = con.WS_CHILD | con.BS_NOTIFY | con.WS_TABSTOP | con.WS_VISIBLE | con.BS_PUSHBUTTON
@@ -21,11 +21,11 @@ txtFlag = con.DT_SINGLELINE | con.DT_VCENTER | con.DT_CENTER | con.DT_NOPREFIX
 
 
 class Button(Control):
-
+    """Represents Button control"""
     _count = 1
     __slots__ = ( "_flatBkg", "_mfore_color", "_mback_color", "_mfocus_color", "_mclick_color", "_mframe_color",
                 "_mgrad_def_clr1", "_mgrad_def_clr2", "_mgrad_foc_clr1", "_mgrad_foc_clr2", "_mgrad_clk_clr1",
-                "_mgrad_clk_clr2", "_mgrad_top2btm", "_gd_brush_main", "_gd_brush_hover", "_gd_brush_click")
+                "_mgrad_clk_clr2", "_mgrad_top2btm", "_gd_brush_main", "_gd_brush_hover", "_gd_brush_click", "_fdraw", "_gdraw")
 
     def __init__(self, parent, txt: str = "", xpos = 50, ypos = 50, width = 120, height = 40) -> None:
         super().__init__()
@@ -42,25 +42,22 @@ class Button(Control):
         self._text = self.name if txt == "" else txt
         self._style = btnStyle
         self._ex_style = 0x00000004
-
-        # self._draw_flag = 0
         self._flatBkg = False
         self._gd_brush_click = 0
         self._gd_brush_hover = 0
         self._gd_brush_main = 0
+        self._fdraw = FlatDraw()
+        self._gdraw = GradDraw()
 
         Button._count += 1
 
 
-
     def create_handle(self):
-        # with Timing("btn create win ex speed "):
         self._create_control()
         if self._hwnd:
             btnDic[self._hwnd] = self
             self._set_font_internal()
             self._set_subclass(btn_wnd_proc)
-
 
 
     @Control.fore_color.setter
@@ -71,11 +68,9 @@ class Button(Control):
             pass
 
 
-    def set_back_color(self, def_color, focus_color = -1, click_color = -1, frame_color = -1):
+    def set_back_color(self, def_color):
         self._mback_color = Color(def_color)
-        self._mfocus_color = Color.from_color(def_color, -2) if focus_color == -1 else Color(focus_color)
-        self._mclick_color = Color.from_color(def_color, -1) if click_color == -1 else Color(click_color)
-        self._mframe_color = Color.from_color(def_color, -4) if frame_color == -1 else Color(frame_color)
+        self._fdraw.set_data(Color(def_color))
         if not self._draw_flag & 2: self._draw_flag += 2
         if self._is_created:
             pass
@@ -90,27 +85,8 @@ class Button(Control):
         if self._is_created:
             pass
 
-    def set_gradient_color(self, clr1 : int, clr2 : int, top2Btm : bool = True):
-        self._mgrad_top2btm = top2Btm
-        self._mgrad_def_clr1 = RgbColor(clr1)
-        self._mgrad_def_clr2 = RgbColor(clr2)
-        self._mgrad_foc_clr1 = RgbColor.getNewShade(self._mgrad_def_clr1, 2)
-        self._mgrad_foc_clr2 = RgbColor.getNewShade(self._mgrad_def_clr2, 2)
-        self._mgrad_clk_clr1 = RgbColor.getNewShade(self._mgrad_def_clr1, -3)
-        self._mgrad_clk_clr2 = RgbColor.getNewShade(self._mgrad_def_clr2, -3)
-        self._mframe_color = Color.from_color(clr1, -4)
-        if not self._draw_flag & 4: self._draw_flag += 4
-        if self._is_created: pass
-
-    def set_gradient_color_ex(self, bgc : ButtonGradientColors):
-        self._mgrad_def_clr1 = bgc.def_color1
-        self._mgrad_def_clr2 = bgc.def_color2
-        self._mgrad_foc_clr1 = bgc.focus_color1
-        self._mgrad_foc_clr2 = bgc.focus_color2
-        self._mgrad_clk_clr1 = bgc.click_color1
-        self._mgrad_clk_clr2 = bgc.click_color2
-        self._mframe_color = bgc.frame_color
-        self._mgrad_top2btm = bgc.top_to_bottom
+    def set_gradient_color(self, clr1 : int, clr2 : int):
+        self._gdraw.set_data(clr1, clr2)
         if not self._draw_flag & 4: self._draw_flag += 4
         if self._is_created: pass
 
@@ -121,20 +97,14 @@ class Button(Control):
         api.SetBkMode(nmcd.hdc, 1)
         api.DrawText(nmcd.hdc, self._text, len(self._text), byref(nmcd.rc), txtFlag )
 
-    # Drawing a flat back color in wm_notify message. Frame drawing is happening too.
-    def _draw_back_color(self, nmc, btClr, btnRcSize, frmRcSize, penWidth = 1):
-        rc = inflateRect(nmc.rc, btnRcSize) if btnRcSize != 0 and self._parent._is_normal_draw else nmc.rc
-        hbr = api.CreateSolidBrush(btClr)
-        api.SelectObject(nmc.hdc, hbr)
-        api.FillRect(nmc.hdc, byref(rc), hbr)
-        api.DeleteObject(hbr)
 
-        rc2 = inflateRect(rc, frmRcSize) if frmRcSize != 0 and self._parent._is_normal_draw else rc
-        framePen = api.CreatePen(con.PS_SOLID, penWidth, self._mframe_color.ref)
-        # print(framePen.unused)
-        api.SelectObject(nmc.hdc, framePen)
-        api.Rectangle(nmc.hdc, rc2.left, rc2.top, rc2.right, rc2.bottom)
-        api.DeleteObject(framePen)
+
+    def _draw_background_color(self, nc, hbr, pen):
+        api.SelectObject(nc.hdc, hbr);
+        api.SelectObject(nc.hdc, pen);
+        api.RoundRect(nc.hdc, nc.rc.left, nc.rc.top, nc.rc.right, nc.rc.bottom, 5, 5);
+        api.FillPath(nc.hdc)
+
 
 
     # Drawing btn frame in wm_notify message
@@ -161,25 +131,11 @@ class Button(Control):
 
                     elif nmcd.dwDrawStage == con.CDDS_PREPAINT:
                         if (nmcd.uItemState & 0b1) == 0b1:                  # mouse click
-                            self._draw_back_color(nmcd,
-                                                btClr= self._mclick_color.ref,
-                                                btnRcSize= -1,
-                                                frmRcSize= 0,
-                                                penWidth= 1)
-
+                            self._draw_background_color(nmcd, self._fdraw.def_brush, self._fdraw.hot_pen)
                         elif (nmcd.uItemState & 0b1000000) == 0b1000000:    # mouse over
-                            self._draw_back_color(nmcd,
-                                                btClr= self._mfocus_color.ref,
-                                                btnRcSize= -1,
-                                                frmRcSize= 1,
-                                                penWidth= 1)
-
+                            self._draw_background_color(nmcd, self._fdraw.hot_brush, self._fdraw.hot_pen)
                         else:                                               # Normal button state
-                            self._draw_back_color(nmcd,
-                                                btClr= self._mback_color.ref,
-                                                btnRcSize= 0,
-                                                frmRcSize= 0,
-                                                penWidth= 1)
+                            self._draw_background_color(nmcd, self._fdraw.def_brush, self._fdraw.def_pen)
 
                         if self._draw_flag & 1:
                             self._draw_fore_color(nmcd)
@@ -191,40 +147,30 @@ class Button(Control):
                     if nmcd.dwDrawStage == con.CDDS_PREERASE:
                         return con.CDRF_NOTIFYPOSTERASE
                     elif nmcd.dwDrawStage == con.CDDS_PREPAINT:
-                        frame_size = 0
                         if (nmcd.uItemState & 0b1) == 0b1: #--------------mouse click   (plain form clr = -1), (grad form =
-                            rc = inflateRect(nmcd.rc, -1) if self._parent._is_normal_draw else nmcd.rc
-                            if self._gd_brush_click == 0:
+                            if self._gdraw.def_brush == 0:
                                 # print("going to create gradient brush for mouse click")
-                                self._gd_brush_click = create_gradient_brush2(nmcd.hdc, rc,
-                                                                            self._mgrad_clk_clr1, self._mgrad_clk_clr2,
-                                                                            self._mgrad_top2btm)
-                            gBrush = self._gd_brush_click
+                                self._gdraw.def_brush = create_gradient_brush2(nmcd.hdc, nmcd.rc,
+                                                                                self._gdraw.gc_def.c1,
+                                                                                self._gdraw.gc_def.c2, True)
 
+                            self._draw_background_color(nmcd, self._gdraw.def_brush, self._gdraw.hot_pen)
 
                         elif (nmcd.uItemState & 0b1000000) == 0b1000000: #---mouse over
-                            rc = inflateRect(nmcd.rc, -1) if self._parent._is_normal_draw else nmcd.rc
-                            frame_size = 1
-                            if self._gd_brush_hover == 0:
-                                # print("going to create gradient brush for mouse hover")
-                                self._gd_brush_hover = create_gradient_brush2(  nmcd.hdc, rc,
-                                                                                self._mgrad_foc_clr1, self._mgrad_foc_clr2,
-                                                                                self._mgrad_top2btm)
-                            gBrush = self._gd_brush_hover
+                            if self._gdraw.hot_brush == 0:
+                                self._gdraw.hot_brush = create_gradient_brush2(nmcd.hdc, nmcd.rc,
+                                                                                self._gdraw.gc_hot.c1,
+                                                                                self._gdraw.gc_hot.c2, True)
+
+                            self._draw_background_color(nmcd, self._gdraw.hot_brush, self._gdraw.hot_pen)
 
                         else: #--------------------------------------------- Normal button state
-                            rc = nmcd.rc
-                            if self._gd_brush_main == 0:
-                                # print("going to create gradient brush for main use")
-                                self._gd_brush_main = create_gradient_brush2(   nmcd.hdc, nmcd.rc,
-                                                                                self._mgrad_def_clr1, self._mgrad_def_clr2,
-                                                                                self._mgrad_top2btm)
-                            gBrush = self._gd_brush_main
+                            if self._gdraw.def_brush == 0:
+                                self._gdraw.def_brush = create_gradient_brush2(nmcd.hdc, nmcd.rc,
+                                                                                self._gdraw.gc_def.c1,
+                                                                                self._gdraw.gc_def.c2, True)
 
-                        api.SelectObject(nmcd.hdc, gBrush)
-                        api.FillRect(nmcd.hdc, rc, gBrush)
-                        # api.DeleteObject(gBrush)
-                        self._draw_btn_frame(nmcd, rc, frame_size )
+                            self._draw_background_color(nmcd, self._gdraw.def_brush, self._gdraw.hot_pen)
 
                         if self._draw_flag & 1:
                             self._draw_fore_color(nmcd)
@@ -232,82 +178,114 @@ class Button(Control):
 
                         return con.CDRF_DODEFAULT
 
-
-
         return con.CDRF_DODEFAULT
 
-    # @property
-    # def isMouseEnter(self): return self._is_mouse_entered
+    def _reset_brushes(self):
+        # Button size changed. So we need to reset our...
+        # gradient brushes to zero. So that we can...
+        # recreate these brushes with new size.
+        if self._draw_flag > 3:
+            self.def_brush = 0
+            self.hot_brush = 0
+
+    def finalize(self, scID):
+        match self._draw_flag:
+            case 2 | 3: self._fdraw.finalize() # Freeing flat draw resources
+            case 4 | 5: self._gdraw.finalize() # Freeing grad draw resources
+
+        api.RemoveWindowSubclass(self._hwnd, btn_wnd_proc, scID)
+        del btnDic[self._hwnd]
+
 
 
 
 #End Button Class
 
+class FlatDraw:
+    __slots__ = ("def_brush", "hot_brush", "def_pen", "hot_pen")
+    def __init__(self) -> None:
+        self.def_brush = 0
+        self.hot_brush = 0
+        self.def_pen = 0
+        self.hot_pen = 0
+
+    def set_data(self, c: Color):
+        hrc = c.make_RGB()
+        frc = c.make_RGB()
+        hadj = 1.5 if frc.is_dark() else 1.2
+
+        self.def_brush = api.CreateSolidBrush(c.ref)
+        self.hot_brush = api.CreateSolidBrush(hrc.change_shade_ref(hadj))
+        self.def_pen = api.CreatePen(con.PS_SOLID, 1, frc.change_shade_ref(0.6))
+        self.hot_pen = api.CreatePen(con.PS_SOLID, 1, frc.change_shade_ref(0.3))
+
+    def finalize(self):
+        if self.def_brush: api.DeleteObject(self.def_brush)
+        if self.hot_brush: api.DeleteObject(self.hot_brush)
+        if self.def_pen: api.DeleteObject(self.def_pen)
+        if self.hot_pen: api.DeleteObject(self.hot_pen)
+
+
+
+class GradColor:
+    def __init__(self) -> None:
+        self.c1 = RgbColor(0)
+        self.c2 = RgbColor(0)
+
+class GradDraw:
+    def __init__(self) -> None:
+        self.gc_def = GradColor()
+        self.gc_hot = GradColor()
+        self.def_pen = 0
+        self.hot_pen = 0
+        self.def_brush = 0
+        self.hot_brush = 0
+
+
+    def set_data(self, uc1, uc2):
+        self.gc_def.c1 = RgbColor(uc1)
+        self.gc_def.c2 = RgbColor(uc2)
+        hadj1 = 1.5 if self.gc_def.c1.is_dark() else 1.2
+        hadj2 = 1.5 if self.gc_def.c2.is_dark() else 1.2
+        self.gc_hot.c1 = self.gc_def.c1.change_shade_rgb(hadj1)
+        self.gc_hot.c2 = self.gc_def.c2.change_shade_rgb(hadj2)
+
+        self.def_pen = api.CreatePen(con.PS_SOLID, 1, self.gc_def.c1.change_shade_ref(0.6))
+        self.hot_pen = api.CreatePen(con.PS_SOLID, 1, self.gc_hot.c1.change_shade_ref(0.3))
+
+    def finalize(self):
+        if self.def_pen: api.DeleteObject(self.def_pen)
+        if self.hot_pen: api.DeleteObject(self.hot_pen)
+        if self.def_brush: api.DeleteObject(self.def_brush)
+        if self.hot_brush: api.DeleteObject(self.hot_brush)
 
 
 
 
-# TODO : Delete unwanted print commands and other lines
-
-# @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR) # This line is crucial. Without this program will crash.
 @SUBCLASSPROC
 def btn_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     # winmsgs.log_msg(msg, "Button")
 
     btn = btnDic[hw]
-    # print("in btn wndproc ", msg)
     match msg:
-        case con.WM_NCDESTROY:
-            api.RemoveWindowSubclass(hw, btn_wnd_proc, scID)
-            # print("remove subclass of ", btn.name)
-
-        # case con.WM_DESTROY:
-        #     print(f"{btn.name}'s [WNDPROC] gradient brush is {btn._gd_brush_click}")
+        case con.WM_NCDESTROY: btn.finalize(scID)
 
         case con.WM_SETFOCUS: return btn._got_focus_handler()
         case con.WM_KILLFOCUS: return btn._lost_focus_handler()
         case con.WM_LBUTTONDOWN:btn._left_mouse_down_handler(msg, wp, lp)
-        # case con.BM_SETSTATE:
-        #     print("BMSET")
+
         case con.WM_LBUTTONUP: btn._left_mouse_up_handler(msg, wp, lp)
-        case MyMessages.MOUSE_CLICK:
-            # print("my click")
-            btn._mouse_click_handler()
+        case MyMessages.MOUSE_CLICK: btn._mouse_click_handler()
         case con.WM_RBUTTONDOWN: btn._right_mouse_down_handler(msg, wp, lp)
         case con.WM_RBUTTONUP: btn._right_mouse_up_handler(msg, wp, lp)
         case MyMessages.RIGHT_CLICK: btn._right_mouse_click_handler()
         case con.WM_MOUSEWHEEL: btn._mouse_wheel_handler(msg, wp, lp)
         case con.WM_MOUSEMOVE: btn._mouse_move_handler(msg, wp, lp)
         case con.WM_MOUSELEAVE: btn._mouse_leave_handler()
-        case MyMessages.CTRL_NOTIFY :
-            # with horology.Timing("wm notify btn"):
-            return btn._wm_notify_handler(lp)
-            # if not btn._draw_flag:
-            #     hbr = api.CreateSolidBrush(0x0000ccBB)
-            #     api.SelectObject(wp, hbr)
-            #     return hbr
-            # else:
-
-
-
-
-
-        # case MyMessages.CTL_COMMAND:
-        #     ncode = api.HIWORD(wp)
-        #     print(ncode, " ncode")
-        #     match ncode:
-        #         case con.BN_CLICKED:
-        #             print("bn clickd")
-
-
-        case con.WM_SIZE:
-            # We are using pre prepared gradient brushes for drawing gradient button background
-            # So, whenever, we get a wm_size message, we need to set the brushes to zero value.
-            # Otherwise, brushes will remain old button size and we get a weird background drawing.
-            if btn._draw_flag == 4 or btn._draw_flag == 5:
-                btn._gd_brush_main = 0
-                btn._gd_brush_hover = 0
-                btn._gd_brush_click = 0
-            return 0
+        case MyMessages.CTRL_NOTIFY : return btn._wm_notify_handler(lp)
+        case con.WM_SIZE: btn._reset_brushes()
+        # We are using pre prepared gradient brushes for drawing gradient button background
+        # So, whenever, we get a wm_size message, we need to set the brushes to zero value.
+        # Otherwise, brushes will remain old button size and we get a weird background drawing.
 
     return api.DefSubclassProc(hw, msg, wp, lp)
