@@ -14,7 +14,8 @@ import datetime
 
 INT_MIN   =  -2147483647 - 1
 INT_MAX  =     2147483647
-
+TRANSPARENT = 0x00000001
+OPAQUE = 0x00000002
 
 
 
@@ -35,7 +36,7 @@ class Font:
     __slots__ = ("_name", "_size", "_weight", "_italics", "_underLine", "_hwnd")
 
     def __init__(   self, name: str = "Tahoma",
-                    size: int = 12,
+                    size: int = 11,
                     weight: FontWeight = FontWeight.NORMAL,
                     italics: bool = False,
                     underLine: bool = False) -> None:
@@ -170,6 +171,8 @@ class MyMessages:
     HORI_SCROLL = 9010
     VERT_SCROLL = 9011
     TREENODE_NOTIFY = 9012 # A tree node notify it's tree view control about changes
+    BUDDY_RESET = 9013
+    MENU_EVENT_SET = 9014 # To inform a form that a menu event is added
 
 
 
