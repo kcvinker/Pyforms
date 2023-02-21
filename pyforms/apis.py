@@ -410,6 +410,18 @@ class NMTVCUSTOMDRAW(Structure):
         ("iLevel", INT),
     ]
 LPNMTVCUSTOMDRAW = POINTER(NMTVCUSTOMDRAW)
+
+class MENUINFO(Structure):
+    _fields_ = [
+        ("cbSize", DWORD),
+        ("fMask", DWORD),
+        ("dwStyle", DWORD),
+        ("cyMax", UINT),
+        ("hbrBack", HBRUSH),
+        ("dwContextHelpID", DWORD),
+        ("dwMenuData", ULONG_PTR),
+    ]
+LPMENUINFO = POINTER(MENUINFO)
 # -endregion Structures
 
 
@@ -657,10 +669,10 @@ GetClassInfoExW = windll.user32.GetClassInfoExW
 GetClassInfoExW.argtypes = [HINSTANCE, LPCWSTR, POINTER(WNDCLASSEX)]
 GetClassInfoExW.restype = BOOL
 
-# GetClassInfoW = windll.user32.GetClassInfoW
-# """ [HINSTANCE, LPCWSTR(The class name), POINTER(WNDCLASSEX)] -> BOOL"""
-# GetClassInfoW.argtypes = [HINSTANCE, LPCWSTR, POINTER(WNDCLASS)]
-# GetClassInfoW.restype = BOOL
+SetRect = windll.user32.SetRect
+""" [POINTER(RECT), INT, INT, INT, INT] -> BOOL"""
+SetRect.argtypes = [POINTER(RECT), INT, INT, INT, INT]
+SetRect.restype = BOOL
 
 GetClassLongPtrW = windll.user32.GetClassLongPtrW
 """ [HWND, INT] -> ULONG_PTR"""
@@ -672,6 +684,25 @@ WindowFromDC = windll.user32.WindowFromDC
 WindowFromDC.argtypes = [HDC]
 WindowFromDC.restype = HWND
 
+CreateMenu = windll.user32.CreateMenu
+""" [] -> HMENU"""
+CreateMenu.argtypes = []
+CreateMenu.restype = HMENU
+
+AppendMenu = windll.user32.AppendMenuW
+""" [HMENU, UINT: flags, UINT_PTR: menu id, LPCWSTR: text] -> BOOL"""
+AppendMenu.argtypes = [HMENU, UINT, UINT_PTR, LPCWSTR]
+AppendMenu.restype = BOOL
+
+SetMenu = windll.user32.SetMenu
+""" [HWND, HMENU] -> BOOL"""
+SetMenu.argtypes = [HWND, HMENU]
+SetMenu.restype = BOOL
+
+SetMenuInfo = windll.user32.SetMenuInfo
+""" [HWND, LPMENUINFO] -> BOOL"""
+SetMenuInfo.argtypes = [HWND, LPMENUINFO]
+SetMenuInfo.restype = BOOL
 
 
 
@@ -800,6 +831,16 @@ TextOut = windll.gdi32.TextOutW
 """ [HDC, INT - x, INT - y, LPCWSTR - text, INT - len(text)] -> BOOL"""
 TextOut.argtypes = [HDC, INT, INT, LPCWSTR, INT]
 TextOut.restype = BOOL
+
+RoundRect = windll.gdi32.RoundRect
+""" [HDC, INT, INT, INT, INT, INT, INT] -> BOOL"""
+RoundRect.argtypes = [HDC, INT, INT, INT, INT, INT, INT]
+RoundRect.restype = BOOL
+
+FillPath = windll.gdi32.FillPath
+""" [HDC] -> BOOL"""
+FillPath.argtypes = [HDC]
+FillPath.restype = BOOL
 
 
 
