@@ -1,20 +1,19 @@
 
-# Created on 23-Nov-2022 17:09:20
+#Label module - Created on 23-Nov-2022 17:09:20
 
 from ctypes.wintypes import HWND, UINT
 from ctypes import byref
-# import ctypes as ctp
 
 from .control import Control
 from . import constants as con
 from .commons import MyMessages
 from .enums import ControlType, TextAlignment, LabelBorder, LabelAlignment
-# from .events import EventArgs
-from .apis import SIZE, LRESULT, UINT_PTR, DWORD_PTR, WPARAM, LPARAM, SUBCLASSPROC
+
+from .apis import SIZE, SUBCLASSPROC
 from . import apis as api
 from .colors import Color
 
-from horology import Timing
+# from horology import Timing
 
 label_dict = {}
 lb_style = con.WS_VISIBLE | con.WS_CHILD | con.WS_CLIPCHILDREN | con.WS_CLIPSIBLINGS | con.SS_NOTIFY
@@ -27,7 +26,7 @@ class Label(Control):
     def __init__(self, parent, txt: str = "", xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 30 ) -> None:
         super().__init__()
         self._cls_name = "Static"
-        self.name = f"Label{Label._count}"
+        self.name = f"Label_{Label._count}"
         self._text = self.name if txt == "" else txt
         self._ctl_type = ControlType.LABEL
         self._parent = parent
@@ -40,7 +39,6 @@ class Label(Control):
         self._is_textable = True
         self._style = lb_style
         self._ex_style = 0x00000000
-
         self._auto_size = True
         self._multi_line = False
         self._txt_align = LabelAlignment.MIDLEFT
@@ -53,26 +51,31 @@ class Label(Control):
 
     # -region Public funcs
     def create_handle(self):
+        """Create handle for this label"""
         if self._border_style != LabelBorder.NONE: self._adjustBorder()
         self._bkg_brush = api.CreateSolidBrush(self._bg_color.ref)
         self._isAutoSizeNeeded()
         self._create_control()
         if self._hwnd:
             label_dict[self._hwnd] = self
-
+            self._set_subclass(lb_wnd_proc)
             if self._auto_size: self._setAutoSize(False)
             self._set_font_internal()
-            self._set_subclass(lb_wnd_proc)
+
 
     # -endregion Public funcs
 
     # -region Private funcs
+
+    # Set the border for this Label
     def _adjustBorder(self):
         if self._border_style == LabelBorder.SUNKEN:
             self._style |= con.SS_SUNKEN
         else:
             self._style = con.WS_BORDER
 
+
+    # Set the text alignment for this label
     def _setTextAlignment(self):
         match self._txt_align:
             case LabelAlignment.TOPLEFT:
@@ -101,14 +104,14 @@ class Label(Control):
         else:
             self._dw_align_flag |= con.DT_SINGLELINE
 
+
+    # Check if auto sizing needed or not
     def _isAutoSizeNeeded(self):
-        # if self._multi_line: self._auto_size = True
-        # if self._width != 0: self._auto_size = True
-        # if self._height != 0: self._auto_size = True
         if any([self._multi_line, self._width, self._height]): self._auto_size = True
 
+
+    # Set appropriate size for this Label
     def _setAutoSize(self, redraw):
-        # with Timing("Time for normal hdc  : "):
         hdc = api.GetDC(self._hwnd)
         ss = SIZE()
         api.SelectObject(hdc, self._font._hwnd)
@@ -120,6 +123,7 @@ class Label(Control):
         if redraw: api.InvalidateRect(self._hwnd, None, True)
 
 
+    # Reser the back gound brush for this Label
     def reset_brush(self): self._bk_brush = api.CreateSolidBrush(self._bg_color.ref)
 
     # -endregion Private funcs
@@ -127,39 +131,50 @@ class Label(Control):
     # -region Properties
 
     @property
-    def auto_size(self): return self._auto_size
+    def auto_size(self):
+        """Returns true if auto size is set"""
+        return self._auto_size
+
+    @auto_size.setter
+    def auto_size(self, value: bool):
+        """Set true if auto size set"""
+        self._auto_size = value
 
     @property
-    def multi_line(self): return self._multi_line
+    def multi_line(self):
+        """Returns true if multi line enabled"""
+        return self._multi_line
 
     @multi_line.setter
-    def multi_line(self, value: bool): self._multi_line = value
+    def multi_line(self, value: bool):
+        """Set true for multi line"""
+        self._multi_line = value
 
     @property
-    def text_align(self): return self._txt_align
+    def text_align(self):
+        """Returns the text alignment mode. Check for TextAlignment enum"""
+        return self._txt_align
 
     @text_align.setter
-    def text_align(self, value: TextAlignment): self._txt_align = value
+    def text_align(self, value: TextAlignment):
+        """Set the text alignment mode. Check for TextAlignment enum"""
+        self._txt_align = value
 
     @property
-    def border_style(self): return self._border_style
+    def border_style(self):
+        """Returns the border style. Check for LabelBorder enum"""
+        return self._border_style
 
     @border_style.setter
-    def border_style(self, value: LabelBorder): self._border_style = value
+    def border_style(self, value: LabelBorder):
+        """set the border style. Check for LabelBorder enum"""
+        self._border_style = value
 
     # -endregion Properties
-    dummy = 100
-
-
-
-
-
-
-
 
 #End Label
 
-# @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+
 @SUBCLASSPROC
 def lb_wnd_proc(hw, msg, wp, lp, scID, refData):
     # printWinMsg(msg)
@@ -167,6 +182,7 @@ def lb_wnd_proc(hw, msg, wp, lp, scID, refData):
     match msg:
         case con.WM_DESTROY:
             api.RemoveWindowSubclass(hw, lb_wnd_proc, scID)
+            del label_dict[hw]
 
         case MyMessages.LABEL_COLOR:
             # Whether user selects a back color or not, we must set the back color.
@@ -190,20 +206,5 @@ def lb_wnd_proc(hw, msg, wp, lp, scID, refData):
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 
-
-# class DeviceContext:
-#     def __init__(self, handle) -> None:
-#         self.hwnd = handle
-#         print("Device context is init with hwnd - ", handle)
-
-#     def __enter__(self):
-#         self.hdc = GetDC(self.hwnd)
-#         print("hdc created and value is ", self.hdc)
-#         return self.hdc
-
-#     def __exit__(self, tp, v, tb):
-#         if self.hdc:
-#             ReleaseDC(self.hwnd, self.hdc)
-#             print("hdc is released and value is ", self.hdc)
 
 
