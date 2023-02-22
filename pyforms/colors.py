@@ -1,19 +1,13 @@
-# Created on 16-Nov-2022 01:37
+# Color module - Created on 16-Nov-2022 01:37
 
-from typing import TypeVar
-from . import constants as con
 from . apis import CreateSolidBrush
-from ctypes import wintypes as wt
 from ctypes import byref
 from ctypes.wintypes import HDC, COLORREF, HBRUSH
 from .apis import RECT, CreateSolidBrush, FillRect, DeleteObject, DeleteDC
 from .apis import CreatePatternBrush, SelectObject
 from .apis import CreateCompatibleDC, CreateCompatibleBitmap
-from functools import lru_cache, cache
-import dis
 
-# COLORREF = TypeVar("COLORREF")
-# COLORREF = TypeVar("COLORREF")
+
 
 def get_ref(clr: int) -> COLORREF:
     red = clr >> 16
@@ -24,7 +18,7 @@ def get_ref(clr: int) -> COLORREF:
 
 class RgbColor:
     __slots__ = ("red", "green", "blue", "int_color", "ref" )
-    def __init__(self, clr) -> None:
+    def __init__(self, clr:int) -> None:
         self.red = clr >> 16
         self.green = (clr & 0x00ff00) >> 8
         self.blue = clr & 0x0000ff
@@ -55,6 +49,24 @@ class RgbColor:
         rc.green = self.green - adj
         rc.blue = self.blue - adj
         return rc
+
+    def change_shade_ref(self, adj: float):
+        r = clamp(self.red * adj)
+        g = clamp(self.green * adj)
+        b = clamp(self.blue * adj)
+        return int((b << 16) | (g << 8) | r)
+
+    def change_shade_rgb(self, adj: float):
+        r = RgbColor(0)
+        r.red = clamp(self.red * adj)
+        r.green = clamp(self.green * adj)
+        r.blue = clamp(self.blue * adj)
+        r.ref = int((r.blue << 16) | (r.green << 8) | r.red)
+        return r
+
+    def is_dark(self):
+        x = ((self.red * 0.2126) + (self.green * 0.7152) + (self.blue * 0.0722))
+        return x < 40
 
     def toStr(self) -> str:
         return f"Red : {self.red}, Green : {self.green}, Blue : {self.blue}"
@@ -108,10 +120,15 @@ class Color:
         ivalue = int((red << 16) | (green << 8) | blue)
         return cls(ivalue)
 
+
+    def make_RGB(self):
+        rc = RgbColor(self.value)
+        return rc;
+
+
+
 COLOR_BLACK = Color(0x000000)
 COLOR_WHITE = Color(0XFFFFFF)
-# COLOR_FORM = Color(0X000000)
-
 
 
 
@@ -135,54 +152,18 @@ class ButtonGradientColors:
 
 
 
-
-
-
 def change_color(clr: int, change_value: float) -> COLORREF:
     rc = RgbColor(clr)
     red = clamp(rc.red + (change_value * 8))
     green = clamp(rc.green + (change_value * 16))
     blue = clamp(rc.blue + (change_value * 32))
-    # print(f"old clr {rc.red = }, {rc.green = }, {rc.blue = }")
-    # print(f"changed clr {red = }, {green = }, {blue = }, {change_value = }")
     return ref_from_RGB(red, green, blue)
 
 
 def clamp(n, minVal = 0, maxVal = 255): return int(max(min(maxVal, n), minVal))
 
 
-
-
-
-
 def ref_from_RGB(r, g, b) -> COLORREF: return int((b << 16) | (g << 8) | r)
-
-
-# def create_gradient_brush(dc: HDC, rct: RECT, r1, r2, g1, g2, b1, b2, isT2B: bool):
-#     # tBrush = wt.HBRUSH()
-#     memHdc = CreateCompatibleDC(dc)
-#     hBmp = CreateCompatibleBitmap(dc, rct.right, rct.bottom)
-#     loopEnd = rct.bottom if isT2B else rct.right
-#     SelectObject(memHdc, hBmp)
-#     for i in range(loopEnd):
-#         r, g, b = 0, 0, 0
-#         r = r1 + int(i * (r2 - r1) / loopEnd)
-#         g = g1 + int(i * (g2 - g1) / loopEnd)
-#         b = b1 + int(i * (b2 - b1) / loopEnd)
-#         tBrush = CreateSolidBrush(ref_from_RGB(r, g, b))
-#         rc = RECT()
-#         rc.left = 0 if isT2B else i
-#         rc.top = i if isT2B else 0
-#         rc.right = rct.right if isT2B else i + 1
-#         rc.bottom = i + 1 if isT2B else loopEnd
-#         FillRect(memHdc, byref(rc), tBrush)
-#         DeleteObject(tBrush)
-
-#     gBrush = CreatePatternBrush(hBmp)
-#     DeleteDC(memHdc)
-#     DeleteObject(hBmp)
-#     return gBrush
-
 
 
 def create_gradient_brush2(dc: HDC, rct: RECT, rc1, rc2, isT2B: bool):
