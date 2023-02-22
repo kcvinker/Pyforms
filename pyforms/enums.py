@@ -183,6 +183,10 @@ class ProgressBarStyle(Enum):
     BLOCK_STYLE = 0
     MARQUEE_STYLE = 1
 
+class ProgressBarState(Enum):
+    NORMAL = 1
+    ERROR = 2
+    PAUSED = 3
 
 
 class Keys(Enum):
