@@ -3,16 +3,13 @@
 
 from ctypes.wintypes import HWND, UINT, HDC
 from ctypes import WINFUNCTYPE, byref, sizeof, addressof, create_unicode_buffer
-# import ctypes as ctp
 
 from .control import Control
 from . import constants as con
 from .commons import MyMessages, get_mousepos_on_msg, point_in_rect
 from .enums import ControlType
 from .events import EventArgs
-# from .apis import DefSubclassProc, RemoveWindowSubclass, COMBOBOXINFO, SetWindowSubclass, SendMessage
 from .apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, COMBOBOXINFO, WPARAM, LPARAM, SUBCLASSPROC
-# from .apis import LRESULT, SetBkColor, SetTextColor
 from . import apis as api
 from .colors import Color
 # from horology import Timing
@@ -26,8 +23,8 @@ class ComboBox(Control):
     """Combo box control """
     _count = 1
     _tb_subcls_id = 4000
-    __slots__ = ( "_once_created", "_items", "_vis_tem_count", "_sel_index", "_recreate_enabled", "_old_hwnd",
-                    "_enable_input", "_fg_color", "_bg_color",
+    __slots__ = ( "_once_created", "_items", "_vis_tem_count", "_sel_index", "_old_hwnd",
+                    "_enable_input", "_fg_color", "_bg_color", "_recreated",
                     "on_selection_committed", "on_list_closed", "on_list_opened", "on_text_updated", "on_text_changed",
                     "on_selection_changed", "on_selection_cancelled"  )
 
@@ -43,16 +40,15 @@ class ComboBox(Control):
         self._height = height
         self._xpos = xpos
         self._ypos = ypos
-        # self._is_textable = True
         self._style = cmb_style
         self._ex_style = 0x00000200
         self._once_created = False
         self._items = []
         self._vis_tem_count = 0
         self._sel_index = -1
-        self._recreate_enabled = False
         self._old_hwnd = 0
         self._enable_input = False
+        self._recreated = False
 
         # Events
         self.on_selection_cancelled = 0
@@ -64,20 +60,20 @@ class ComboBox(Control):
         self.on_selection_committed = 0
 
         ComboBox._count += 1
-        # print("combo's init back color ref ", self._bg_color.ref)
+
 
     # Create's combo box handle
     def create_handle(self):
 
         """Create's combo box handle"""
 
-        if not self._is_created:
+        if self._recreated: # This is recreation.
+            del cmb_dict[self._hwnd]
+        else: # First time creation
             self._set_ctl_id()
             self._set_style()
-        else:
-            del cmb_dict[self._hwnd]
 
-        self._hwnd = api.CreateWindowEx(  self._ex_style,
+        self._hwnd = api.CreateWindowEx(self._ex_style,
                                         self._cls_name,
                                         self._text,
                                         self._style,
@@ -93,6 +89,7 @@ class ComboBox(Control):
             if not self._is_created:
                 self._is_created = True
 
+            self._recreated = False # We need to allow user to recreate again and again.
             self._set_subclass(cmb_wnd_proc)
             self._set_font_internal()
             self._get_combo_info()
@@ -101,23 +98,25 @@ class ComboBox(Control):
 
     # -region private_funcs
 
+    # Setting combo styles
     def _set_style(self):
         if self._enable_input:
             self._style |= con.CBS_DROPDOWN
         else:
             self._style |= con.CBS_DROPDOWNLIST
 
+    # Get the combo's internal info from OS
     def _get_combo_info(self):
         ci = COMBOBOXINFO()
         ci.cbSize = sizeof(COMBOBOXINFO)
         ciPtr = addressof(ci)
         api.SendMessage(self._hwnd, con.CB_GETCOMBOBOXINFO, 0, ciPtr)
         self.parent._combo_dict[ci.hwndList] = self._hwnd  # Putting list hwnd in form's special dict.
-        # cmb_tb_dict[ci.hwndItem] = self
         api.SetWindowSubclass(ci.hwndItem, cmb_edit_wnd_proc, ComboBox._tb_subcls_id, self._hwnd)
         ComboBox._tb_subcls_id += 1
-        # print("combo hwndItem - ", ci.hwndItem)
 
+
+    # Helper function for inserting items to combo
     def _insert_items(self):
         if self._items:
             for item in self._items:
@@ -125,39 +124,50 @@ class ComboBox(Control):
                 buff = create_unicode_buffer(sitem)
                 api.SendMessage(self._hwnd, con.CB_ADDSTRING, 0, addressof(buff))
 
+
+    # Helper function for checking mouse lieaved from combo
     def _checkMouseLeave(self):
         rc = RECT()
         api.GetWindowRect(self._hwnd, byref(rc))
         p = get_mousepos_on_msg()
         return point_in_rect(rc, p)
 
-
     # -endregion
 
     # -region Properties
 
     @property
-    def items(self): return self._items
+    def items(self):
+        """Get the items collection"""
+        return self._items
+
 
     @property
-    def item_count(self): return len(self._items)
+    def item_count(self):
+        """Get the item count of this combo"""
+        return len(self._items)
 
     @property
     def selected_index(self):
+        """Get the selected index of this combo."""
         if self._is_created: return api.SendMessage(self._hwnd, con.CB_GETCURSEL, 0, 0)
         return -1
 
 
     @selected_index.setter
     def selected_index(self, value):
+        """Set the selected index of this combo"""
         self._sel_index = value
         if self._is_created: api.SendMessage(self._hwnd, con.CB_SETCURSEL, value, 0)
 
     @property
-    def enable_input(self): return self._enable_input
+    def enable_input(self):
+        """Get the boolean value of enable text input for this combo. """
+        return self._enable_input
 
     @enable_input.setter
     def enable_input(self, value: bool):
+        """Enable text input for this combo"""
         if self._is_created:
             if self._enable_input != value:
                 if value:
@@ -168,18 +178,18 @@ class ComboBox(Control):
                     self._style |= con.CBS_DROPDOWNLIST
 
                 self._enable_input = value
-                # del cmb_dict[self._hwnd] # We need to remove this combo from dict.
-                api.DestroyWindow(self._hwnd) # Destroy this and create new one.
+                self._recreated = True
+                api.DestroyWindow(self._hwnd) # Destroy this combo and create new one.
                 self.create_handle()
         else:
             self._enable_input = value
 
-
     # -endregion props
 
 
-    # -region pub_func
+    # -region public functions
     def add_item(self, item):
+        """Add an item to this combo"""
         self._items.append(item)
         if self._is_created:
             sitem = item if isinstance(item, str) else str(item)
@@ -188,6 +198,7 @@ class ComboBox(Control):
 
 
     def add_items(self, *args):
+        """Add items to this combo"""
         self._items.extend(args)
         if self._is_created:
             for item in args:
@@ -196,8 +207,8 @@ class ComboBox(Control):
                 api.SendMessage(self._hwnd, con.CB_ADDSTRING, 0, addressof(buff))
 
 
-
     def remove_item_at(self, index):
+        """Remove an item at the given index"""
         if index in range(len(self._items)):
             item = self._items[index]
             sitem = item if isinstance(item, str) else str(item)
@@ -209,6 +220,7 @@ class ComboBox(Control):
 
 
     def remove_item(self, item):
+        """Remove the given item from combo"""
         if self._items.__contains__(item):
             sitem = item if isinstance(item, str) else str(item)
             buff = create_unicode_buffer(sitem)
@@ -221,6 +233,7 @@ class ComboBox(Control):
 
 
     def remove_items(self, *args):
+        """Remove the given items from this combo"""
         if(all(x in self._items for x in args)):
             for item in args:
                 sitem = item if isinstance(item, str) else str(item)
@@ -232,7 +245,9 @@ class ComboBox(Control):
         else:
             print("Given items are not in list")
 
+
     def clear_items(self):
+        """Delete all items from this combo"""
         if self._items:
             del self._items[:]
             api.SendMessage(self._hwnd, con.CB_DELETESTRING, 0, 0)
@@ -240,14 +255,13 @@ class ComboBox(Control):
 
     # -endregion
 
-    def dumm(self): pass
+    # def dumm(self): pass
 
 #End ComboBox
 
 
 
 
-# @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
 @SUBCLASSPROC
 def cmb_wnd_proc(hw, msg, wp, lp, scID, refData):
     # printWinMsg(msg)
@@ -255,17 +269,10 @@ def cmb_wnd_proc(hw, msg, wp, lp, scID, refData):
     match msg:
         case con.WM_DESTROY:
             api.RemoveWindowSubclass(hw, cmb_wnd_proc, scID)
-            # print("remove subclass for - ", cmb.name)
-
-        # case con.WM_CTLCOLOREDIT:
-        #     print("combo ctl edit")
-
-        # case con.CB_SHOWDROPDOWN:
-        #     print("combo CB_SHOWDROPDOWN")
+            if not cmb._recreated: del cmb_dict[hw] # Only remove if this is a natural end
 
         case MyMessages.LIST_COLOR:
             if cmb._draw_flag:
-                # print("combo list clr")
                 hdc = HDC(wp)
                 if cmb._draw_flag & 1: api.SetTextColor(hdc, cmb._fg_color.ref )
                 api.SetBkColor(hdc, cmb._bg_color.ref)
@@ -319,14 +326,13 @@ def cmb_wnd_proc(hw, msg, wp, lp, scID, refData):
     return api.DefSubclassProc(hw, msg, wp, lp)
 
 
+# Wndproc for edit control of this combo
 @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
 def cmb_edit_wnd_proc(hw, msg, wp, lp, scID, refData):
     cmb = cmb_dict[refData]
-    # printWinMsg(msg)
     match msg:
         case con.WM_NCDESTROY:
             api.RemoveWindowSubclass(hw, cmb_edit_wnd_proc, scID)
-            print("remove subclass for ComboBox's text box -", hw)
 
         case MyMessages.EDIT_COLOR:
             if cmb._draw_flag:
@@ -337,8 +343,6 @@ def cmb_edit_wnd_proc(hw, msg, wp, lp, scID, refData):
 
         case MyMessages.LABEL_COLOR: # Not Working
             if cmb._draw_flag:
-                # print("dra stsrt")
-                # ret = api.DefSubclassProc(hw, msg, wp, lp)
                 hdc = HDC(wp)
                 if cmb._draw_flag & (1 << 0): api.SetTextColor(hdc, cmb._fg_color.ref )
                 api.SetBkColor(hdc, cmb._bg_color.ref)
