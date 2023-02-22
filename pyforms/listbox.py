@@ -1,26 +1,21 @@
-
-
-
 # listbox module - Created on 11-Dec-2022 11:23:20
 
-from ctypes.wintypes import HWND, UINT, LPCWSTR
-from ctypes import WINFUNCTYPE, byref, sizeof, addressof, create_unicode_buffer, cast, create_string_buffer, c_int
-# import ctypes as ctp
-from horology import Timing
+# from ctypes.wintypes import HWND, UINT, LPCWSTR
+from ctypes import addressof, create_unicode_buffer, c_int
+# from horology import Timing
 from .control import Control
 from . import constants as con
 from .commons import MyMessages
-from .enums import ControlType, DateFormat
-from .events import EventArgs, DateTimeEventArgs
-from .apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, LPNMHDR, LPNMDATETIMECHANGE, WPARAM, LPARAM, SUBCLASSPROC
+from .enums import ControlType
+from .events import EventArgs
+from .apis import LRESULT, SUBCLASSPROC
 from . import apis as api
 from .colors import Color
-from datetime import datetime, date
+# from datetime import datetime, date
 
 lbx_dict = {}
 lbx_style = con.WS_CHILD | con.WS_VISIBLE | con.WS_BORDER  | con.LBS_NOTIFY | con.LBS_HASSTRINGS
 
-# print("size of cuint ", sizeof(c_uint) )
 
 class ListBox(Control):
 
@@ -33,7 +28,7 @@ class ListBox(Control):
         super().__init__()
 
         self._cls_name = "LISTBOX"
-        self.name = f"ListBox{ListBox._count}"
+        self.name = f"ListBox_{ListBox._count}"
         self._ctl_type = ControlType.LIST_BOX
         self._parent = parent
         self._bg_color = Color(parent._bg_color)
@@ -45,7 +40,6 @@ class ListBox(Control):
         self._is_textable = False
         self._style = lbx_style
         self._ex_style = 0
-
         self._has_sort = False
         self._no_sel = False
         self._multi_col = False
@@ -53,17 +47,14 @@ class ListBox(Control):
         self._use_hscroll = False
         self._use_vscroll = False
         self._multi_sel = False
-
         self._sel_indices = ()
         self._items = []
         self._dummy_index = -1
         self._sel_index = -1
 
-
         # Events
         self.on_selection_changed = 0
         self.on_double_click = 0
-
 
         ListBox._count += 1
 
@@ -96,6 +87,7 @@ class ListBox(Control):
 
 
     def clear_selection(self):
+        """Clear the selection from list box"""
         if self._is_created:
             if self._multi_sel:
                 api.SendMessage(self._hwnd, con.LB_SETSEL, False, -1)
@@ -104,6 +96,7 @@ class ListBox(Control):
 
 
     def insert_item(self, item, index):
+        """Insert an item to list box """
         if self._is_created:
             buff = create_unicode_buffer(str(item))
             api.SendMessage(self._hwnd, con.LB_INSERTSTRING, index, addressof(buff))
@@ -115,18 +108,19 @@ class ListBox(Control):
 
 
     def remove_item(self, index):
+        """Remove an item from list box"""
         if self._is_created:
             res = api.SendMessage(self._hwnd, con.LB_DELETESTRING, index, 0)
             if res != con.LB_ERR: del self._items[index]
         else:
             del self._items[index]
 
+
     def remove_all(self):
+        """Remove all the items from list box"""
         if self._is_created:
             api.SendMessage(self._hwnd, con.LB_RESETCONTENT, 0, 0)
         self._items.clear()
-
-
 
 
 # -endregion Public functions
@@ -134,6 +128,7 @@ class ListBox(Control):
 
     # -region private_funcs
 
+    # Set list box styles
     def _set_style(self):
         if self._has_sort: self._style |= con.LBS_SORT
         if self._multi_sel: self._style |= con.LBS_EXTENDEDSEL | con.LBS_MULTIPLESEL
@@ -143,6 +138,7 @@ class ListBox(Control):
         if self._use_hscroll: self._style |= con.WS_HSCROLL
         if self._use_vscroll: self._style |= con.WS_VSCROLL
 
+    # Internal function to get an item from listbox
     def _get_item(self, index: int) -> str:
         item_len = api.SendMessage(self._hwnd, con.LB_GETTEXTLEN, index, 0)
         if item_len != con.LB_ERR:
@@ -152,34 +148,41 @@ class ListBox(Control):
         else:
             return ""
 
-
-
-
-
     # -endregion Private funcs
 
     # -region Properties
 
     @property
-    def items(self): return self._items
+    def items(self):
+        """Returns the item collection"""
+        return self._items
     #-----------------------------------------------------------------------------1
 
     @property
-    def has_hscroll(self)-> bool: return self._use_hscroll
+    def has_hscroll(self)-> bool:
+        """Returns true if list box has horizontal scroll enabled"""
+        return self._use_hscroll
 
     @has_hscroll.setter
-    def has_hscroll(self, value: bool): self._use_hscroll = value
+    def has_hscroll(self, value: bool):
+        """set true if list box has horizontal scroll enabled"""
+        self._use_hscroll = value
     # #------------------------------------------------------------------------2
 
     @property
-    def has_vscroll(self)-> bool: return self._use_vscroll
+    def has_vscroll(self)-> bool:
+        """Returns true if list box has vertical scroll enabled"""
+        return self._use_vscroll
 
     @has_vscroll.setter
-    def has_vscroll(self, value: bool): self._use_vscroll = value
+    def has_vscroll(self, value: bool):
+        """Set true if list box has vertical scroll enabled"""
+        self._use_vscroll = value
     # #------------------------------------------------------------------------3
 
     @property
     def selected_index(self)-> int:
+        """Get the selected index from list box"""
         if self._is_created and not self._multi_sel:
             sel_ind = api.SendMessage(self._hwnd, con.LB_GETCURSEL, 0, 0)
             return sel_ind if sel_ind else -1
@@ -188,6 +191,7 @@ class ListBox(Control):
 
     @selected_index.setter
     def selected_index(self, value: int):
+        """Set the selected index of list box"""
         if self._is_created and not self._multi_sel:
             res = api.SendMessage(self._hwnd, con.LB_SETCURSEL, value, 0)
             if res != con.LB_ERR: self._sel_index = value # Fix this : We can avoid using _sel_index
@@ -198,6 +202,7 @@ class ListBox(Control):
 
     @property
     def selected_indices(self)-> tuple[int]:
+        """Get the selected indices as a list from list box"""
         if self._multi_sel and self._is_created:
             sel_count = api.SendMessage(self._hwnd, con.LB_GETSELCOUNT, 0, 0)
             if sel_count:
@@ -212,15 +217,19 @@ class ListBox(Control):
     # #------------------------------------------------------------------------5
 
     @property
-    def multi_selection(self)-> bool: return self._multi_sel
+    def multi_selection(self)-> bool:
+        """Returns true if this list box has multi selection enabled"""
+        return self._multi_sel
 
     @multi_selection.setter
     def multi_selection(self, value: bool):
+        """Set true if this list box has multi selection enabled"""
         self._multi_sel = value
     # #--------------------------------------------------------------------------------------------6
 
     @property
     def selected_item(self)-> str:
+        """Returns the selected item from list box"""
         if self._is_created and not self._multi_sel:
             sel_ind = api.SendMessage(self._hwnd, con.LB_GETCURSEL, 0, 0)
             if sel_ind: return self._get_item(sel_ind)
@@ -228,6 +237,7 @@ class ListBox(Control):
 
     @selected_item.setter
     def selected_item(self, value):
+        """Set the given item as selected in list box"""
         if self._is_created and not self._multi_sel:
             api.SendMessage(self._hwnd, con.LB_SETCURSEL, value, 0)
     # #----------------------------------------------------------------------7
@@ -241,6 +251,7 @@ class ListBox(Control):
 
     @property
     def selected_items(self)-> list[str]:
+        """Returns the selected items as a list. Only work for multi selection list boxes"""
         if self._is_created and self._multi_sel:
             sel_count = api.SendMessage(self._hwnd, con.LB_GETSELCOUNT, 0, 0)
             if sel_count != con.LB_ERR:
@@ -259,25 +270,10 @@ class ListBox(Control):
             if indx: return self._get_item(indx)
         return ""
 
-    # @no_trailing_dates.setter
-    # def no_trailing_dates(self, value): self._no_trail_dates = value
-    # #-------------------------------------------------------------------------10
-
-    # @property
-    # def short_date_names(self)-> bool: return self._short_date_names
-
-    # @short_date_names.setter
-    # def short_date_names(self, value): self._short_date_names = value
-    #---------------------------------------------------------------------------11
-
     # -endregion Properties
-    x = 100 # Dummy
-    #dummy line
-
 
 # End ListBox
 
-# @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
 @SUBCLASSPROC
 def lbx_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     # printWinMsg(msg)
@@ -285,7 +281,7 @@ def lbx_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     match msg:
         case con.WM_DESTROY:
             api.RemoveWindowSubclass(hw, lbx_wnd_proc, scID)
-            # print("remove subclass for - ", lbx.name)
+            del lbx_dict[hw]
 
         case MyMessages.LIST_COLOR:
             if lbx._draw_flag:
@@ -303,44 +299,6 @@ def lbx_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                     if lbx.on_double_click: lbx.on_double_click(lbx, EventArgs())
                 case con.LBN_SELCHANGE:
                     if lbx.on_selection_changed: lbx.on_selection_changed(lbx, EventArgs())
-
-
-
-
-
-        # case MyMessages.CTRL_NOTIFY:
-        #     nm = cast(lp, LPNMHDR).contents
-        #     # print(f"reach 246 {con.DTN_USERSTRING = } {nm.code = }" )
-        #     match nm.code:
-        #         # case con.DTN_USERSTRINGW:
-        #         #     # if lbx.on_text_changed:
-        #         #     dts = cast(lp, api.LPNMDATETIMESTRINGW).contents
-        #         #     dea = DateTimeEventArgs(dts.pszUserString, dts.st)
-        #         #     print(dts.st.wYear)
-
-
-        #         case con.DTN_DROPDOWN:
-        #             if lbx.on_calendar_opened:
-        #                 lbx.on_calendar_opened(lbx, EventArgs())
-        #                 return 0
-
-        #         case con.DTN_CLOSEUP:
-        #             if lbx.on_calendar_closed:
-        #                 lbx.on_calendar_closed(lbx, EventArgs())
-        #                 return 0
-
-        #         case con.DTN_DATETIMECHANGE:
-        #             # For unknown reason, this notification occurs two times back to back.
-        #             # So, we need to use a boolean flag to suppress one notification.
-        #             if lbx._event_handled:
-        #                 lbx._event_handled = False
-        #             else:
-        #                 lbx._event_handled = True
-        #                 dic = cast(lp, LPNMDATETIMECHANGE).contents
-        #                 lbx._value = lbx._make_date_time(dic.st)
-        #                 if lbx.on_value_changed:
-        #                     lbx.on_value_changed(lbx, EventArgs())
-        #                     return 0
 
         case con.WM_SETFOCUS: lbx._got_focus_handler()
         case con.WM_KILLFOCUS: lbx._lost_focus_handler()
