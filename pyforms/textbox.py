@@ -1,9 +1,5 @@
 
-# Created on 22-Nov-2022 00:54:20
-
-# from ctypes.wintypes import HWND, UINT, HDC
-from ctypes import byref
-# import ctypes as ctp
+# textbox module - Created on 22-Nov-2022 00:54:20
 
 
 from .control import Control
@@ -13,8 +9,7 @@ from .apis import SUBCLASSPROC
 from . import apis as api
 from .colors import Color
 from . import constants as con
-from . import winmsgs
-# import sys
+# from . import winmsgs
 
 tb_dict = {}
 tb_style = con.WS_CHILD | con.WS_VISIBLE | con.ES_LEFT | con.WS_TABSTOP | con.ES_AUTOHSCROLL
@@ -40,12 +35,7 @@ class TextBox(Control):
         self._is_textable = True
         self._style = 0x50010080 | con.WS_CLIPCHILDREN
         self._ex_style = 0x00000204
-
-        # self._fg_color = Color(0)
         self._bg_color = Color(0xFFFFFF)
-
-
-        # self._draw_mode = ControlDrawMode.NO_DRAW
         self._draw_flag = 0
         self._multi_line = False
         self._hide_sel = False
@@ -53,28 +43,24 @@ class TextBox(Control):
         self._txt_case = TextCase.NORMAL
         self._txt_type = TextType.NORMAL
         self._txt_align = TextAlignment.LEFT
-        # self._bk_brush = HBRUSH(0)
-        # self._text = "ert"
-
         TextBox._count += 1
 
+
     def create_handle(self):
+        """Create text box's handle"""
         self._set_style()
         self._create_control()
         if self._hwnd:
-            # self._parent.tbdraw_dict[self._hwnd] = self._tb_color_msg_handler
             tb_dict[self._hwnd] = self
-
             self._set_subclass(tb_wnd_proc)
             self._set_font_internal()
-            # api.InvalidateRect(self._hwnd, None, False)
-            # rc = api.get_client_rect(self._hwnd)
+
+            # Without this line, textbox looks ugly style. It won't receive WM_NCPAINT message.
+            # So we just redraw the non client area and it will receive WM_NCPAINT
             api.RedrawWindow(self._hwnd, None, None, con.RDW_FRAME| con.RDW_INVALIDATE)
 
-            # print("edit hwnd ", self._hwnd)
-            # print(f"{sizeof(c_longlong) = }, {sizeof(c_long) = }, {sizeof(c_void_p) = }")
 
-
+    # Setting text box's style bits
     def _set_style(self):
         if self._multi_line: self._style |= con.ES_MULTILINE | con.ES_WANTRETURN
         if self._hide_sel: self._style |= con.ES_NOHIDESEL
@@ -98,44 +84,26 @@ class TextBox(Control):
         self._bk_brush = api.CreateSolidBrush(self._bg_color.ref)
 
 
-    # def _tb_color_msg_handler(self, wp):
-    #     if self._draw_flag:
-    #         if self._draw_flag & 1: api.SetTextColor(wp, self._fg_color.ref)
-    #         if self._draw_flag & 2: api.SetBkColor(wp, self._bg_color.ref)
-    #         # if self._draw_flag == 1:
-    #         #     return api.GetStockObject(con.DC_BRUSH)
-    #         # else:
-    #     return self._bk_brush
-
 
     @Control.text.getter
     def text(self):
+        """Returns the text property of text box"""
         if self._is_created:
-            #api.SendMessage(self._hwnd, con.WM_GETTEXT, 0, 0)
             return self._get_ctrl_text()
         else:
             return self._text
 
-    # @Control.text.setter
-    # def text(self, value: str):
-    #     self._text = value
-    #     if self._is_created: self._set_ctrl_text(value)
-
-
-
 #End TextBox
 
-# @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
 @SUBCLASSPROC
 def tb_wnd_proc(hw, msg, wp, lp, scID, refData):
-    # printWinMsg(msg)
     # winmsgs.log_msg(msg)
     tb = tb_dict[hw]
     match msg:
         case con.WM_DESTROY:
             api.DeleteObject(tb._bk_brush)
             api.RemoveWindowSubclass(hw, tb_wnd_proc, scID)
-            # print("remove subclass of ", tb.name)
+            del tb_dict[hw]
 
         # case con.WM_SETFOCUS: tb._got_focus_handler()
         # case con.WM_KILLFOCUS: tb._lost_focus_handler()
@@ -151,47 +119,13 @@ def tb_wnd_proc(hw, msg, wp, lp, scID, refData):
 
         case MyMessages.LABEL_COLOR:
             return tb._bk_brush
-            # print("lbl clr")
-            # api.DefSubclassProc(hw, msg, wp, lp)
-            # return 0
 
         case MyMessages.EDIT_COLOR:
             if tb._draw_flag:
                 if tb._draw_flag & 1: api.SetTextColor(wp, tb._fg_color.ref)
                 if tb._draw_flag & 2: api.SetBkColor(wp, tb._bg_color.ref)
-                # if tb._draw_flag == 1:
-                #     return api.GetStockObject(con.DC_BRUSH)
-                # else:
-            # tb._parent._tb_brush = HBRUSH(tb._bk_brush)
+
             return tb._bk_brush
 
-        # case con.WM_PAINT:
-        #     return 0#api.DefSubclassProc(hw, msg, wp, lp)
-
-        # case con.WM_ERASEBKGND:
-        #     return api.DefSubclassProc(hw, msg, wp, lp)
-
-
-        # case MyMessages.CTL_COMMAND:
-        #     ncode = api.HIWORD(wp)
-        #     match ncode:
-        #         case con.EM_GETRECT:
-
-        #         case con.EM_SETRECT:
-        #             return 1
-
-        case _: return api.DefSubclassProc(hw, msg, wp, lp)
-
-
-
-
-
-
-
     return api.DefSubclassProc(hw, msg, wp, lp)
-
-
-
-
-
 
