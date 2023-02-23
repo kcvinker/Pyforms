@@ -1,17 +1,14 @@
 
-
-
 # RadioButton module - Created on 09-Dec-2022 16:03:20
 
-from ctypes.wintypes import HWND, UINT
 from ctypes import byref, cast, addressof
 
 from .control import Control
 from .commons import MyMessages
 from .enums import ControlType
-from .apis import LRESULT, UINT_PTR, DWORD_PTR, LPNMCUSTOMDRAW, WPARAM, LPARAM, SUBCLASSPROC
+from .apis import LRESULT, LPNMCUSTOMDRAW, SUBCLASSPROC
 from . import apis as api
-from .colors import Color, RgbColor
+from .colors import Color
 from . import constants as con
 from .events import EventArgs
 
@@ -41,28 +38,21 @@ class RadioButton(Control):
         self._style = rb_style
         self._ex_style = con.WS_EX_LTRREADING | con.WS_EX_LEFT
         self._txt_style = con.DT_SINGLELINE | con.DT_VCENTER
-
-        # self._fg_color = Color(0)
         self._bg_color = Color(parent._bg_color)
         self._bg_brush = api.CreateSolidBrush(self._bg_color.ref)
         self._check_on_click = True
-
-        # self._draw_mode = ControlDrawMode.NO_DRAW
-        # self._draw_flag = 0
         self._right_align = False
         self._is_checked = False
         self.on_checked_changed = 0
-        # self._txt_case = TextCase.NORMAL
-        # self._txt_type = TextType.NORMAL
-        # self._txt_align = TextAlignment.LEFT
-
         RadioButton._count += 1
 
 
     def create_handle(self):
+        """Create Button's handle"""
         if self._right_align:
             self._style |= con.BS_RIGHTBUTTON
             self._txt_style |= con.DT_RIGHT
+
         if not self._check_on_click: self._style ^= con.BS_AUTORADIOBUTTON
 
         self._create_control()
@@ -79,9 +69,9 @@ class RadioButton(Control):
 
 
 
-
     @Control.back_color.setter
     def back_color(self, value):
+        """Set back color of radio button."""
         self._bg_color.update_color(value)
         self._bg_brush = api.CreateSolidBrush(self._bg_color.ref)
         if not self._draw_flag & (1 << 1): self._draw_flag += 2
@@ -89,15 +79,14 @@ class RadioButton(Control):
 
     @Control.text.getter
     def text(self):
+        """Set text of radio button."""
         if self._is_created:
             return self._get_ctrl_text()
         else:
             return self._text
 
-
 #End RadioButton
 
-# @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
 @SUBCLASSPROC
 def rb_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     # printWinMsg(msg)
@@ -105,9 +94,7 @@ def rb_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     match msg:
         case con.WM_DESTROY:
             api.RemoveWindowSubclass(hw, rb_wnd_proc, scID)
-            # print("remove subclass of ", rb.name)
-
-
+            del rb_dict[hw]
 
         case con.WM_SETFOCUS: rb._got_focus_handler()
         case con.WM_KILLFOCUS: rb._lost_focus_handler()
@@ -141,16 +128,9 @@ def rb_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                     api.DrawText(nmc.hdc, rb._text, len(rb._text), byref(rct), rb._txt_style )
                     return con.CDRF_SKIPDEFAULT
 
-
         case MyMessages.CTL_COMMAND:
             rb._is_checked = bool(api.SendMessage(hw, con.BM_GETCHECK, 0, 0))
             if rb.on_checked_changed: rb.on_checked_changed(rb, EventArgs() )
 
-
     return api.DefSubclassProc(hw, msg, wp, lp)
-
-
-
-
-
 
