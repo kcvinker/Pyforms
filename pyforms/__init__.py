@@ -10,8 +10,9 @@ from .radiobutton import RadioButton
 from .datetimepicker import DateTimePicker
 from .groupbox import GroupBox
 from .listbox import ListBox
+from .menubar import MenuBar, MenuItem, MenuType
 from .numberpicker import NumberPicker
-from .progressbar import ProgressBar
+from .progressbar import ProgressBar, ProgressBarStyle, ProgressBarState
 from .trackbar import TrackBar, ChannelStyle, TickPosition
 from .listview import ListView
 from .treeview import TreeView, TreeNode
