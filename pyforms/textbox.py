@@ -93,6 +93,20 @@ class TextBox(Control):
         else:
             return self._text
 
+    @Control.back_color.setter
+    def back_color(self, value):
+        if isinstance(value, int):
+            self._bg_color.update_color(value)
+        elif isinstance(value, Color):
+            self._bg_color = value
+
+        if not self._draw_flag & (1 << 1): self._draw_flag += 2
+        if self._is_created: self._bk_brush = api.CreateSolidBrush(self._bg_color.ref)
+        self._manage_redraw()
+
+        # api.RedrawWindow(self._hwnd, None, None, con.RDW_INVALIDATE| con.RDW_FRAME)
+
+
 #End TextBox
 
 @SUBCLASSPROC
