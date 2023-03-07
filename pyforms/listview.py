@@ -52,7 +52,7 @@ class ListView(Control):
 					"_hdr_font", "_col_align", "_view_style", "_columns", "_items", "_col_ind_list", "_col_index",
                     "_hdr_height", "_sel_item_index", "sel_sub_index", "_img_list", "_hdr_item_dict", "_hdr_pts", "_mouse_on_hdr",
                     "_hdr_bg_color", "_hdr_fg_color", "_hdr_bk_brush", "_hdr_odraw", "_hot_hdr", "_col_index",
-                    "_hdr_hot_brush", "_hdr_clickable", "_selectable", "_item_index", "_item_drawn" )
+                    "_hdr_hot_brush", "_hdr_clickable", "_selectable", "_item_index", "_item_drawn", "_destroyCount", "_layCount" )
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 250, height: int = 200) -> None:
         super().__init__()
@@ -101,6 +101,8 @@ class ListView(Control):
         self._hdr_height = 25
         self._hot_hdr = -1
         self._col_index = 0
+        self._destroyCount = 0
+        self._layCount = 0
 
         # Events
         # self.on_value_changed = 0
@@ -143,8 +145,6 @@ class ListView(Control):
                 ord_list = self._change_column_order()
                 api.SendMessage(self._hwnd, con.LVM_SETCOLUMNORDERARRAY, len(ord_list), addressof(ord_list))
                 self._cb_is_last = True
-
-            print("lv hwnd ", self._hwnd)
 
 
     #End of Create function-----------------------------------------------
@@ -377,6 +377,18 @@ class ListView(Control):
     #------------------------------------------------------------------------2 Header Back Color
 
 
+    @property
+    def header_height(self)-> int:
+        """Get the header height."""
+        return self._hdr_height
+
+    @header_height.setter
+    def header_height(self, value: int):
+        """Set the header height."""
+        self._hdr_height = value
+    #------------------------------------------------------------------------2 Header Height
+
+
 
 
 
@@ -471,14 +483,10 @@ def lv_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     lv = lv_dict[hw]
     match msg:
         case con.WM_DESTROY:
-            res = api.RemoveWindowSubclass(hw, lv_wnd_proc, scID)
-            # print(f"remove subclass for {lv.name}, res - {res}")
+            api.RemoveWindowSubclass(hw, lv_wnd_proc, scID)
+            lv._destroyCount += 1
+            if lv._destroyCount == 2: del lv_dict[hw]
 
-        # case con.WM_PAINT:
-        #     api.DefSubclassProc(hw, msg, wp, lp)
-
-
-        #     return 0
 
         case MyMessages.CTRL_NOTIFY:
             nmh = cast(lp, api.LPNMHDR).contents
@@ -571,15 +579,24 @@ def hdr_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     match msg:
         case con.WM_DESTROY:
             res = api.RemoveWindowSubclass(hw, hdr_wnd_proc, scID)
-            print(f"remove subclass for {lv.name}.Header, res - {res}")
+            lv._destroyCount += 1
+            if lv._destroyCount == 2: del lv_dict[lv._hwnd]
 
         case con.HDM_LAYOUT:
             if lv._change_hdr_height:
                 phl = cast(lp, api.LPHDLAYOUT).contents
-                res = api.DefSubclassProc(hw, msg, wp, lp)
+                # res = api.DefSubclassProc(hw, msg, wp, lp)
                 pos = phl.pwpos.contents
+                prc = phl.prc.contents
+                pos.flags = con.SWP_FRAMECHANGED
+                pos.hwnd = hw
+                pos.y = 0
+                pos.x = prc.left
+                pos.cx = prc.right - prc.left
                 pos.cy = lv._hdr_height
-                return res
+                prc.top = lv._hdr_height
+
+                return -1
 
         case con.WM_MOUSEMOVE:
             pt = getMousePoints(lp) # Collecting mouse points
