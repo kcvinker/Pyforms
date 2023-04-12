@@ -28,7 +28,7 @@ class InitComCtls:
     This task is needed to be done at once per class.
     So this class will handle the job for us. First, it will initiate...
     standard control classes like button, edit etc. Then we need to...
-    intentionaly call the 'init_comm_ctls' function for special controls.
+    intentionaly call the 'initCommCtls' function for special controls.
     """
     started = False
     icc_ex = INITCOMMONCONTROLSEX()
@@ -36,10 +36,11 @@ class InitComCtls:
     def __init__(self) -> None:
         self.icc_ex.dwICC = con.ICC_STANDARD_CLASSES
         self.is_date_init = False
-        api.InitCommonControlsEx(byref(self.icc_ex))
+        ret = api.InitCommonControlsEx(byref(self.icc_ex))
         InitComCtls.started = True
+        # print("init common ctrl res = ", ret)
 
-    def init_comm_ctls(self, ctl_value):
+    def initCommCtls(self, ctl_value):
         flag = False
         if ctl_value == 0x100: # If it's ICC_DATECLASS, we need to take special care.
             if self.is_date_init:
@@ -65,15 +66,14 @@ class Control:
     _ctl_id = 101
     _subclass_id = 1001
     icc = InitComCtls()
-    __slots__ = ("tvar", "name", "_hwnd", "_text", "_width", "_height", "_style", "_ex_style", "_h_inst", "_visible",
-                 "_cls_name", "_cid", "_xpos", "_ypos", "_parent", "_is_created", "_is_textable", "_lbtn_down",
-                 "_rbtn_down", "_is_mouse_entered", "_ctl_type", "_font", "_fg_color", "_bg_color", "_draw_flag",
-                 "_has_brush", "_bkg_brush",
-                  "_on_mouse_enter", "on_mouse_down", "on_mouse_up", "on_right_mouse_down", "on_right_mouse_up",
-                  "on_right_click", "_on_mouse_leave", "on_double_click", "on_mouse_wheel", "on_mouse_move",
-                  "on_mouse_hover", "on_key_down", "on_key_up", "on_key_press", "on_paint", "on_got_focus",
-                  "on_lost_focus", "on_click")
-
+    __slots__ = ("tvar", "name", "_hwnd", "_text", "_width", "_height", "_style", "_exStyle", "_hInst", "_visible",
+                 "_clsName", "_cid", "_xpos", "_ypos", "_parent", "_isCreated", "_isTextable", "_lBtnDown",
+                 "_rBtnDown", "_isMouseEntered", "_ctlType", "_font", "_fgColor", "_bgColor", "_drawFlag",
+                 "_hasBrush", "_bkgBrush",
+                  "_onMouseEnter", "onMouseDown", "onMouseUp", "onRightMouseDown", "onRightMouseUp",
+                  "onRightClick", "_onMouseLeave", "onDoubleClick", "onMouseWheel", "onMouseMove",
+                  "onMouseHover", "onKeyDown", "onKeyUp", "onKeyPress", "onPaint", "onGotFocus",
+                  "onLostFocus", "onClick")
 
     def __init__(self) -> None:
         self.name = ""
@@ -82,45 +82,45 @@ class Control:
         self._width = 0
         self._height = 0
         self._style = 0
-        self._ex_style = 0
-        self._h_inst = 0
+        self._exStyle = 0
+        self._hInst = 0
         self._visible = True
-        self._cls_name = ""
+        self._clsName = ""
         self._xpos = 0
         self._ypos = 0
         self._parent = 0
-        self._is_created = False
-        self._is_textable = False
-        self._lbtn_down = False
-        self._rbtn_down = False
-        self._is_mouse_entered = False
-        self._ctl_type = ControlType.NONE
+        self._isCreated = False
+        self._isTextable = False
+        self._lBtnDown = False
+        self._rBtnDown = False
+        self._isMouseEntered = False
+        self._ctlType = ControlType.NONE
         self._font = Font()
-        self._fg_color = Color(0)
-        self._bg_color = Color(0)
-        self._draw_flag = 0
-        self._has_brush = False
+        self._fgColor = Color(0)
+        self._bgColor = Color(0)
+        self._drawFlag = 0
+        self._hasBrush = False
         self.tvar = 1 # Only for testing purpose. Can be deleted at last
 
         # Events
-        self._on_mouse_enter = 0
-        self.on_mouse_down = 0
-        self.on_mouse_up = 0
-        self.on_click = 0
-        self.on_right_mouse_down = 0
-        self.on_right_mouse_up = 0
-        self.on_right_click = 0
-        self._on_mouse_leave = 0
-        self.on_double_click = 0
-        self.on_mouse_wheel = 0
-        self.on_mouse_move = 0
-        self.on_mouse_hover = 0
-        self.on_key_down = 0
-        self.on_key_up = 0
-        self.on_key_press = 0
-        self.on_paint = 0
-        self.on_got_focus = 0
-        self.on_lost_focus = 0
+        self.onMouseEnter = 0
+        self.onMouseDown = 0
+        self.onMouseUp = 0
+        self.onClick = 0
+        self.onRightMouseDown = 0
+        self.onRightMouseUp = 0
+        self.onRightClick = 0
+        self.onMouseLeave = 0
+        self.onDoubleClick = 0
+        self.onMouseWheel = 0
+        self.onMouseMove = 0
+        self.onMouseHover = 0
+        self.onKeyDown = 0
+        self.onKeyUp = 0
+        self.onKeyPress = 0
+        self.onPaint = 0
+        self.onGotFocus = 0
+        self.onLostFocus = 0
 
 
     # -region Public funcs
@@ -130,19 +130,19 @@ class Control:
         api.DestroyWindow(self._hwnd)
 
 
-    def set_size(self, width : int, height : int):
+    def setSize(self, width : int, height : int):
         """Set the size of this control. Give the width & height."""
         self._width = width
         self._height = height
-        if self._is_created:
+        if self._isCreated:
             api.SetWindowPos(self._hwnd, None, self._xpos, self._ypos, self._width, self._height, con.SWP_NOZORDER)
     #----------------------------------------------
 
-    def set_position(self, xpos : int, ypos : int):
+    def setPosition(self, xpos : int, ypos : int):
         """Set the position of this control. Give the X & Y points."""
         self._xpos = xpos
         self._ypos = ypos
-        if self._is_created:
+        if self._isCreated:
             api.SetWindowPos(self._hwnd, None, self._xpos, self._ypos, self._width, self._height, con.SWP_NOZORDER)
 
     # -endregion
@@ -151,14 +151,14 @@ class Control:
     # -region Private funcs
 
     # Internal function for create controls
-    def _create_control(self):
+    def _createControl(self):
         """This function will create control handles with 'CreateWindowEx' function.
-        And it will set the '_is_created' property to True.
+        And it will set the '_isCreated' property to True.
         We can use this single function to create all of our controls.
         """
-        self._set_ctl_id()
-        self._hwnd = api.CreateWindowEx( DWORD(self._ex_style),
-                                            self._cls_name,
+        self._setCtlID()
+        self._hwnd = api.CreateWindowEx( DWORD(self._exStyle),
+                                            self._clsName,
                                             self._text,
                                            DWORD(self._style),
                                             self._xpos,
@@ -170,33 +170,33 @@ class Control:
                                             self._parent.wnd_class.hInstance, None )
 
         if self._hwnd:
-            self._is_created = True
-            print(f"Created {self.name} with handle {self._hwnd}")
+            self._isCreated = True
+            # print(f"Created {self.name} with handle {self._hwnd}")
     #-----------------------------------------------------------------------------------END
 
     # Internal function to set the control IDs
-    def _set_ctl_id(self):
+    def _setCtlID(self):
         """Before creating control, we need to set the control ID."""
         self._cid = Control._ctl_id
         Control._ctl_id += 1
 
 
     # Creating font handle if needed and apply it in the control.
-    def _set_font_internal(self):
+    def _setFontInternal(self):
         if self._font._hwnd == 0:
-            self._font.create_handle(self._hwnd)
+            self._font.createHandle(self._hwnd)
 
         api.SendMessage(self._hwnd, con.WM_SETFONT, self._font._hwnd, True)
 
 
     # Setting subclass for this control.
-    def _set_subclass(self, subClsFunc):
+    def _setSubclass(self, subClsFunc):
         """Replacing the 'WndProc' function for this control."""
         api.SetWindowSubclass(self._hwnd, subClsFunc, Control._subclass_id, 0)
         Control._subclass_id += 1
 
     # Internal function to get the text from control
-    def _get_ctrl_text(self):
+    def _getCtrlText(self):
         """Return the text from this control."""
         # with Timing("get text time : "):
         tLen = api.GetWindowTextLength(self._hwnd) + 1
@@ -205,15 +205,15 @@ class Control:
         return buffer.value
 
     # Internal function to set the text for this control
-    def _set_ctrl_text(self, value: str):
+    def _setCtrlText(self, value: str):
         """Set the text for this control."""
         api.SetWindowText(self._hwnd, value)
-        if self._ctl_type == ControlType.LABEL:
+        if self._ctlType == ControlType.LABEL:
             if self._autoSize: self._setAutoSize(True)
 
 
     # Internal function for get the text in given hwnd
-    def _get_ctrl_text_ex(self, hwnd):
+    def _getCtrlTextEx(self, hwnd):
         """Returns the control text with given hwnd.
         Used in combination controls like ComboBox, NumberPicker etc."""
         tLen = api.GetWindowTextLength(hwnd) + 1
@@ -222,13 +222,13 @@ class Control:
         return buffer.value
 
     # Internal function to invalidate controls if needed
-    def _manage_redraw(self):
+    def _manageRedraw(self):
         """If this control is created, send a command to redraw it"""
-        if self._is_created: api.InvalidateRect(self._hwnd, None, False)
+        if self._isCreated: api.InvalidateRect(self._hwnd, None, False)
 
 
     # Internal function to convert date time class to systime.
-    def _make_sys_time(self, tm: datetime) -> api.SYSTEMTIME:
+    def _makeSysTime(self, tm: datetime) -> api.SYSTEMTIME:
         """Create a SYSTEMTIME struct from given datetime object"""
         st = api.SYSTEMTIME()
         st.wYear = tm.year
@@ -243,7 +243,7 @@ class Control:
 
 
     # Internal function to convert systime to date time class
-    def _make_date_time(self, st: api.SYSTEMTIME):
+    def _makeDateTime(self, st: api.SYSTEMTIME):
         """Create a datetime object from given SYSTEMTIME object"""
         return datetime.datetime(st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds)
 
@@ -286,7 +286,7 @@ class Control:
                 value : Font object
         """
         self._font = value
-        if self._is_created:
+        if self._isCreated:
             pass
     #-------------------------------------------------FONT
 
@@ -299,7 +299,7 @@ class Control:
     def text(self, value:str):
         """Set the control's text"""
         self._text = value
-        if self._is_created and self._is_textable: self._set_ctrl_text(value)
+        if self._isCreated and self._isTextable: self._setCtrlText(value)
     #----------------------------------------------------------------TEXT
 
 
@@ -312,7 +312,7 @@ class Control:
     def xpos(self, value : int):
         """Set the control's x position"""
         self._xpos = value
-        if self._is_created:
+        if self._isCreated:
             pass
     #--------------------------------------------XPOS
 
@@ -325,7 +325,7 @@ class Control:
     def ypos(self, value : int):
         """Set the control's Y position"""
         self._ypos = value
-        if self._is_created:
+        if self._isCreated:
             pass
     #--------------------------------------------YPOS
 
@@ -338,7 +338,7 @@ class Control:
     def width(self, value : int):
         """Set the control's width"""
         self._width = value
-        if self._is_created:
+        if self._isCreated:
             pass
     #--------------------------------------------WIDTH
 
@@ -351,7 +351,7 @@ class Control:
     def height(self, value : int):
         """Set the control's height"""
         self._height = value
-        if self._is_created:
+        if self._isCreated:
             pass
     #--------------------------------------------HEIGHT
 
@@ -364,53 +364,54 @@ class Control:
     def visibile(self, value : bool):
         """Set the control's visibility"""
         self._visibile = value
-        if self._is_created:
+        if self._isCreated:
             pass
     #--------------------------------------------VISIBLE
 
     @property
-    def back_color(self):
+    def backColor(self):
         """Get the control's back color"""
-        return self._bg_color
+        return self._bgColor
 
-    @back_color.setter
-    def back_color(self, value):
+    @backColor.setter
+    def backColor(self, value):
         """Set the control's back color"""
         if isinstance(value, int):
-            self._bg_color.update_color(value)
+            self._bgColor.updateColor(value)
         elif isinstance(value, Color):
-            self._bg_color = value
-        if not self._draw_flag & (1 << 1): self._draw_flag += 2
-        if self._is_created and self._has_brush: self._bkg_brush =api.CreateSolidBrush(self._bg_color.ref)
-        self._manage_redraw()
-    #--------------------------------------------BACK_COLOR
+            self._bgColor = value
+
+        if not self._drawFlag & (1 << 1): self._drawFlag += 2
+        if self._isCreated and self._hasBrush: self._bkgBrush = self._bgColor.createHBrush()
+        self._manageRedraw()
+    #--------------------------------------------BACKCOLOR
 
     @property
-    def fore_color(self):
+    def foreColor(self):
         """Get the control's text color"""
-        return self._fg_color.value
+        return self._fgColor.value
 
-    @fore_color.setter
-    def fore_color(self, value : int):
+    @foreColor.setter
+    def foreColor(self, value : int):
         """Set the control's text color"""
-        self._fg_color.update_color(value)
-        if not self._draw_flag & 1: self._draw_flag += 1
-        self._manage_redraw()
+        self._fgColor.updateColor(value)
+        if not self._drawFlag & 1: self._drawFlag += 1
+        self._manageRedraw()
     #--------------------------------------------[9]---------
 
     @property
-    def on_mouse_enter(self):
-        return self._on_mouse_enter
+    def onMouseEnter(self):
+        return self._onMouseEnter
 
-    @on_mouse_enter.setter
-    def on_mouse_enter(self, value): self._on_mouse_enter = value
+    @onMouseEnter.setter
+    def onMouseEnter(self, value): self._onMouseEnter = value
     #--------------------------------------------[10]---------
 
     @property
-    def on_mouse_leave(self): return self._on_mouse_leave
+    def onMouseLeave(self): return self._onMouseLeave
 
-    @on_mouse_leave.setter
-    def on_mouse_leave(self, value): self._on_mouse_leave = value
+    @onMouseLeave.setter
+    def onMouseLeave(self, value): self._onMouseLeave = value
     #--------------------------------------------[11]---------
 
     # -endregion
@@ -421,84 +422,84 @@ class Control:
 
 
     # -region Event handlers
-    def _left_mouse_down_handler(self, msg, wpm, lpm):
-        self._lbtn_down = True
-        if self.on_mouse_down:
-            self.on_mouse_down(self, MouseEventArgs(msg, wpm, lpm))
+    def _leftMouseDownHandler(self, msg, wpm, lpm):
+        self._lBtnDown = True
+        if self.onMouseDown:
+            self.onMouseDown(self, MouseEventArgs(msg, wpm, lpm))
             return 0
 
 
-    def _left_mouse_up_handler(self, msg, wpm, lpm):
-        if self.on_mouse_up:
-            self.on_mouse_up(self, MouseEventArgs(msg, wpm, lpm))
+    def _leftMouseUpHandler(self, msg, wpm, lpm):
+        if self.onMouseUp:
+            self.onMouseUp(self, MouseEventArgs(msg, wpm, lpm))
 
-        if self._lbtn_down:
-            self._lbtn_down = False
+        if self._lBtnDown:
+            self._lBtnDown = False
             api.SendMessage(self._hwnd, MyMessages.MOUSE_CLICK, 0, 0)
             return 0
 
 
     def _mouse_click_handler(self):
-        if self.on_click: self.on_click(self, EventArgs())
+        if self.onClick: self.onClick(self, EventArgs())
 
 
-    def _right_mouse_down_handler(self, msg, wpm, lpm):
-        self._rbtn_down = True
-        if self.on_right_mouse_down: self.on_right_mouse_down(self, MouseEventArgs(msg, wpm, lpm))
+    def _rightMouseDownHandler(self, msg, wpm, lpm):
+        self._rBtnDown = True
+        if self.onRightMouseDown: self.onRightMouseDown(self, MouseEventArgs(msg, wpm, lpm))
 
 
-    def _right_mouse_up_handler(self, msg, wpm, lpm):
-        if self.on_right_mouse_up: self.on_right_mouse_up(self, MouseEventArgs(msg, wpm, lpm))
-        if self._rbtn_down:
-            self._rbtn_down = False
+    def _rightMouseUpHandler(self, msg, wpm, lpm):
+        if self.onRightMouseUp: self.onRightMouseUp(self, MouseEventArgs(msg, wpm, lpm))
+        if self._rBtnDown:
+            self._rBtnDown = False
             self.send_msg(MyMessages.RIGHT_CLICK, 0, 0)
 
 
 
     def _right_mouse_click_handler(self):
-        if self.on_right_click: self.on_right_click(self, EventArgs())
+        if self.onRightClick: self.onRightClick(self, EventArgs())
         return 0
 
 
-    def _mouse_wheel_handler(self, msg, wpm, lpm):
-        if self.on_mouse_wheel: self.on_mouse_wheel(self, MouseEventArgs(msg, wpm, lpm))
+    def _mouseWheenHandler(self, msg, wpm, lpm):
+        if self.onMouseWheel: self.onMouseWheel(self, MouseEventArgs(msg, wpm, lpm))
 
 
 
-    def _mouse_move_handler(self, msg, wpm, lpm):
-        if self._is_mouse_entered:
-            if self.on_mouse_move: self.on_mouse_move(self, MouseEventArgs(msg, wpm, lpm))
-        if not self._is_mouse_entered:
-            self._is_mouse_entered = True
-            if self.on_mouse_enter: self.on_mouse_enter(self, EventArgs())
+    def _mouseMoveHandler(self, msg, wpm, lpm):
+        if self._isMouseEntered:
+            if self.onMouseMove: self.onMouseMove(self, MouseEventArgs(msg, wpm, lpm))
+        if not self._isMouseEntered:
+            self._isMouseEntered = True
+            if self._onMouseEnter: self._onMouseEnter(self, EventArgs())
 
 
 
-    def _mouse_leave_handler(self):
-        self._is_mouse_entered = False
-        if self.on_mouse_leave: self.on_mouse_leave(self, EventArgs())
+    def _mouseLeaveHandler(self):
+        self._isMouseEntered = False
+        if self._onMouseLeave: self._onMouseLeave(self, EventArgs())
 
 
 
-    def _key_down_handler(self, wpm):
-        if self.on_key_down: self.on_key_down(self, KeyEventArgs(wpm))
+    def _keyDownHandler(self, wpm):
+        if self.onKeyDown: self.onKeyDown(self, KeyEventArgs(wpm))
         return 0
 
-    def _key_up_handler(self, wpm):
-        if self.on_key_up: self.on_key_up(self, KeyEventArgs(wpm))
+    def _keyUpHandler(self, wpm):
+        if self.onKeyUp: self.onKeyUp(self, KeyEventArgs(wpm))
         return 0
 
-    def _key_press_handler(self, wp):
-        if self.on_key_press: self.on_key_press(self, KeyPressEventArgs(wp))
+    def _keyPressHandler(self, wp):
+        if self.onKeyPress: self.onKeyPress(self, KeyPressEventArgs(wp))
         return 0
 
-    def _got_focus_handler(self):
-        if self.on_got_focus: self.on_got_focus(self, EventArgs())
+    def _gotFocusHandler(self):
+        if self.onGotFocus: self.onGotFocus(self, EventArgs())
         return 0
 
 
-    def _lost_focus_handler(self):
-        if self.on_lost_focus: self.on_lost_focus(self, EventArgs())
+    def _lostFocusHandler(self):
+        if self.onLostFocus: self.onLostFocus(self, EventArgs())
         return 0
 
 
