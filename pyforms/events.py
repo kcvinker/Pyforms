@@ -1,16 +1,12 @@
-
 # Created on 14-Nov-2022 00:02:00
-
 
 import ctypes
 import datetime as dt
-from ctypes import wintypes, POINTER
+from ctypes import POINTER
 from . import constants as con
 from . import apis as api
 from .commons import getWheelDelta, getKeyState, Area
 from .enums import MouseButtonState, MouseButton, Keys, SizedPositions
-
-
 
 mouseMsgList = [con.WM_MOUSEWHEEL, con.WM_MOUSEMOVE, con.WM_MOUSEHOVER, con.WM_NCHITTEST,
                 con.WM_LBUTTONDOWN, con.WM_LBUTTONUP, con.WM_RBUTTONDOWN, con.WM_RBUTTONUP]
@@ -19,7 +15,6 @@ class EventArgs:
         self.handled = False
         self.data = None
         self.testvar = 100
-
 
 
 class MouseEventArgs(EventArgs):
@@ -79,19 +74,15 @@ class SizeEventArgs(EventArgs):
 
 
 class DateTimeEventArgs(EventArgs):
-    __slot__ = ("_date_str", "_date_time")
-    def __init__(self, dtp_str, st) -> None:
+    __slot__ = ("_dateStr", "_dateTime")
+    def __init__(self, dtpStr, st) -> None:
         super().__init__()
-        self._date_str = dtp_str
-        self._date_time = dt.datetime(st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds)
+        self._dateStr = dtpStr
+        self._dateTime = dt.datetime(st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds)
 
     @property
-    def date_string(self) -> str: return self._date_str
+    def dateString(self) -> str: return self._dateStr
 
     @property
-    def date_time(self) -> dt.datetime: return self._date_time
-
-
-
-
+    def dateTime(self) -> dt.datetime: return self._dateTime
 
