@@ -1,12 +1,10 @@
-
 # Created on 24-Nov-2022 05:00:20
 
 from ctypes.wintypes import HWND, UINT, HDC
 from ctypes import WINFUNCTYPE, byref, sizeof, addressof, create_unicode_buffer
-
 from .control import Control
 from . import constants as con
-from .commons import MyMessages, get_mousepos_on_msg, point_in_rect
+from .commons import MyMessages, getMousePosOnMsg, point_in_rect
 from .enums import ControlType
 from .events import EventArgs
 from .apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, COMBOBOXINFO, WPARAM, LPARAM, SUBCLASSPROC
@@ -23,58 +21,58 @@ class ComboBox(Control):
     """Combo box control """
     _count = 1
     _tb_subcls_id = 4000
-    __slots__ = ( "_once_created", "_items", "_vis_tem_count", "_sel_index", "_old_hwnd",
-                    "_enable_input", "_fg_color", "_bg_color", "_recreated",
-                    "on_selection_committed", "on_list_closed", "on_list_opened", "on_text_updated", "on_text_changed",
-                    "on_selection_changed", "on_selection_cancelled"  )
+    __slots__ = ( "_onceCreated", "_items", "_visItemCount", "_selIndex", "_oldHwnd",
+                    "_enableInput", "_recreated",
+                    "onSelectionCommitted", "onListClosed", "onListOpened", "onTextUpdated", "onTextChanged",
+                    "onSelectionChanged", "onSelectionCancelled" )
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 30) -> None:
         super().__init__()
-        self._cls_name = "ComboBox"
+        self._clsName = "ComboBox"
         self.name = f"ComboBox_{ComboBox._count}"
-        self._ctl_type = ControlType.COMBO_BOX
+        self._ctlType = ControlType.COMBO_BOX
         self._parent = parent
-        self._bg_color = Color(parent._bg_color)
+        self._bgColor = Color(parent._bgColor)
         self._font = parent._font
         self._width = width
         self._height = height
         self._xpos = xpos
         self._ypos = ypos
         self._style = cmb_style
-        self._ex_style = 0x00000200
-        self._once_created = False
+        self._exStyle = 0x00000200
+        self._onceCreated = False
         self._items = []
-        self._vis_tem_count = 0
-        self._sel_index = -1
-        self._old_hwnd = 0
-        self._enable_input = False
+        self._visItemCount = 0
+        self._selIndex = -1
+        self._oldHwnd = 0
+        self._enableInput = False
         self._recreated = False
 
         # Events
-        self.on_selection_cancelled = 0
-        self.on_selection_changed = 0
-        self.on_text_changed = 0
-        self.on_text_updated = 0
-        self.on_list_opened = 0
-        self.on_list_closed = 0
-        self.on_selection_committed = 0
+        self.onSelectionCancelled = 0
+        self.onSelectionChanged = 0
+        self.onTextChanged = 0
+        self.onTextUpdated = 0
+        self.onListOpened = 0
+        self.onListClosed = 0
+        self.onSelectionCommitted = 0
 
         ComboBox._count += 1
 
 
     # Create's combo box handle
-    def create_handle(self):
+    def createHandle(self):
 
         """Create's combo box handle"""
 
         if self._recreated: # This is recreation.
             del cmb_dict[self._hwnd]
         else: # First time creation
-            self._set_ctl_id()
-            self._set_style()
+            self._setCtlID()
+            self._setStyles()
 
-        self._hwnd = api.CreateWindowEx(self._ex_style,
-                                        self._cls_name,
+        self._hwnd = api.CreateWindowEx(self._exStyle,
+                                        self._clsName,
                                         self._text,
                                         self._style,
                                         self._xpos,
@@ -86,38 +84,38 @@ class ComboBox(Control):
                                         self._parent.wnd_class.hInstance, None )
         if self._hwnd:
             cmb_dict[self._hwnd] = self
-            if not self._is_created:
-                self._is_created = True
+            if not self._isCreated:
+                self._isCreated = True
 
             self._recreated = False # We need to allow user to recreate again and again.
-            self._set_subclass(cmb_wnd_proc)
-            self._set_font_internal()
-            self._get_combo_info()
-            self._insert_items()
-            if self._sel_index > -1: api.SendMessage(self._hwnd, con.CB_SETCURSEL, self._sel_index, 0)
+            self._setSubclass(cmbWndProc)
+            self._setFontInternal()
+            self._getComboInfo()
+            self._insertItems()
+            if self._selIndex > -1: api.SendMessage(self._hwnd, con.CB_SETCURSEL, self._selIndex, 0)
 
     # -region private_funcs
 
     # Setting combo styles
-    def _set_style(self):
-        if self._enable_input:
+    def _setStyles(self):
+        if self._enableInput:
             self._style |= con.CBS_DROPDOWN
         else:
             self._style |= con.CBS_DROPDOWNLIST
 
     # Get the combo's internal info from OS
-    def _get_combo_info(self):
+    def _getComboInfo(self):
         ci = COMBOBOXINFO()
         ci.cbSize = sizeof(COMBOBOXINFO)
         ciPtr = addressof(ci)
         api.SendMessage(self._hwnd, con.CB_GETCOMBOBOXINFO, 0, ciPtr)
         self.parent._combo_dict[ci.hwndList] = self._hwnd  # Putting list hwnd in form's special dict.
-        api.SetWindowSubclass(ci.hwndItem, cmb_edit_wnd_proc, ComboBox._tb_subcls_id, self._hwnd)
+        api.SetWindowSubclass(ci.hwndItem, cmbEditWndProc, ComboBox._tb_subcls_id, self._hwnd)
         ComboBox._tb_subcls_id += 1
 
 
     # Helper function for inserting items to combo
-    def _insert_items(self):
+    def _insertItems(self):
         if self._items:
             for item in self._items:
                 sitem = item if isinstance(item, str) else str(item)
@@ -129,7 +127,7 @@ class ComboBox(Control):
     def _checkMouseLeave(self):
         rc = RECT()
         api.GetWindowRect(self._hwnd, byref(rc))
-        p = get_mousepos_on_msg()
+        p = getMousePosOnMsg()
         return point_in_rect(rc, p)
 
     # -endregion
@@ -143,33 +141,33 @@ class ComboBox(Control):
 
 
     @property
-    def item_count(self):
+    def itemCount(self):
         """Get the item count of this combo"""
         return len(self._items)
 
     @property
-    def selected_index(self):
+    def selectedIndex(self):
         """Get the selected index of this combo."""
-        if self._is_created: return api.SendMessage(self._hwnd, con.CB_GETCURSEL, 0, 0)
+        if self._isCreated: return api.SendMessage(self._hwnd, con.CB_GETCURSEL, 0, 0)
         return -1
 
 
-    @selected_index.setter
-    def selected_index(self, value):
+    @selectedIndex.setter
+    def selectedIndex(self, value):
         """Set the selected index of this combo"""
-        self._sel_index = value
-        if self._is_created: api.SendMessage(self._hwnd, con.CB_SETCURSEL, value, 0)
+        self._selIndex = value
+        if self._isCreated: api.SendMessage(self._hwnd, con.CB_SETCURSEL, value, 0)
 
     @property
-    def enable_input(self):
+    def enableInput(self):
         """Get the boolean value of enable text input for this combo. """
-        return self._enable_input
+        return self._enableInput
 
-    @enable_input.setter
-    def enable_input(self, value: bool):
+    @enableInput.setter
+    def enableInput(self, value: bool):
         """Enable text input for this combo"""
-        if self._is_created:
-            if self._enable_input != value:
+        if self._isCreated:
+            if self._enableInput != value:
                 if value:
                     self._style ^= con.CBS_DROPDOWNLIST
                     self._style |= con.CBS_DROPDOWN
@@ -177,37 +175,37 @@ class ComboBox(Control):
                     self._style ^= con.CBS_DROPDOWN
                     self._style |= con.CBS_DROPDOWNLIST
 
-                self._enable_input = value
+                self._enableInput = value
                 self._recreated = True
                 api.DestroyWindow(self._hwnd) # Destroy this combo and create new one.
-                self.create_handle()
+                self.createHandle()
         else:
-            self._enable_input = value
+            self._enableInput = value
 
     # -endregion props
 
 
     # -region public functions
-    def add_item(self, item):
+    def addItem(self, item):
         """Add an item to this combo"""
         self._items.append(item)
-        if self._is_created:
+        if self._isCreated:
             sitem = item if isinstance(item, str) else str(item)
             buff = create_unicode_buffer(sitem)
             api.SendMessage(self._hwnd, con.CB_ADDSTRING, 0, addressof(buff))
 
 
-    def add_items(self, *args):
+    def addItems(self, *args):
         """Add items to this combo"""
         self._items.extend(args)
-        if self._is_created:
+        if self._isCreated:
             for item in args:
                 sitem = item if isinstance(item, str) else str(item)
                 buff = create_unicode_buffer(sitem)
                 api.SendMessage(self._hwnd, con.CB_ADDSTRING, 0, addressof(buff))
 
 
-    def remove_item_at(self, index):
+    def removeItemAt(self, index):
         """Remove an item at the given index"""
         if index in range(len(self._items)):
             item = self._items[index]
@@ -219,7 +217,7 @@ class ComboBox(Control):
                 del self._items[index]
 
 
-    def remove_item(self, item):
+    def removeItem(self, item):
         """Remove the given item from combo"""
         if self._items.__contains__(item):
             sitem = item if isinstance(item, str) else str(item)
@@ -232,7 +230,7 @@ class ComboBox(Control):
             print("item is not in list")
 
 
-    def remove_items(self, *args):
+    def removeItems(self, *args):
         """Remove the given items from this combo"""
         if(all(x in self._items for x in args)):
             for item in args:
@@ -246,7 +244,7 @@ class ComboBox(Control):
             print("Given items are not in list")
 
 
-    def clear_items(self):
+    def clearItems(self):
         """Delete all items from this combo"""
         if self._items:
             del self._items[:]
@@ -263,49 +261,49 @@ class ComboBox(Control):
 
 
 @SUBCLASSPROC
-def cmb_wnd_proc(hw, msg, wp, lp, scID, refData):
+def cmbWndProc(hw, msg, wp, lp, scID, refData):
     # printWinMsg(msg)
     cmb = cmb_dict[hw]
     match msg:
         case con.WM_DESTROY:
-            api.RemoveWindowSubclass(hw, cmb_wnd_proc, scID)
+            api.RemoveWindowSubclass(hw, cmbWndProc, scID)
             if not cmb._recreated: del cmb_dict[hw] # Only remove if this is a natural end
 
         case MyMessages.LIST_COLOR:
-            if cmb._draw_flag:
+            if cmb._drawFlag:
                 hdc = HDC(wp)
-                if cmb._draw_flag & 1: api.SetTextColor(hdc, cmb._fg_color.ref )
-                api.SetBkColor(hdc, cmb._bg_color.ref)
-                return api.CreateSolidBrush(cmb._bg_color.ref)
+                if cmb._drawFlag & 1: api.SetTextColor(hdc, cmb._fgColor.ref )
+                api.SetBkColor(hdc, cmb._bgColor.ref)
+                return api.CreateSolidBrush(cmb._bgColor.ref)
 
         case MyMessages.CTL_COMMAND:
             ncode = api.HIWORD(wp)
             match ncode:
                 case con.CBN_SELCHANGE:
-                    if cmb.on_selection_changed: cmb.on_selection_changed(cmb, EventArgs())
+                    if cmb.onSelectionChanged: cmb.onSelectionChanged(cmb, EventArgs())
                 case con.CBN_EDITCHANGE:
-                    if cmb.on_text_changed: cmb.on_text_changed(cmb, EventArgs())
+                    if cmb.onTextChanged: cmb.onTextChanged(cmb, EventArgs())
                 case con.CBN_EDITUPDATE:
-                    if cmb.on_text_updated: cmb.on_text_updated(cmb, EventArgs())
+                    if cmb.onTextUpdated: cmb.onTextUpdated(cmb, EventArgs())
                 case con.CBN_DROPDOWN:
-                    if cmb.on_list_opened: cmb.on_list_opened(cmb, EventArgs())
+                    if cmb.onListOpened: cmb.onListOpened(cmb, EventArgs())
                 case con.CBN_CLOSEUP:
-                    if cmb.on_list_closed: cmb.on_list_closed(cmb, EventArgs())
+                    if cmb.onListClosed: cmb.onListClosed(cmb, EventArgs())
                 case con.CBN_SELENDOK:
-                    if cmb.on_selection_committed: cmb.on_selection_committed(cmb, EventArgs())
+                    if cmb.onSelectionCommitted: cmb.onSelectionCommitted(cmb, EventArgs())
                 case con.CBN_SELENDCANCEL:
-                    if cmb.on_selection_cancelled: cmb.on_selection_cancelled(cmb, EventArgs())
+                    if cmb.onSelectionCancelled: cmb.onSelectionCancelled(cmb, EventArgs())
 
-        case con.WM_SETFOCUS: cmb._got_focus_handler()
-        case con.WM_KILLFOCUS: cmb._lost_focus_handler()
-        case con.WM_LBUTTONDOWN: cmb._left_mouse_down_handler(msg, wp, lp)
-        case con.WM_LBUTTONUP: cmb._left_mouse_up_handler(msg, wp, lp)
+        case con.WM_SETFOCUS: cmb._gotFocusHandler()
+        case con.WM_KILLFOCUS: cmb._lostFocusHandler()
+        case con.WM_LBUTTONDOWN: cmb._leftMouseDownHandler(msg, wp, lp)
+        case con.WM_LBUTTONUP: cmb._leftMouseUpHandler(msg, wp, lp)
         case MyMessages.MOUSE_CLICK: cmb._mouse_click_handler()
-        case con.WM_RBUTTONDOWN: cmb._right_mouse_down_handler(msg, wp, lp)
-        case con.WM_RBUTTONUP: cmb._right_mouse_up_handler(msg, wp, lp)
+        case con.WM_RBUTTONDOWN: cmb._rightMouseDownHandler(msg, wp, lp)
+        case con.WM_RBUTTONUP: cmb._rightMouseUpHandler(msg, wp, lp)
         case MyMessages.RIGHT_CLICK: cmb._right_mouse_click_handler()
-        case con.WM_MOUSEWHEEL: cmb._mouse_wheel_handler(msg, wp, lp)
-        case con.WM_MOUSEMOVE: cmb._mouse_move_handler(msg, wp, lp)
+        case con.WM_MOUSEWHEEL: cmb._mouseWheenHandler(msg, wp, lp)
+        case con.WM_MOUSEMOVE: cmb._mouseMoveHandler(msg, wp, lp)
         case con.WM_MOUSELEAVE:
             # Here, we need to do a trick. Actually, in a Combobox, when it's
             # text input mode enabled, we get two mouse leave msg & two mouse move msg
@@ -315,45 +313,45 @@ def cmb_wnd_proc(hw, msg, wp, lp, scID, refData):
             # combo and mouse move from textbox. So here we are checking the mouse is
             # in combo's rect or not. If it is stil inside, we suppress the mouse leave
             # and continue receiving the mouse move msgs from text are.
-            if cmb._enable_input:
+            if cmb._enableInput:
                 if cmb._checkMouseLeave():
                     return 1
                 else:
-                    cmb._mouse_leave_handler()
+                    cmb._mouseLeaveHandler()
             else:
-                cmb._mouse_leave_handler()
+                cmb._mouseLeaveHandler()
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 
 
 # Wndproc for edit control of this combo
 @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
-def cmb_edit_wnd_proc(hw, msg, wp, lp, scID, refData):
+def cmbEditWndProc(hw, msg, wp, lp, scID, refData):
     cmb = cmb_dict[refData]
     match msg:
         case con.WM_NCDESTROY:
-            api.RemoveWindowSubclass(hw, cmb_edit_wnd_proc, scID)
+            api.RemoveWindowSubclass(hw, cmbEditWndProc, scID)
 
         case MyMessages.EDIT_COLOR:
-            if cmb._draw_flag:
+            if cmb._drawFlag:
                 hdc = HDC(wp)
-                if cmb._draw_flag & (1 << 0): api.SetTextColor(hdc, cmb._fg_color.ref )
-                api.SetBkColor(hdc, cmb._bg_color.ref)
-                return api.CreateSolidBrush(cmb._bg_color.ref)
+                if cmb._drawFlag & (1 << 0): api.SetTextColor(hdc, cmb._fgColor.ref )
+                api.SetBkColor(hdc, cmb._bgColor.ref)
+                return api.CreateSolidBrush(cmb._bgColor.ref)
 
         case MyMessages.LABEL_COLOR: # Not Working
-            if cmb._draw_flag:
+            if cmb._drawFlag:
                 hdc = HDC(wp)
-                if cmb._draw_flag & (1 << 0): api.SetTextColor(hdc, cmb._fg_color.ref )
-                api.SetBkColor(hdc, cmb._bg_color.ref)
-                return api.CreateSolidBrush(cmb._bg_color.ref)
+                if cmb._drawFlag & (1 << 0): api.SetTextColor(hdc, cmb._fgColor.ref )
+                api.SetBkColor(hdc, cmb._bgColor.ref)
+                return api.CreateSolidBrush(cmb._bgColor.ref)
 
 
-        case con.WM_KEYDOWN: cmb._key_down_handler(wp)
-        case con.WM_KEYUP: cmb._key_up_handler(wp)
-        case con.WM_CHAR: cmb._key_press_handler(wp)
-        case con.WM_LBUTTONDOWN: cmb._left_mouse_down_handler(msg, wp, lp)
-        case con.WM_LBUTTONUP: cmb._left_mouse_up_handler(msg, wp, lp)
+        case con.WM_KEYDOWN: cmb._keyDownHandler(wp)
+        case con.WM_KEYUP: cmb._keyUpHandler(wp)
+        case con.WM_CHAR: cmb._keyPressHandler(wp)
+        case con.WM_LBUTTONDOWN: cmb._leftMouseDownHandler(msg, wp, lp)
+        case con.WM_LBUTTONUP: cmb._leftMouseUpHandler(msg, wp, lp)
         case MyMessages.MOUSE_CLICK: cmb._mouse_click_handler()
         case con.WM_RBUTTONDOWN: cmb._mouse_click_handler(msg, wp, lp)
         case con.WM_RBUTTONUP: cmb._mouse_click_handler(msg, wp, lp)
@@ -361,7 +359,6 @@ def cmb_edit_wnd_proc(hw, msg, wp, lp, scID, refData):
         case con.WM_MOUSEMOVE:
             # When mouse pointer moves from combo's rect boundary and get into edit's rect
             # we will continue the mouse move message handling.
-            cmb._mouse_move_handler(msg, wp, lp)
-
+            cmb._mouseMoveHandler(msg, wp, lp)
 
     return api.DefSubclassProc(hw, msg, wp, lp)

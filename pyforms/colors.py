@@ -1,15 +1,14 @@
 # Color module - Created on 16-Nov-2022 01:37
 
-from . apis import CreateSolidBrush
+from . apis import CreateSolidBrush, CreatePen
+from . constants import PS_SOLID
 from ctypes import byref
 from ctypes.wintypes import HDC, COLORREF, HBRUSH
 from .apis import RECT, CreateSolidBrush, FillRect, DeleteObject, DeleteDC
 from .apis import CreatePatternBrush, SelectObject
 from .apis import CreateCompatibleDC, CreateCompatibleBitmap
 
-
-
-def get_ref(clr: int) -> COLORREF:
+def getColorRef(clr: int) -> COLORREF:
     red = clr >> 16
     green = (clr & 0x00ff00) >> 8
     blue = clr & 0x0000ff
@@ -73,41 +72,82 @@ class RgbColor:
 
 
 class Color:
-    __slots__ = ("value", "ref", "updated", )
+    __slots__ = ("value", "ref", "updated", "red", "green", "blue")
     def __init__(self, clr=0) -> None:
         if isinstance(clr, int):
             self.value = clr
-            self.ref = 0 if clr == 0 else get_ref(clr)
+            self.red = clr >> 16
+            self.green = (clr & 0x00ff00) >> 8
+            self.blue = clr & 0x0000ff
+            self.ref = 0 if clr == 0 else int((self.blue << 16) | (self.green << 8) | self.red)
             self.updated = False
         else:
             self.value = clr.value
+            self.red = clr.red
+            self.green = clr.green
+            self.blue = clr.blue
             self.ref = clr.ref
             self.updated = False
 
 
     def __str__(self) -> str:
-        return f"Value: {self.value:X}, Ref: {self.ref:X}"
+        return f"Value: {self.value:X}, Ref: {self.ref:X}, Red: {self.red}, Green: {self.green}, Blue: {self.blue}"
 
     def __ne__(self, __o: object) -> bool:
         return self.value != __o.value
 
 
-    def update_color(self, clr: int):
+    def updateColor(self, clr: int):
         self.value = clr
-        self.ref = get_ref(clr)
+        self.red = clr >> 16
+        self.green = (clr & 0x00ff00) >> 8
+        self.blue = clr & 0x0000ff
+        self.ref = int((self.blue << 16) | (self.green << 8) | self.red)
         self.updated = True
 
-    def get_hot_brush(self, adj: float) -> HBRUSH:
-        # When mouse pointer comes to certain controls, we want to
-        # highlight those part in different color. This function will
-        # return an hbrush with slightly different color.
-        # Try above 1 to get lighter shade and below 1 to darker.
-        cref = change_color(self.value, adj)
-        return CreateSolidBrush(cref)
+    def getShadedColor(self, adj: float):
+        r1 = clamp(self.red * adj)
+        g1 = clamp(self.green * adj)
+        b1 = clamp(self.blue * adj)
+        return Color.fromRGB(r1, g1, b1)
+
+
+    def createHBrush(self, adj: float = 0) -> HBRUSH:
+        if adj == 0:
+            return CreateSolidBrush(self.ref)
+        else:
+            r1 = clamp(self.red * adj)
+            g1 = clamp(self.green * adj)
+            b1 = clamp(self.blue * adj)
+            cref = int((b1 << 16) | (g1 << 8) | r1)
+            return CreateSolidBrush(cref)
+
+    def createHPen(self, adj: float = 0):
+        if adj > 0:
+            r1 = clamp(self.red * adj)
+            g1 = clamp(self.green * adj)
+            b1 = clamp(self.blue * adj)
+            cref = int((b1 << 16) | (g1 << 8) | r1)
+            return CreatePen(PS_SOLID, 1, cref)
+        else:
+            return CreatePen(PS_SOLID, 1, self.ref)
+
+    def changeToColorRef(self, adj: float):
+        r1 = clamp(self.red * adj)
+        g1 = clamp(self.green * adj)
+        b1 = clamp(self.blue * adj)
+        return int((b1 << 16) | (g1 << 8) | r1)
+
+
+
+
+    def isDark(self):
+        x = ((self.red * 0.2126) + (self.green * 0.7152) + (self.blue * 0.0722))
+        return x < 40
 
 
     @classmethod
-    def from_color(cls, clr: int, change_value: int):
+    def fromColor(cls, clr: int, change_value: int):
         rc = RgbColor(clr)
         red = clamp(rc.red + (change_value * 8))
         green = clamp(rc.green + (change_value * 16))
@@ -116,12 +156,12 @@ class Color:
         return cls(ivalue)
 
     @classmethod
-    def from_RGB(cls, red, green, blue):
+    def fromRGB(cls, red, green, blue):
         ivalue = int((red << 16) | (green << 8) | blue)
         return cls(ivalue)
 
 
-    def make_RGB(self):
+    def makeRGB(self):
         rc = RgbColor(self.value)
         return rc;
 
@@ -166,7 +206,7 @@ def clamp(n, minVal = 0, maxVal = 255): return int(max(min(maxVal, n), minVal))
 def ref_from_RGB(r, g, b) -> COLORREF: return int((b << 16) | (g << 8) | r)
 
 
-def create_gradient_brush2(dc: HDC, rct: RECT, rc1, rc2, isT2B: bool):
+def _createGradientBrush(dc: HDC, rct: RECT, rc1, rc2, isT2B: bool):
     # tBrush = wt.HBRUSH()
     memHdc = CreateCompatibleDC(dc)
     hBmp = CreateCompatibleBitmap(dc, rct.right, rct.bottom)

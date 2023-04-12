@@ -1,8 +1,4 @@
-
-# import win32gui
-# import con
-# import win32api
-
+# Common module - Created on
 from ctypes import c_int, cast, windll, byref, sizeof
 from .enums import FontWeight
 from . import apis as api
@@ -11,25 +7,18 @@ from . import constants as con
 from enum import Enum
 import datetime
 
-
 INT_MIN   =  -2147483647 - 1
 INT_MAX  =     2147483647
 TRANSPARENT = 0x00000001
 OPAQUE = 0x00000002
 
-
-
-
-
-def get_mousepos_on_msg():
+def getMousePosOnMsg():
     dw_value = windll.user32.GetMessagePos()
     x = api.LOWORD(dw_value)
     y = api.HIWORD(dw_value)
     return POINT(x, y)
 
-def point_in_rect(rct, pt): return api.PtInRect(byref(rct), pt)
-
-
+def pointInRect(rct, pt): return api.PtInRect(byref(rct), pt)
 
 
 class Font:
@@ -47,13 +36,12 @@ class Font:
         self._underLine = underLine
         self._hwnd = 0
 
-    def create_handle(self, hwnd):
+    def createHandle(self, hwnd):
         dcHwnd = api.GetDC(hwnd)
         iHeight = -api.MulDiv(self._size, api.GetDeviceCaps(dcHwnd, con.LOGPIXELSY), 72)
         api.ReleaseDC(hwnd, dcHwnd)
-        # print("font height ", iHeight)
-        lf = LOGFONT()
 
+        lf = LOGFONT()
         lf.lfFaceName = self._name
         lf.lfHeight = iHeight
         lf.lfWeight = self._weight.value
@@ -62,9 +50,8 @@ class Font:
         lf.lfClipPrecision = con.CLIP_DEFAULT_PRECIS
         lf.lfQuality = con.PROOF_QUALITY
         lf.lfPitchAndFamily = 1
-        hfont = api.CreateFontIndirect(byref(lf))
-        # print("hfont ", hfont)
-        self._hwnd = hfont
+        self._hwnd = api.CreateFontIndirect(byref(lf))
+
 
     @property
     def name(self): return self._name
@@ -130,25 +117,6 @@ class Area:
         self.width = w
         self.height = h
 
-# class TextBoxDrawData:
-#     isDrawable = False
-#     drawForeColor = False
-#     drawBackColor = False
-
-
-
-
-
-# class RectClass:
-#     def __init__(self, l, t, r, b) -> None:
-#         self.left = l
-#         self.right = r
-#         self.top = t
-#         self.bottom = b
-
-#     @classmethod
-#     def fromRect(cls, rct):
-#         cls.__init__(rct[0], rct[1], rct[2], rct[3])
 
 msgCounter = 1
 def printWinMsg(ms):
@@ -221,10 +189,5 @@ def getHalfOfRect(rct, isUpper):
         height = rct[3] - rct[1]
         top = int(rct[1] + (height / 2))
         return (rct[0], top, rct[2], rct[3])
-
-
-
-
-
 
 
