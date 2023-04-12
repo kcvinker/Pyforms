@@ -4,7 +4,7 @@ from ctypes.wintypes import HWND, UINT, HDC
 from ctypes import WINFUNCTYPE, byref, sizeof, addressof, create_unicode_buffer
 from .control import Control
 from . import constants as con
-from .commons import MyMessages, getMousePosOnMsg, point_in_rect
+from .commons import MyMessages, getMousePosOnMsg, pointInRect
 from .enums import ControlType
 from .events import EventArgs
 from .apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, COMBOBOXINFO, WPARAM, LPARAM, SUBCLASSPROC
