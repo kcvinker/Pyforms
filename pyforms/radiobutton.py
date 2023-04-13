@@ -1,8 +1,6 @@
-
 # RadioButton module - Created on 09-Dec-2022 16:03:20
 
 from ctypes import byref, cast, addressof
-
 from .control import Control
 from .commons import MyMessages
 from .enums import ControlType
@@ -12,21 +10,21 @@ from .colors import Color
 from . import constants as con
 from .events import EventArgs
 
-rb_dict = {}
-rb_style = con.WS_CHILD | con.WS_VISIBLE | con.WS_TABSTOP | con.BS_AUTORADIOBUTTON
+rbDict = {}
+rbStyle = con.WS_CHILD | con.WS_VISIBLE | con.WS_TABSTOP | con.BS_AUTORADIOBUTTON
 txtFlag = con.DT_SINGLELINE | con.DT_VCENTER | con.DT_CENTER | con.DT_NOPREFIX
 
 
 class RadioButton(Control):
 
     _count = 1
-    __slots__ = ( "_right_align", "_txt_style", "_bg_brush", "_is_checked", "on_checked_changed", "_check_on_click")
+    __slots__ = ( "_rightAlign", "_txtStyle", "_isChecked", "onCheckedChanged", "_checkOnClick")
 
     def __init__(self, parent, txt: str, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 23) -> None:
         super().__init__()
-        self._cls_name = "Button"
+        self._clsName = "Button"
         self.name = f"RadioButton_{RadioButton._count}"
-        self._ctl_type = ControlType.RADIO_BUTTON
+        self._ctlType = ControlType.RADIO_BUTTON
         self._text = self.name if txt == "" else txt
         self._parent = parent
         self._font = parent._font
@@ -34,32 +32,32 @@ class RadioButton(Control):
         self._height = height
         self._xpos = xpos
         self._ypos = ypos
-        self._is_textable = True
-        self._style = rb_style
-        self._ex_style = con.WS_EX_LTRREADING | con.WS_EX_LEFT
-        self._txt_style = con.DT_SINGLELINE | con.DT_VCENTER
-        self._bg_color = Color(parent._bg_color)
-        self._bg_brush = api.CreateSolidBrush(self._bg_color.ref)
-        self._check_on_click = True
-        self._right_align = False
-        self._is_checked = False
-        self.on_checked_changed = 0
+        self._isTextable = True
+        self._style = rbStyle
+        self._exStyle = con.WS_EX_LTRREADING | con.WS_EX_LEFT
+        self._txtStyle = con.DT_SINGLELINE | con.DT_VCENTER
+        self._bgColor = Color(parent._bgColor)
+        self._bkgBrush = self._bgColor.createHBrush()
+        self._checkOnClick = True
+        self._rightAlign = False
+        self._isChecked = False
+        self.onCheckedChanged = None
         RadioButton._count += 1
 
 
-    def create_handle(self):
+    def createHandle(self):
         """Create Button's handle"""
-        if self._right_align:
+        if self._rightAlign:
             self._style |= con.BS_RIGHTBUTTON
-            self._txt_style |= con.DT_RIGHT
+            self._txtStyle |= con.DT_RIGHT
 
-        if not self._check_on_click: self._style ^= con.BS_AUTORADIOBUTTON
+        if not self._checkOnClick: self._style ^= con.BS_AUTORADIOBUTTON
 
-        self._create_control()
+        self._createControl()
         if self._hwnd:
-            rb_dict[self._hwnd] = self
-            self._set_subclass(rb_wnd_proc)
-            self._set_font_internal()
+            rbDict[self._hwnd] = self
+            self._setSubclass(rbWndProc)
+            self._setFontInternal()
             ss = api.SIZE()
             api.SendMessage(self._hwnd, con.BCM_GETIDEALSIZE, 0, addressof(ss))
 
@@ -69,49 +67,49 @@ class RadioButton(Control):
 
 
 
-    @Control.back_color.setter
-    def back_color(self, value):
+    @Control.backColor.setter
+    def backColor(self, value):
         """Set back color of radio button."""
-        self._bg_color.update_color(value)
-        self._bg_brush = api.CreateSolidBrush(self._bg_color.ref)
-        if not self._draw_flag & (1 << 1): self._draw_flag += 2
+        self._bgColor.update_color(value)
+        self._bg_brush = api.CreateSolidBrush(self._bgColor.ref)
+        if not self._drawFlag & (1 << 1): self._drawFlag += 2
 
 
     @Control.text.getter
     def text(self):
         """Set text of radio button."""
-        if self._is_created:
-            return self._get_ctrl_text()
+        if self._isCreated:
+            return self._getCtrlText()
         else:
             return self._text
 
 #End RadioButton
 
 @SUBCLASSPROC
-def rb_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
+def rbWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     # printWinMsg(msg)
-    rb = rb_dict[hw]
+    rb = rbDict[hw]
     match msg:
         case con.WM_DESTROY:
-            api.RemoveWindowSubclass(hw, rb_wnd_proc, scID)
-            del rb_dict[hw]
+            api.RemoveWindowSubclass(hw, rbWndProc, scID)
+            del rbDict[hw]
 
-        case con.WM_SETFOCUS: rb._got_focus_handler()
-        case con.WM_KILLFOCUS: rb._lost_focus_handler()
-        case con.WM_LBUTTONDOWN: rb._left_mouse_down_handler(msg, wp, lp)
-        case con.WM_LBUTTONUP: rb._left_mouse_up_handler(msg, wp, lp)
+        case con.WM_SETFOCUS: rb._gotFocusHandler()
+        case con.WM_KILLFOCUS: rb._lostFocusHandler()
+        case con.WM_LBUTTONDOWN: rb._leftMouseDownHandler(msg, wp, lp)
+        case con.WM_LBUTTONUP: rb._leftMouseUpHandler(msg, wp, lp)
         case MyMessages.MOUSE_CLICK: rb._mouse_click_handler()
-        case con.WM_RBUTTONDOWN: rb._right_mouse_down_handler(msg, wp, lp)
-        case con.WM_RBUTTONUP: rb._right_mouse_up_handler(msg, wp, lp)
+        case con.WM_RBUTTONDOWN: rb._rightMouseDownHandler(msg, wp, lp)
+        case con.WM_RBUTTONUP: rb._rightMouseUpHandler(msg, wp, lp)
         case MyMessages.RIGHT_CLICK: rb._right_mouse_click_handler()
-        case con.WM_MOUSEWHEEL: rb._mouse_wheel_handler(msg, wp, lp)
-        case con.WM_MOUSEMOVE: rb._mouse_move_handler(msg, wp, lp)
-        case con.WM_MOUSELEAVE: rb._mouse_leave_handler()
+        case con.WM_MOUSEWHEEL: rb._mouseWheenHandler(msg, wp, lp)
+        case con.WM_MOUSEMOVE: rb._mouseMoveHandler(msg, wp, lp)
+        case con.WM_MOUSELEAVE: rb._mouseLeaveHandler()
 
         case MyMessages.LABEL_COLOR:
-            # if rb._draw_flag & 1: api.SetTextColor(wp, rb._fg_color.ref)
-            if rb._draw_flag & 2: api.SetBkColor(wp, rb._bg_color.ref)
-            return rb._bg_brush
+            # if rb._drawFlag & 1: api.SetTextColor(wp, rb._fgColor.ref)
+            if rb._drawFlag & 2: api.SetBkColor(wp, rb._bgColor.ref)
+            return rb._bkgBrush
 
         case MyMessages.CTRL_NOTIFY:
             nmc = cast(lp, LPNMCUSTOMDRAW).contents
@@ -119,18 +117,18 @@ def rb_wnd_proc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                 case con.CDDS_PREERASE: return con.CDRF_NOTIFYPOSTERASE
                 case con.CDDS_PREPAINT:
                     rct = nmc.rc
-                    if not rb._right_align:
+                    if not rb._rightAlign:
                         rct.left += 17 # Adjusting rect,otherwise text will be drawn upon the check area
                     else: rct.right -= 17
 
-                    api.SetTextColor(nmc.hdc, rb._fg_color.ref)
+                    api.SetTextColor(nmc.hdc, rb._fgColor.ref)
                     api.SetBkMode(nmc.hdc, 1)
-                    api.DrawText(nmc.hdc, rb._text, len(rb._text), byref(rct), rb._txt_style )
+                    api.DrawText(nmc.hdc, rb._text, len(rb._text), byref(rct), rb._txtStyle )
                     return con.CDRF_SKIPDEFAULT
 
         case MyMessages.CTL_COMMAND:
-            rb._is_checked = bool(api.SendMessage(hw, con.BM_GETCHECK, 0, 0))
-            if rb.on_checked_changed: rb.on_checked_changed(rb, EventArgs() )
+            rb._isChecked = bool(api.SendMessage(hw, con.BM_GETCHECK, 0, 0))
+            if rb.onCheckedChanged: rb.onCheckedChanged(rb, EventArgs() )
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 

@@ -381,7 +381,7 @@ class Control:
         elif isinstance(value, Color):
             self._bgColor = value
 
-        if not self._drawFlag & (1 << 1): self._drawFlag += 2
+        if self._drawFlag & 2 != 2: self._drawFlag += 2
         if self._isCreated and self._hasBrush: self._bkgBrush = self._bgColor.createHBrush()
         self._manageRedraw()
     #--------------------------------------------BACKCOLOR

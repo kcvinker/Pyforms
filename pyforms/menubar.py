@@ -1,12 +1,9 @@
-
 # menubar module - Created on 21-02-2023 12:48 AM
 
 from enum import Enum
-from ctypes import create_unicode_buffer, sizeof, byref
-from .apis import CreateMenu, AppendMenu, SetMenu, SetMenuInfo, SendMessage, MENUINFO
-from .control import MenuEventData
+from ctypes import create_unicode_buffer
+from .apis import CreateMenu, AppendMenu, SetMenu, SendMessage
 from .commons import MyMessages
-
 
 # Constants
 MF_POPUP = 0x00000010
@@ -18,7 +15,7 @@ MIM_STYLE = 0x00000010
 
 # To hold static data for menu item and menu bar
 class MenuData:
-	static_menu_id = 100
+	staticMenuID = 100
 
 # Differentiate various menu types
 class MenuType(Enum):
@@ -32,7 +29,6 @@ class MenuEvents(Enum):
 	MENU_CLICK = 0
 
 
-
 class MenuBar:
 	"""MenuBar class is the container of all menus"""
 
@@ -44,7 +40,7 @@ class MenuBar:
 		self._type = MenuType.MENU_BAR
 		self.menus = {}
 
-	def add_menu(self, txt: str):
+	def addMenu(self, txt: str):
 		mi = MenuItem(txt, MenuType.BASE_MENU, self)
 		self.menus[txt] = mi
 		return mi
@@ -62,46 +58,44 @@ class MenuBar:
 
 
 
-
-
 class MenuItem:
 	"""MenuItem represents a simple menu or dropdown menu or a separator"""
-	__slots__ = ("_hwnd", "_parent", "_id", "_level", "_text", "_type", "menus", "_flags", "_form_hwnd", "_click")
+	__slots__ = ("_hwnd", "_parent", "_id", "_level", "_text", "_type", "menus", "_flags", "_formHwnd", "_click")
 
 	def __init__(self, txt: str, typ: MenuType, parent) -> None:
 		self._hwnd = CreateMenu()
-		self._id = MenuData.static_menu_id
+		self._id = MenuData.staticMenuID
 		self._text = f"{self._id}" if txt == "" else txt
 		self._type = typ
 		self._parent = parent
 		self.menus = {}
 		self._flags = 0
-		MenuData.static_menu_id += 1
+		MenuData.staticMenuID += 1
 		match typ:
 			case MenuType.BASE_MENU:
 				self._flags |= MF_POPUP
-				self._form_hwnd = parent._parent._hwnd
+				self._formHwnd = parent._parent._hwnd
 			case MenuType.POP_UP:
 				self._flags |= MF_POPUP
-				self._form_hwnd = parent._form_hwnd
+				self._formHwnd = parent._formHwnd
 			case MenuType.MENU_ITEM :
 				self._flags |= MF_STRING
-				self._form_hwnd = parent._form_hwnd
+				self._formHwnd = parent._formHwnd
 			case MenuType.SEPARATOR:
 				self._flags |= MF_SEPARATOR
-				self._form_hwnd = parent._form_hwnd
+				self._formHwnd = parent._formHwnd
 
-	def add_menu(self, txt: str):
+	def addMenu(self, txt: str):
 		mi = MenuItem(txt, MenuType.MENU_ITEM, self)
 		self.menus[txt] = mi
 		return mi
 
-	def add_popup_menu(self, txt: str):
+	def addPopupMenu(self, txt: str):
 		mi = MenuItem(txt, MenuType.POP_UP, self)
 		self.menus[txt] = mi
 		return mi
 
-	def add_seperator(self):
+	def addSeperator(self):
 		mi = MenuItem("", MenuType.SEPARATOR, self)
 		self.menus[mi._text] = mi
 		return mi
@@ -125,16 +119,12 @@ class MenuItem:
 
 
 	@property
-	def on_click(self) : return self._click
+	def onClick(self) : return self._click
 
-	@on_click.setter
-	def on_click(self, value) :
+	@onClick.setter
+	def onClick(self, value) :
 		self._click = value
-		SendMessage(self._form_hwnd, MyMessages.MENU_EVENT_SET, 0, id(self)) # Inform our parent window.
-
-
-
-
+		SendMessage(self._formHwnd, MyMessages.MENU_EVENT_SET, 0, id(self)) # Inform our parent window.
 
 
 

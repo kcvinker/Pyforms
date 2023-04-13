@@ -155,7 +155,6 @@ class Form(Control):
     def __init__(self, txt = "", width = 500, height = 400) -> None:
         super().__init__()
         self._classStr = ""
-
         self.name = f"Form_{Form._count}"
         self._text = self.name if txt == "" else txt
         self._width = width
@@ -170,28 +169,28 @@ class Form(Control):
         self._topMost = False
         self._maximizeBox = True
         self._minimizeBox = True
-        self._mainWinHwnd = 0
+        self._mainWinHwnd = None
         self._isMainWindow = False
         self._isMouseTracking = False # A flag to control mouse tracking in oreder to get the mouse move msg
         self._drawMode = FormDrawMode.NORMAL # Other options are flat color & gradient
         self._isNormalDraw = True
         self._formID = Form._count + 1000 # A unique ID for all forms.
         self._comboDict = {} # Combo boxes demands to keep their listbox handle
-        self._updRect = 0
+        self._updRect = None
         self._menuEventDict = {}
         # Events
-        self.onLoad = 0
-        self.onMinimized = 0
-        self.onMaximized = 0
-        self.onRestored = 0
-        self.onClosing = 0
-        self.onClosed = 0
-        self.onActivate = 0
-        self.onDeActivate = 0
-        self.onMoving = 0
-        self.onMoved = 0
-        self.onSizing = 0
-        self.onSized = 0
+        self.onLoad = None
+        self.onMinimized = None
+        self.onMaximized = None
+        self.onRestored = None
+        self.onClosing = None
+        self.onClosed = None
+        self.onActivate = None
+        self.onDeActivate = None
+        self.onMoving = None
+        self.onMoved = None
+        self.onSizing = None
+        self.onSized = None
 
         Form._count += 1
     #------------------------------

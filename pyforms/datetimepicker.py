@@ -125,7 +125,7 @@ class DateTimePicker(Control):
         if self._shotDateNames: self._style |= con.MCS_SHORTDAYSOFWEEK
         if self._rightAlign: self._style |= con.DTS_RIGHTALIGN
         if self._showUpdown: self._style ^= con.DTS_UPDOWN
-        self._bk_brush = api.CreateSolidBrush(self._bgColor.ref)
+        self._bkgBrush = self._bgColor.createHBrush()
 
     # -endregion Private funcs
 

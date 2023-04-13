@@ -143,7 +143,7 @@ def gbWndProc(hw, msg, wp, lp, scID, refData):
         case con.WM_ERASEBKGND:
             if gb._drawFlag:
                 rc = api.get_client_rect(hw)
-                api.FillRect(wp, byref(rc), gb._bk_brush)
+                api.FillRect(wp, byref(rc), gb._bkgBrush)
                 return 1
             # NOTE: Do not return anything outside the 'if', as it will make every static control a mess.
 
