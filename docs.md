@@ -5,7 +5,7 @@
 |Types |  |  |  |  |
 |------|------|-------|-------|-------|
 |[Area](#area-class)|[Button](#button-class)| [CalendarBox](#calendarbox-class)| [CheckBox](#checkbox-class)| [Color](#color-class)| [ComboBox](#combobox-class)|
-|[DateTimePicker](#datetimepicker-class) |[EventArgs](#eventargs-class) |[Font](#font-class)|[GroupBox](#groupbox-class)| [KeyEventArgs]()| [KeyPressEventArgs]() |
+|[DateTimePicker](#datetimepicker-class) |[EventArgs](#eventargs-class) |[Font](#font-class)|[GroupBox](#groupbox-class)| [KeyEventArgs](#keyeventargs-class)|  [KeyPressEventArgs](#keypresseventargs-class) |
 |[Label](#label-class)|[ListBox](#listbox-class)| [ListView](#listview-class)|[ListViewColumn]()|[ListViewItem]()|
 |[MenuBar](#menubar-class) | [MenuItem]() |[MouseEventArgs](#mouseeventargs-class) |[NumberPicker](#numberpicker-class) |[ProgressBar](#progressbar-class) |
 |[RadioButton](#radiobutton-class) |[SizeEventArgs](#sizeeventargs-class) |[TextBox](#textbox-class) |[TrackBar](#trackbar-class) |[TreeNode]() |
@@ -362,10 +362,10 @@ createHandle(self)  # Creates the handle of button.
 ## **Event handler types**
 | Name      | Signature        |
 |--------------------|-------------|
-|EventHandler| func(Control, EventArgs)|
-|MouseEventHandler|func(Control, MouseEventArgs) |
-|KeyEventHandler| func(Control, KeyEventArgs)|
-|KeyPressEventHandler| func(Control, KeyPressEventArgs)|
+|EventHandler| func(Control, [EventArgs](#eventargs-class))|
+|MouseEventHandler|func(Control, [MouseEventArgs](#mouseeventargs-class)) |
+|KeyEventHandler| func(Control, [KeyEventArgs](#keyeventargs-class))|
+|KeyPressEventHandler| func(Control, [KeyPressEventArgs](#keypresseventargs-class))|
 |PaintEventHandler| func(Control, PaintEventArgs)|
 
 ([Go to index](#index))
@@ -539,6 +539,20 @@ KeyEventArgs(self, wp: WPARAM)
 |ctrlPressed | bool||
 |altPressed | bool||
 |keyValue | int| |
+
+([Go to index](#index))
+---------------
+
+## **KeyPressEventArgs class**
+### Constructor
+```python
+KeyPressEventArgs(self, wp: WPARAM)
+```
+#### Properties
+| Name      |Type| Description |
+|-----------|------|-------|
+|handled | bool ||
+|keyChar | char| |
 
 ([Go to index](#index))
 ---------------
