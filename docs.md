@@ -1361,7 +1361,7 @@ insertChildNode(self, node, parent, pos)
     Values - NONE = 0, FIXED_SINGLE = 1, FIXED_3D = 2, FIXED_DIALOG = 3, FIXED_TOOL = 4, SIZABLE = 5, SIZABLE_TOOL = 6, HIDDEN = 7
 
 ## Keys Enum
-    Keys enum is too big to include this documentation. Please refer to enums.py in source
+    Keys enum is too big to include this documentation. Please refer to [enums.py](https://github.com/kcvinker/Pyforms/blob/main/pyforms/enums.py#:~:text=class-,Keys,-(Enum)%3A) in source
 
 ## LabelAlignment Enum
     Values - TOPLEFT = 0, TOPCENTER = 1, TOPRIGHT = 2, MIDLEFT = 3, CENTER  = 4, MIDRIGHT = 5, BOTTOMLEFT = 6, BOTTOMCENTER = 7, BOTTOMRIGHT = 8
