@@ -4,12 +4,12 @@
 ## **Index**
 |Types |  |  |  |  |
 |------|------|-------|-------|-------|
-|[Area](#area-class)|[Button](#button-class)| [CalendarBox](#calendarbox-class)| [CheckBox](#checkbox-class)| [Color](#color-class)| [ComboBox](#combobox-class)|
-|[DateTimePicker](#datetimepicker-class) |[EventArgs](#eventargs-class) |[Font](#font-class)|[GroupBox](#groupbox-class)| [KeyEventArgs](#keyeventargs-class)|  [KeyPressEventArgs](#keypresseventargs-class) |
-|[Label](#label-class)|[ListBox](#listbox-class)| [ListView](#listview-class)|[ListViewColumn]()|[ListViewItem]()|
-|[MenuBar](#menubar-class) | [MenuItem]() |[MouseEventArgs](#mouseeventargs-class) |[NumberPicker](#numberpicker-class) |[ProgressBar](#progressbar-class) |
-|[RadioButton](#radiobutton-class) |[SizeEventArgs](#sizeeventargs-class) |[TextBox](#textbox-class) |[TrackBar](#trackbar-class) |[TreeNode]() |
-|[TreeView](#treeview-class)|
+|[Area](#area-class)|[Button](#button-class)| [CalendarBox](#calendarbox-class)| [CheckBox](#checkbox-class)| [Color](#color-class)|
+|[ComboBox](#combobox-class)| [DateTimeEventArgs](#datetimeeventargs-class) |[DateTimePicker](#datetimepicker-class) |[EventArgs](#eventargs-class) |[Font](#font-class)|
+[GroupBox](#groupbox-class)| [KeyEventArgs](#keyeventargs-class)|  [KeyPressEventArgs](#keypresseventargs-class) | [Label](#label-class)|[ListBox](#listbox-class)|
+| [ListView](#listview-class)|[ListViewColumn]()|[ListViewItem]()| [MenuBar](#menubar-class) | [MenuItem](#menuitem-class) |
+|[MouseEventArgs](#mouseeventargs-class) |[NumberPicker](#numberpicker-class) |[ProgressBar](#progressbar-class) | [RadioButton](#radiobutton-class) |[SizeEventArgs](#sizeeventargs-class) |
+|[TextBox](#textbox-class) |[TrackBar](#trackbar-class) |[TreeNode]() | [TreeView](#treeview-class)|
 
 
 ---
@@ -297,6 +297,21 @@ createHandle(self)  # Creates the handle of button.
 
 ([Go to index](#index))
 -------------
+
+## DateTimeEventArgs class
+### Constructor
+```python
+DateTimeEventArgs(self, dtpStr: str, st: SYSTEMTIME)
+```
+### **Properties**
+| Property Name      | Type        | Description|
+|--------------------|-------------|------------|
+|handled   |bool    ||
+|dateString | str||
+|dateTime | datetime||
+
+------------------
+
 
 ## DateTimePicker class
 
@@ -1361,7 +1376,8 @@ insertChildNode(self, node, parent, pos)
     Values - NONE = 0, FIXED_SINGLE = 1, FIXED_3D = 2, FIXED_DIALOG = 3, FIXED_TOOL = 4, SIZABLE = 5, SIZABLE_TOOL = 6, HIDDEN = 7
 
 ## Keys Enum
-    Keys enum is too big to include this documentation. Please refer to [enums.py](https://github.com/kcvinker/Pyforms/blob/main/pyforms/enums.py#:~:text=class-,Keys,-(Enum)%3A) in source
+    Keys enum is too big to include this documentation.
+Please refer to [enums.py](https://github.com/kcvinker/Pyforms/blob/main/pyforms/enums.py#:~:text=class-,Keys,-(Enum)%3A) in source
 
 ## LabelAlignment Enum
     Values - TOPLEFT = 0, TOPCENTER = 1, TOPRIGHT = 2, MIDLEFT = 3, CENTER  = 4, MIDRIGHT = 5, BOTTOMLEFT = 6, BOTTOMCENTER = 7, BOTTOMRIGHT = 8
