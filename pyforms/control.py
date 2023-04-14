@@ -97,29 +97,30 @@ class Control:
         self._font = Font()
         self._fgColor = Color(0)
         self._bgColor = Color(0)
+        self._bkgBrush = None
         self._drawFlag = 0
         self._hasBrush = False
-        self.tvar = 1 # Only for testing purpose. Can be deleted at last
+
 
         # Events
-        self.onMouseEnter = 0
-        self.onMouseDown = 0
-        self.onMouseUp = 0
-        self.onClick = 0
-        self.onRightMouseDown = 0
-        self.onRightMouseUp = 0
-        self.onRightClick = 0
-        self.onMouseLeave = 0
-        self.onDoubleClick = 0
-        self.onMouseWheel = 0
-        self.onMouseMove = 0
-        self.onMouseHover = 0
-        self.onKeyDown = 0
-        self.onKeyUp = 0
-        self.onKeyPress = 0
-        self.onPaint = 0
-        self.onGotFocus = 0
-        self.onLostFocus = 0
+        self.onMouseEnter = None
+        self.onMouseDown = None
+        self.onMouseUp = None
+        self.onClick = None
+        self.onRightMouseDown = None
+        self.onRightMouseUp = None
+        self.onRightClick = None
+        self.onMouseLeave = None
+        self.onDoubleClick = None
+        self.onMouseWheel = None
+        self.onMouseMove = None
+        self.onMouseHover = None
+        self.onKeyDown = None
+        self.onKeyUp = None
+        self.onKeyPress = None
+        self.onPaint = None
+        self.onGotFocus = None
+        self.onLostFocus = None
 
 
     # -region Public funcs
