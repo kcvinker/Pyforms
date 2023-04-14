@@ -2,10 +2,10 @@
 # Documentation for Pyforms GUI library
 
 ## **Index**
-|Type | Type | Type | Type | Type
+|Types |  |  |  |  |
 |------|------|-------|-------|-------|
-|[Button](#button-class)| [CalendarBox](#calendarbox-class)| [CheckBox](#checkbox-class)| [Color](#color-class)| [ComboBox](#combobox-class)|
-|[DateTimePicker](#datetimepicker-class)|[Font](#font-class)|[GroupBox](#groupbox-class)| [KeyEventArgs]()| [KeyPressEventArgs]() |
+|[Area](#area-class)|[Button](#button-class)| [CalendarBox](#calendarbox-class)| [CheckBox](#checkbox-class)| [Color](#color-class)| [ComboBox](#combobox-class)|
+|[DateTimePicker](#datetimepicker-class) |[EventArgs](#eventargs-class) |[Font](#font-class)|[GroupBox](#groupbox-class)| [KeyEventArgs]()| [KeyPressEventArgs]() |
 |[Label](#label-class)|[ListBox](#listbox-class)| [ListView](#listview-class)|[ListViewColumn]()|[ListViewItem]()|
 |[MenuBar](#menubar-class) | [MenuItem]() |[MouseEventArgs](#mouseeventargs-class) |[NumberPicker](#numberpicker-class) |[ProgressBar](#progressbar-class) |
 |[RadioButton](#radiobutton-class) |[SizeEventArgs](#sizeeventargs-class) |[TextBox](#textbox-class) |[TrackBar](#trackbar-class) |[TreeNode]() |
@@ -13,6 +13,19 @@
 
 
 ---
+
+## **Area class**
+### Constructor
+```python
+Area(self, w, h)
+```
+### **Properties**
+| Property Name      | Type        | Description|
+|--------------------|-------------|------------|
+|width   |int     | |
+|height | int ||
+
+---------------
 
 ## **Button class**
 
@@ -32,7 +45,7 @@ createHandle(self)  # Creates the handle of button.
 ### **Properties**
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
-|handle   |HWND     | Getter only.
+|handle   |HWND[^1]     | Getter only.
 |parent   |[Form](#form-class)     | Getter Only|
 |font     |[Font](#font-class)     |
 |text     |string   |
@@ -89,7 +102,7 @@ createHandle(self)  # Creates the handle of button.
 ### **Properties**
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
-|handle   |HWND     | Getter only.|
+|handle   |HWND[^1]     | Getter only.|
 |parent   |[Form](#form-class)     | Getter Only|
 |font     |[Font](#font-class)     |
 |text     |string   |
@@ -152,7 +165,7 @@ createHandle(self)  # Creates the handle of button.
 ### **Properties**
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
-|handle   |HWND     | Getter only.|
+|handle   |HWND[^1]     | Getter only.|
 |parent   |[Form](#form-class)     | Getter Only|
 |font     |[Font](#font-class)     |
 |text     |string   |
@@ -212,8 +225,8 @@ updateColor(self, clr: int) -> Color # Updates the color with new value
 createHBrush(self, adj: float = 0) -> HBRUSH # Create an HBRUSH to use win api functions
 createHPen(self, adj: float = 0) -> HPEN # Create HPEN to use in win api functions
 
-changeToColorRef(self, adj: float) -> COLORREF
-# Change the color with given value and returns COLORREF
+changeToColorRef(self, adj: float) -> COLORREF[^2]
+# Change the color with given value and returns COLORREF[^2]
 # NOTE:  To make a  color lighter, use values greater than 1.0
 #        To make color darker, use values lower than 1.0
 ```
@@ -223,7 +236,7 @@ changeToColorRef(self, adj: float) -> COLORREF
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
 |value   |int     | Getter only.|
-|ref| COLORREF| Getterr only|
+|ref| COLORREF[^2]| Getterr only|
 |red| int| Getterr only|
 |green| int| Getterr only|
 |blue| int| Getterr only|
@@ -247,7 +260,7 @@ createHandle(self)  # Creates the handle of button.
 ### Properties
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
-|handle   |HWND     | Getter only.
+|handle   |HWND[^1]     | Getter only.
 |parent   |[Form](#form-class)     | Getter Only
 |font     |[Font](#font-class)     |
 |text     |string   |
@@ -301,7 +314,7 @@ createHandle(self)  # Creates the handle of button.
 ### **Properties**
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
-|handle   |HWND     | Getter only.
+|handle   |HWND[^1]     | Getter only.
 |parent   |[Form](#form-class)     | Getter Only
 |font     |[Font](#font-class)     |
 |text     |string   |
@@ -339,7 +352,14 @@ createHandle(self)  # Creates the handle of button.
 ([Go to index](#index))
 --------------
 
-## Event handler types
+## **EventArgs class**
+#### Properties
+| Name      |Type| Description |
+|-----------|------|-------|
+|handled    | bool   | |
+-------------
+
+## **Event handler types**
 | Name      | Signature        |
 |--------------------|-------------|
 |EventHandler| func(Control, EventArgs)|
@@ -347,6 +367,8 @@ createHandle(self)  # Creates the handle of button.
 |KeyEventHandler| func(Control, KeyEventArgs)|
 |KeyPressEventHandler| func(Control, KeyPressEventArgs)|
 |PaintEventHandler| func(Control, PaintEventArgs)|
+
+([Go to index](#index))
 
 
 # **Font class**
@@ -389,7 +411,7 @@ display(self)
 ### Properties
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
-|handle   |HWND     | Getter only.
+|handle   |HWND[^1]     | Getter only.
 |parent   |[Form](#form-class)     | Getter Only
 |font     |[Font](#font-class)     |
 |text     |string   |
@@ -462,7 +484,7 @@ createHandle(self)
 ### Properties
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
-|handle   |HWND     | Getter only.
+|handle   |HWND[^1]     | Getter only.
 |parent   |[Form](#form-class)     | Getter Only
 |font     |[Font](#font-class)     |
 |text     |string   |
@@ -502,6 +524,26 @@ createHandle(self)
 ([Go to index](#index))
 --------------
 
+## **KeyEventArgs class**
+### Constructor
+```python
+KeyEventArgs(self, wp: WPARAM)
+```
+#### Properties
+| Name      |Type| Description |
+|-----------|------|-------|
+|handled | bool ||
+|keyCode | [Keys](#keys-enum)| |
+|shiftPressed | bool| |
+|modifier | [Keys](#keys-enum)| |
+|ctrlPressed | bool||
+|altPressed | bool||
+|keyValue | int| |
+
+([Go to index](#index))
+---------------
+
+
 
 ## **Label class**
 
@@ -519,7 +561,7 @@ createHandle(self)
 ### Properties
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
-|handle   |HWND     | Getter only.
+|handle   |HWND[^1]     | Getter only.
 |parent   |[Form](#form-class)     | Getter Only
 |font     |[Font](#font-class)     |
 |text     |string   |
@@ -583,7 +625,7 @@ removeAll(self)
 ### Properties
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
-|handle   |HWND     | Getter only.
+|handle   |HWND[^1]     | Getter only.
 |parent   |[Form](#form-class)     | Getter Only
 |font     |[Font](#font-class)     |
 |text     |string   |
@@ -662,7 +704,7 @@ addRow(self, *items)
 ### **Properties**
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
-|handle   |HWND     | Getter only.
+|handle   |HWND[^1]     | Getter only.
 |parent   |[Form](#form-class)     | Getter Only
 |font     |[Font](#font-class)     |
 |text     |string   |
@@ -823,6 +865,7 @@ MouseEventArgs(self, msg: UINT, wp: WPARAM, lp: LPARAM)
 |delta|int||
 |shiftPressed| bool ||
 |ctrlPressed| bool||
+|handled    | bool   | |
 |mouseButton | [MouseButtons](#mousebutton-enum)|
 
 ([Go to index](#index))
@@ -845,7 +888,7 @@ createHandle(self) # Create window handle for this NumberPicker
 ## **Properties**
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
-|handle   |HWND     | Getter only.
+|handle   |HWND[^1]     | Getter only.
 |parent   |[Form](#form-class)     | Getter Only
 |font     |[Font](#font-class)     |
 |text     |string   |
@@ -913,7 +956,7 @@ stopMarquee(self)
 ## **Properties**
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
-|handle   |HWND     | Getter only.
+|handle   |HWND[^1]     | Getter only.
 |parent   |[Form](#form-class)     | Getter Only
 |font     |[Font](#font-class)     |
 |text     |string   |
@@ -973,7 +1016,7 @@ createHandle(self) # Create window handle for this NumberPicker
 ## **Properties**
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
-|handle   |HWND     | Getter only.
+|handle   |HWND[^1]     | Getter only.
 |parent   |[Form](#form-class)     | Getter Only
 |font     |[Font](#font-class)     |
 |text     |string   |
@@ -1024,8 +1067,9 @@ SizeEventArgs(self, msg: UINT, wp: WPARAM, lp: LPARAM)
 ## **Properties**
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
+|handled | bool | |
 |sizedOn   |[SizedPositions](#sizedpositions-enum)     | Getter only.
-|formRect | RECT| Getter only|
+|formRect | RECT[^3]| Getter only|
 |clientArea | [Area](#area-class)| Getter only
 
 ([Go to index](#index))
@@ -1047,7 +1091,7 @@ createHandle(self) # Create window handle for this NumberPicker
 ## **Properties**
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
-|handle   |HWND     | Getter only.
+|handle   |HWND[^1]     | Getter only.
 |parent   |[Form](#form-class)     | Getter Only
 |font     |[Font](#font-class)     |
 |text     |string   |
@@ -1119,7 +1163,7 @@ Accepted values are: {'both', 'up', 'down', 'left', 'right'}"""
 ## **Properties**
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
-|handle   |HWND     | Getter only.
+|handle   |HWND[^1]     | Getter only.
 |parent   |[Form](#form-class)     | Getter Only
 |font     |[Font](#font-class)     |
 |text     |string   |
@@ -1204,7 +1248,7 @@ TreeNode(self, text: str)
 |checked | bool| |
 |index | int| |
 |nodeID | int| |
-|treeHwnd | HWND| |
+|treeHwnd | HWND[^1]| |
 
 ([Go to index](#index))
 
@@ -1232,7 +1276,7 @@ insertChildNode(self, node, parent, pos)
 ## **Properties**
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
-|handle   |HWND     | Getter only.
+|handle   |HWND[^1]     | Getter only.
 |parent   |[Form](#form-class)     | Getter Only
 |font     |[Font](#font-class)     |
 |text     |string   |
@@ -1277,56 +1321,90 @@ insertChildNode(self, node, parent, pos)
 
 
 
-
-
-
-
-## Enums
+## Enums ----------------
 
 ## ChannelStyle Enum
+    Values - DEFAULT = 0, CLASSIC = 1, OUTLINE = 2
 
 ## ColumnAlign Enum
+    Values - LEFT = 0, RIGHT = 1, CENTER = 2
 
 ## ControlType Enum
+    Values - NONE = 0, BUTTON = 1, CALENDAR_BOX = 2, CHECK_BOX = 3, COMBO_BOX = 4, DATE_TIME_PICKER = 5, GROUP_BOX = 6, LABEL = 7, LIST_BOX = 8, LIST_VIEW = 9,NUM_PICKER = 10, PROGRESS_BAR = 11, RADIO_BUTTON = 12, TEXT_BOX = 13, TRACK_BAR = 14, TREE_VIEW = 15
 
 ## DateFormat Enum
+    Vaues - LONG_DATE = 1, SHORT_DATE = 2, TIME_ONLY = 4, CUSTOM_DATE = 8
 
 ## FontWeight Enum
+    Values - THIN = 100, EXTRA_LIGHT = 200, LIGHT = 300, NORMAL = 400, MEDIUM = 500, SEMI_BOLD = 600, BOLD = 700, EXTRA_BOLD = 800, THICK = 900
 
 ## FormPosition Enum
 
 ## FormState Enum
+    Values - NORMAL = 0, MAXIMIZED = 1, MINIMIZED = 2
 
 ## FormStyle Enum
+    Values - NONE = 0, FIXED_SINGLE = 1, FIXED_3D = 2, FIXED_DIALOG = 3, FIXED_TOOL = 4, SIZABLE = 5, SIZABLE_TOOL = 6, HIDDEN = 7
 
 ## Keys Enum
+    Keys enum is too big to include this documentation. Please refer to enums.py in source
 
 ## LabelAlignment Enum
+    Values - TOPLEFT = 0, TOPCENTER = 1, TOPRIGHT = 2, MIDLEFT = 3, CENTER  = 4, MIDRIGHT = 5, BOTTOMLEFT = 6, BOTTOMCENTER = 7, BOTTOMRIGHT = 8
 
 ## LabelBorder Enum
+    Values - NONE = 0, SINGLE = 1, SUNKEN = 2
 
 ## ListViewStyle Enum
+    Values - LARGE_ICON = 0, REPORT_VIEW = 1, SMALL_ICON = 2, LIST_VIEW = 3, TILE_VIEW = 4
 
 ## MouseButton Enum
+    Values - NONE = 0, RIGHT = 20_97_152, MIDDLE = 41_94_304, LEFT = 10_48_576, XBUTTON1 = 83_88_608, XBUTTON2 = 167_77_216
 
 ## MouseButtonState Enum
+    Values - RELEASED, PRESSED
 
 ## ProgressBarState Enum
+    Values - NORMAL = 1, ERROR = 2, PAUSED = 3
 
 ## ProgressBarStyle Enum
+    Values - BLOCK_STYLE = 0, MARQUEE_STYLE = 1
 
 ## SizedPositions Enum
+    Values - LEFT_EDGE = 1, RIGHT_EDGE = 2, TOP_EDGE = 3, TOP_LEFT_CORNER = 4, TOP_RIGHT_CORNER = 5, BOTTOM_EDGE = 6, BOTTOM_LEFT_CORNER = 7, BOTTOM_RIGHT_CORNER = 8
 
 ## TextAlignment Enum
+    Values - LEFT = 0, CENTER = 1, RIGHT = 2
 
 ## TextCase Enum
+    Values - NORMAL = 0, LOWER = 1, UPPER = 2
 
 ## TextType Enum
+    Values - NORMAL = 0, NUM_ONLY = 1, PASSWORD = 2
 
 ## TickPosition Enum
+    Values - DOWN = 1, UP = 2, LEFT = 3, RIGHT = 4, BOTH = 5
 
 ## TrackChange Enum
+    Values - NONE = 0, ARROW_LOW = 1, ARROW_HIGH = 2, PAGE_LOW = 3, PAGE_HIGH = 4, MOUSE_CLICK = 5, MOUSE_DRAG = 6
 
 ## ViewMode Enum
+    Values - MONTH_VIEW = 0, YEAR_VIEW = 1, DECADE_VIEW = 2, CENTUARY_VIEW = 3
 
 
+[^1]: HWND - Windows api data type for a Window handle
+
+[^2]: COLORREF - Windows api data type for a color. BGR is the format.
+
+[^3]: RECT - Windows api struct.
+
+*Declaration*
+```python
+class RECT[^3](Structure):
+_fields_ = [
+    ('left', LONG),
+    ('top', LONG),
+    ('right', LONG),
+    ('bottom', LONG)
+]
+```
