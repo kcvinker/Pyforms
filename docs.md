@@ -24,21 +24,17 @@ Button(self, parent, txt: str = "", xpos = 20, ypos = 20, width = 120, height = 
 # bCreate: bool - if this is true, you don't need to call createHandle
 ```
 
----
-
 ### Functions
-| Function Name      | Description |
-|--------------------|-------------|
-|createHandle()      | Creates the handle of button.
-
----
+```python
+createHandle(self)  # Creates the handle of button.
+```
 
 
-### Properties
+### **Properties**
 | Property Name      | Type        | Description|
 |--------------------|-------------|------------|
 |handle   |HWND     | Getter only.
-|parent   |[Form](#form-class)     | Getter Only
+|parent   |[Form](#form-class)     | Getter Only|
 |font     |[Font](#font-class)     |
 |text     |string   |
 |xpos     |int      |
@@ -50,10 +46,9 @@ Button(self, parent, txt: str = "", xpos = 20, ypos = 20, width = 120, height = 
 |backColor|[Color](#color-class)/int|
 |foreColor|[Color](#color-class)/int|
 
-----
 
 ### **Events**
-| Property Name      | Type        |
+| Event Name      | Type        |
 |--------------------|-------------|
 |onMouseEnter     | [EventHandler](#event-handler-types)|
 |onMouseDown      | [MouseEventHandler](#event-handler-types)|
@@ -86,14 +81,10 @@ CalendarBox(self, parent, xpos = 20, ypos = 20, bCreate = False)
 # bCreate: bool - if this is true, you don't need to call createHandle
 ```
 
----
-
 ### Functions
-| Function Name      | Description |
-|--------------------|-------------|
-|createHandle()      | Creates the handle of button.
-
----
+```python
+createHandle(self)  # Creates the handle of button.
+```
 
 ### **Properties**
 | Property Name      | Type        | Description|
@@ -120,7 +111,7 @@ CalendarBox(self, parent, xpos = 20, ypos = 20, bCreate = False)
 |shortDateNames  | bool |
 
 ### **Events**
-| Property Name      | Type        |
+| Event Name      | Type        |
 |--------------------|-------------|
 |onMouseEnter     | [EventHandler](#event-handler-types)|
 |onMouseDown      | [MouseEventHandler](#event-handler-types)|
@@ -153,11 +144,9 @@ CheckBox(self, parent, xpos = 20, ypos = 20, bCreate = False)
 ```
 
 ### Functions
-| Function Name      | Description |
-|--------------------|-------------|
-|createHandle()      | Creates the handle of button.
-
-----
+```python
+createHandle(self)  # Creates the handle of button.
+```
 
 ### **Properties**
 | Property Name      | Type        | Description|
@@ -177,11 +166,10 @@ CheckBox(self, parent, xpos = 20, ypos = 20, bCreate = False)
 |rightAlign| bool|
 |checked| bool|
 
-----
 
 
 ### **Events**
-| Property Name      | Type        |
+| Event Name      | Type        |
 |--------------------|-------------|
 |onMouseEnter     | [EventHandler](#event-handler-types)|
 |onMouseDown      | [MouseEventHandler](#event-handler-types)|
@@ -248,16 +236,11 @@ ComboBox(self, parent, xpos: int = 10, ypos: int = 10, width: int = 120, height:
 # parent : Form
 # bCreate: bool - if this is true, you don't need to call createHandle
 ```
-####        Parameters
-| Name      |Type| Description |
-|-----------|------|-------|
-|parent| [Form](#form-class)| Parent of this control|
-|bCreate| bool|if this is true, you don't need to call createHandle|
 
 ### Functions
-| Function Name      | Description |
-|--------------------|-------------|
-|createHandle()      | Creates the handle of button.
+```python
+createHandle(self)  # Creates the handle of button.
+```
 
 ### Properties
 | Property Name      | Type        | Description|
@@ -276,7 +259,7 @@ ComboBox(self, parent, xpos: int = 10, ypos: int = 10, width: int = 120, height:
 |foreColor|[Color](#color-class)/int|
 
 ### Events
-| Property Name      | Type        |
+| Event Name      | Type        |
 |--------------------|-------------|
 |onMouseEnter     | [EventHandler](#event-handler-types)|
 |onMouseDown      | [MouseEventHandler](#event-handler-types)|
@@ -297,6 +280,7 @@ ComboBox(self, parent, xpos: int = 10, ypos: int = 10, width: int = 120, height:
 |nLostFocus       | [EventHandler](#event-handler-types)|
 |onClick          | [EventHandler](#event-handler-types)|
 
+-------------
 
 ## DateTimePicker class
 
@@ -306,12 +290,50 @@ DateTimePicker(self, parent, xpos = 20, ypos = 20, bCreate = False)
 # parent : Form
 # bCreate: bool - if this is true, you don't need to call createHandle
 ```
-#### Parameters
-| Name      |Type| Description |
-|-----------|------|-------|
-|parent| [Form](#form-class)| Parent of this control|
-|bCreate| bool|if this is true, you don't need to call createHandle|
+### Functions
+```python
+createHandle(self)  # Creates the handle of button.
+```
 
+### **Properties**
+| Property Name      | Type        | Description|
+|--------------------|-------------|------------|
+|handle   |HWND     | Getter only.
+|parent   |[Form](#form-class)     | Getter Only
+|font     |[Font](#font-class)     |
+|text     |string   |
+|xpos     |int      |
+|xpos     |int      |
+|ypos     |int      |
+|width    |int      |
+|height   |int      |
+|visibile |bool     |
+|backColor|[Color](#color-class)/int|
+|foreColor|[Color](#color-class)/int|
+
+### **Events**
+| Event Name      | Type        |
+|--------------------|-------------|
+|onMouseEnter     | [EventHandler](#event-handler-types)|
+|onMouseDown      | [MouseEventHandler](#event-handler-types)|
+|onMouseUp        | [MouseEventHandler](#event-handler-types)|
+|onRightMouseDown | [MouseEventHandler](#event-handler-types)|
+|onRightMouseUp   | [MouseEventHandler](#event-handler-types)|
+|onRightClick     | [EventHandler](#event-handler-types)|
+|onMouseLeave     | [EventHandler](#event-handler-types)|
+|onDoubleClick    | [EventHandler](#event-handler-types)|
+|onMouseWheel     | [MouseEventHandler](#event-handler-types)|
+|onMouseMove      | [MouseEventHandler](#event-handler-types)|
+|onMouseHover     | [EventHandler](#event-handler-types)|
+|onKeyDown        | [KeyEventHandler](#event-handler-types)|
+|onKeyUp          | [KeyEventHandler](#event-handler-types)|
+|onKeyPress       | [KeyPressEventHandler](#event-handler-types)|
+|onPaint          | [PaintEventHandler](#event-handler-types)|
+|onGotFocus       | [EventHandler](#event-handler-types)|
+|nLostFocus       | [EventHandler](#event-handler-types)|
+|onClick          | [EventHandler](#event-handler-types)|
+
+--------------
 
 ## Event handler types
 | Name      | Signature        |
@@ -713,7 +735,7 @@ ListViewColumn(self, hdr_txt: str, width: int, img:int = -1, img_right: bool = F
 
 --------------
 
-## ListViewItem class
+## **ListViewItem class**
 ### Constructor
 ```python
 ListViewItem(self, txt: str, bg_color: int = 0xFFFFFF, fg_color: int = 0x000000, imageIndex: int = -1)
@@ -735,15 +757,43 @@ ListViewItem(self, txt: str, bg_color: int = 0xFFFFFF, fg_color: int = 0x000000,
 
 ### Constructor
 ```python
-MenuBar(self, parent, xpos = 20, ypos = 20, bCreate = False)
+MenuBar(self, parent)
 # parent : Form
-# bCreate: bool - if this is true, you don't need to call createHandle
 ```
-#### Parameters
+### Functions
+```python
+addMenu(self, txt: str) -> MenuItem
+create(self) # Creates menu handles
+# txt - Menu text
+```
+### Properties
+menus - list[[MenuItem](#menuitem-class)]
+
+
+-----------
+
+## **MenuItem class**
+### Constructor
+```python
+MenuItem(self, txt: str, typ: MenuType, parent)
+# txt - Menu text
+# typ - MenuType
+# parent : MenuItem/MenuBar
+```
+### Functions
+```python
+addMenu(self, txt: str) -> MenuItem
+addPopupMenu(self, txt: str) -> MenuItem
+addSeperator(self): -> MenuItem
+# txt - Menu text
+```
+### Event
 | Name      |Type| Description |
 |-----------|------|-------|
-|parent| [Form](#form-class)| Parent of this control|
-|bCreate| bool|If this is true, you don't need to call createHandle|
+|onClick | [EventHandler](#event-handler-types)| |
+
+-----------
+
 
 ## **MouseEventArgs class**
 
@@ -792,11 +842,20 @@ createHandle(self) # Create window handle for this NumberPicker
 |visibile |bool     |
 |backColor|[Color](#color-class)/int|
 |foreColor|[Color](#color-class)/int|
+|decimalPlaces | int|  |
+|minRange | int | |
+|maxRange | int| |
+|autoRotate | bool| |
+|step | int/float| |
+|value | int/float| |
+|buttonOnLeft | bool| |
+|hasSeperator | bool| |
+|hideCaret | bool| |
 
 ----
 
 ### **Events**
-| Property Name      | Type        |
+| Event Name      | Type        |
 |--------------------|-------------|
 |onMouseEnter     | [EventHandler](#event-handler-types)|
 |onMouseDown      | [MouseEventHandler](#event-handler-types)|
@@ -816,22 +875,71 @@ createHandle(self) # Create window handle for this NumberPicker
 |onGotFocus       | [EventHandler](#event-handler-types)|
 |nLostFocus       | [EventHandler](#event-handler-types)|
 |onClick          | [EventHandler](#event-handler-types)|
+|onValueChanged          | [EventHandler](#event-handler-types)|
 
+-----------------
 
 ## **ProgressBar class**
 
 ### Constructor
 ```python
-ProgressBar(self, parent, xpos = 20, ypos = 20, bCreate = False)
+ProgressBar(self, parent, xpos: int = 10, ypos: int = 10, width: int = 180, height: int = 25, bCreate = False)
 # parent : Form
 # bCreate: bool - if this is true, you don't need to call createHandle
 ```
-#### Parameters
-| Name      |Type| Description |
-|-----------|------|-------|
-|parent| [Form](#form-class)| Parent of this control|
-|bCreate| bool|if this is true, you don't need to call createHandle|
+## Functions
+```python
+createHandle(self) # Create window handle for this NumberPicker
+increment(self)
+startMarquee(self)
+stopMarquee(self)
+```
+## **Properties**
+| Property Name      | Type        | Description|
+|--------------------|-------------|------------|
+|handle   |HWND     | Getter only.
+|parent   |[Form](#form-class)     | Getter Only
+|font     |[Font](#font-class)     |
+|text     |string   |
+|xpos     |int      |
+|xpos     |int      |
+|ypos     |int      |
+|width    |int      |
+|height   |int      |
+|visibile |bool     |
+|backColor|[Color](#color-class)/int|
+|foreColor|[Color](#color-class)/int|
+|value| int| |
+|step | int | |
+|state | [ProgressBarState](#progressbarstate-enum) | |
+|style | [ProgressBarStyle](#progressbarstyle-enum) | |
 
+
+
+### **Events**
+| Event Name      | Type        |
+|--------------------|-------------|
+|onMouseEnter     | [EventHandler](#event-handler-types)|
+|onMouseDown      | [MouseEventHandler](#event-handler-types)|
+|onMouseUp        | [MouseEventHandler](#event-handler-types)|
+|onRightMouseDown | [MouseEventHandler](#event-handler-types)|
+|onRightMouseUp   | [MouseEventHandler](#event-handler-types)|
+|onRightClick     | [EventHandler](#event-handler-types)|
+|onMouseLeave     | [EventHandler](#event-handler-types)|
+|onDoubleClick    | [EventHandler](#event-handler-types)|
+|onMouseWheel     | [MouseEventHandler](#event-handler-types)|
+|onMouseMove      | [MouseEventHandler](#event-handler-types)|
+|onMouseHover     | [EventHandler](#event-handler-types)|
+|onKeyDown        | [KeyEventHandler](#event-handler-types)|
+|onKeyUp          | [KeyEventHandler](#event-handler-types)|
+|onKeyPress       | [KeyPressEventHandler](#event-handler-types)|
+|onPaint          | [PaintEventHandler](#event-handler-types)|
+|onGotFocus       | [EventHandler](#event-handler-types)|
+|nLostFocus       | [EventHandler](#event-handler-types)|
+|onClick          | [EventHandler](#event-handler-types)|
+|onValueChanged          | [EventHandler](#event-handler-types)|
+
+-------------
 
 ## **RadioButton class**
 
@@ -841,11 +949,7 @@ RadioButton(self, parent, xpos = 20, ypos = 20, bCreate = False)
 # parent : Form
 # bCreate: bool - if this is true, you don't need to call createHandle
 ```
-#### Parameters
-| Name      |Type| Description |
-|-----------|------|-------|
-|parent| [Form](#form-class)| Parent of this control|
-|bCreate| bool|if this is true, you don't need to call createHandle|
+
 
 ## **SizeEventArgs class**
 ### Constructor
@@ -869,11 +973,7 @@ TextBox(self, parent, xpos = 20, ypos = 20, bCreate = False)
 # parent : Form
 # bCreate: bool - if this is true, you don't need to call createHandle
 ```
-#### Parameters
-| Name      |Type| Description |
-|-----------|------|-------|
-|parent| [Form](#form-class)| Parent of this control|
-|bCreate| bool|if this is true, you don't need to call createHandle|
+
 
 
 ## **TrackBar class**
@@ -884,11 +984,7 @@ TrackBar(self, parent, xpos = 20, ypos = 20, bCreate = False)
 # parent : Form
 # bCreate: bool - if this is true, you don't need to call createHandle
 ```
-#### Parameters
-| Name      |Type| Description |
-|-----------|------|-------|
-|parent| [Form](#form-class)| Parent of this control|
-|bCreate| bool|if this is true, you don't need to call createHandle|
+
 
 
 ## **TreeView class**
@@ -899,11 +995,7 @@ TreeView(self, parent, xpos = 20, ypos = 20, bCreate = False)
 # parent : Form
 # bCreate: bool - if this is true, you don't need to call createHandle
 ```
-#### Parameters
-| Name      |Type| Description |
-|-----------|------|-------|
-|parent| [Form](#form-class)| Parent of this control|
-|bCreate| bool|if this is true, you don't need to call createHandle|
+
 
 
 
