@@ -19,7 +19,7 @@ class GroupBox(Control):
 
     _count = 1
     __slots__ = ("_pen", "_tmpTxt", "_rect", "_txtWidth")
-    def __init__(self, parent, txt: str = "", xpos: int = 10, ypos: int = 10, width: int = 300, height: int = 300 ) -> None:
+    def __init__(self, parent, txt: str = "", xpos: int = 10, ypos: int = 10, width: int = 300, height: int = 300, bCreate = False ) -> None:
         super().__init__()
         self._clsName = "Button"
         self.name = f"GroupBox_{GroupBox._count}"
@@ -39,6 +39,7 @@ class GroupBox(Control):
         self._drawFlag = 0
         self._txtWidth = 0
         GroupBox._count += 1
+        if bCreate: self.createHandle()
 
 
     # -region Public funcs
@@ -133,10 +134,8 @@ def gbWndProc(hw, msg, wp, lp, scID, refData):
         case con.WM_KILLFOCUS: gb._lostFocusHandler()
         case con.WM_LBUTTONDOWN: gb._leftMouseDownHandler(msg, wp, lp)
         case con.WM_LBUTTONUP: gb._leftMouseUpHandler(msg, wp, lp)
-        case MyMessages.MOUSE_CLICK: gb._mouse_click_handler()
         case con.WM_RBUTTONDOWN: gb._rightMouseDownHandler(msg, wp, lp)
         case con.WM_RBUTTONUP: gb._rightMouseUpHandler(msg, wp, lp)
-        case MyMessages.RIGHT_CLICK: gb._right_mouse_click_handler()
         case con.WM_MOUSEWHEEL: gb._mouseWheenHandler(msg, wp, lp)
         case con.WM_MOUSEMOVE: gb._mouseMoveHandler(msg, wp, lp)
         case con.WM_MOUSELEAVE: gb._mouseLeaveHandler()

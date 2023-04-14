@@ -20,7 +20,7 @@ class CheckBox(Control):
     _count = 1
     __slots__ = ( "_rightAlign", "_txtStyle", "_isChecked", "onCheckedChanged")
 
-    def __init__(self, parent, txt: str, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 23) -> None:
+    def __init__(self, parent, txt: str, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 23, bCreate: bool = False) -> None:
         super().__init__()
         self._clsName = "Button"
         self.name = f"CheckBox_{CheckBox._count}"
@@ -39,8 +39,10 @@ class CheckBox(Control):
         self._bgColor = Color(parent._bgColor)
         self._rightAlign = False
         self._isChecked = False
-        self.onCheckedChanged = 0
+        # Events
+        self.onCheckedChanged = None
         CheckBox._count += 1
+        if bCreate: self.createHandle()
 
 
     def createHandle(self):
@@ -61,20 +63,33 @@ class CheckBox(Control):
             self._height = ss.cy
             api.MoveWindow(self._hwnd, self._xpos, self._ypos, self._width, self._height, True)
 
+    @property
+    def checked(self): return self._isChecked
 
-    @Control.backColor.setter
-    def backColor(self, value):
-        self._bgColor.update_color(value)
-        self._bg_brush = api.CreateSolidBrush(self._bgColor.ref)
-        if not self._drawFlag & (1 << 1): self._drawFlag += 2
+    @checked.setter
+    def checked(self, value: bool):
+        self._isChecked = value
+        if self._isCreated: api.SendMessage(self._hwnd, con.BM_SETCHECK, value, 0)
+
+    @property
+    def rightAlign(self): return self._rightAlign
+
+    @rightAlign.setter
+    def rightAlign(self, value: bool): self._rightAlign = value
+
+    # @Control.backColor.setter
+    # def backColor(self, value):
+    #     self._bgColor.update_color(value)
+    #     self._bg_brush = api.CreateSolidBrush(self._bgColor.ref)
+    #     if not self._drawFlag & (1 << 1): self._drawFlag += 2
 
 
-    @Control.text.getter
-    def text(self):
-        if self._isCreated:
-            return self._getCtrlText()
-        else:
-            return self._text
+    # @Control.text.getter
+    # def text(self):
+    #     if self._isCreated:
+    #         return self._getCtrlText()
+    #     else:
+    #         return self._text
 
 
 #End CheckBox
@@ -93,10 +108,8 @@ def cbWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         case con.WM_KILLFOCUS: cb._lostFocusHandler()
         case con.WM_LBUTTONDOWN: cb._leftMouseDownHandler(msg, wp, lp)
         case con.WM_LBUTTONUP: cb._leftMouseUpHandler(msg, wp, lp)
-        case MyMessages.MOUSE_CLICK: cb._mouse_click_handler()
         case con.WM_RBUTTONDOWN: cb._rightMouseDownHandler(msg, wp, lp)
         case con.WM_RBUTTONUP: cb._rightMouseUpHandler(msg, wp, lp)
-        case MyMessages.RIGHT_CLICK: cb._right_mouse_click_handler()
         case con.WM_MOUSEWHEEL: cb._mouseWheenHandler(msg, wp, lp)
         case con.WM_MOUSEMOVE: cb._mouseMoveHandler(msg, wp, lp)
         case con.WM_MOUSELEAVE: cb._mouseLeaveHandler()
@@ -120,7 +133,6 @@ def cbWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                     if cb._drawFlag & 1: api.SetTextColor(nmc.hdc, cb._fgColor.ref)
                     api.SetBkMode(nmc.hdc, 1)
                     api.DrawText(nmc.hdc, cb._text, len(cb._text), byref(rct), cb._txtStyle )
-
                     return con.CDRF_SKIPDEFAULT
 
         case MyMessages.CTL_COMMAND:

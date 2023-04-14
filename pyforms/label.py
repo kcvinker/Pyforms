@@ -17,7 +17,7 @@ class Label(Control):
 
     _count = 1
     __slots__ = ("_autoSize", "_multiLine", "_txtAlign", "_borderStyle", "_dwAlignFlag")
-    def __init__(self, parent, txt: str = "", xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 30 ) -> None:
+    def __init__(self, parent, txt: str = "", xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 30, bCreate = False ) -> None:
         super().__init__()
         self._clsName = "Static"
         self.name = f"Label_{Label._count}"
@@ -40,6 +40,7 @@ class Label(Control):
         self._dwAlignFlag = 0
         self._hasBrush = True
         Label._count += 1
+        if bCreate: self.createHandle()
 
 
     # -region Public funcs
@@ -184,10 +185,8 @@ def lbWndProc(hw, msg, wp, lp, scID, refData):
         case con.WM_KILLFOCUS: lb._lostFocusHandler()
         case con.WM_LBUTTONDOWN: lb._leftMouseDownHandler(msg, wp, lp)
         case con.WM_LBUTTONUP: lb._leftMouseUpHandler(msg, wp, lp)
-        case MyMessages.MOUSE_CLICK: lb._mouse_click_handler()
         case con.WM_RBUTTONDOWN: lb._rightMouseDownHandler(msg, wp, lp)
         case con.WM_RBUTTONUP: lb._rightMouseUpHandler(msg, wp, lp)
-        case MyMessages.RIGHT_CLICK: lb._right_mouse_click_handler()
         case con.WM_MOUSEWHEEL: lb._mouseWheenHandler(msg, wp, lp)
         case con.WM_MOUSEMOVE: lb._mouseMoveHandler(msg, wp, lp)
         case con.WM_MOUSELEAVE: lb._mouseLeaveHandler()

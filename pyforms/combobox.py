@@ -298,10 +298,8 @@ def cmbWndProc(hw, msg, wp, lp, scID, refData):
         case con.WM_KILLFOCUS: cmb._lostFocusHandler()
         case con.WM_LBUTTONDOWN: cmb._leftMouseDownHandler(msg, wp, lp)
         case con.WM_LBUTTONUP: cmb._leftMouseUpHandler(msg, wp, lp)
-        case MyMessages.MOUSE_CLICK: cmb._mouse_click_handler()
         case con.WM_RBUTTONDOWN: cmb._rightMouseDownHandler(msg, wp, lp)
         case con.WM_RBUTTONUP: cmb._rightMouseUpHandler(msg, wp, lp)
-        case MyMessages.RIGHT_CLICK: cmb._right_mouse_click_handler()
         case con.WM_MOUSEWHEEL: cmb._mouseWheenHandler(msg, wp, lp)
         case con.WM_MOUSEMOVE: cmb._mouseMoveHandler(msg, wp, lp)
         case con.WM_MOUSELEAVE:

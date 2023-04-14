@@ -19,7 +19,7 @@ class ProgressBar(Control):
     _count = 1
     __slots__ = ( "_barStyle", "_vertical", "_minValue", "_maxValue", "_step", "_value", "_percentage", "_state", "_speed")
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 180, height: int = 25 ) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 180, height: int = 25, bCreate = False ) -> None:
         super().__init__()
         self._clsName = "msctls_progress32"
         self.name = f"ProgressBar_{ProgressBar._count}"
@@ -45,6 +45,7 @@ class ProgressBar(Control):
         self._speed = 30
         self._percentage = False
         ProgressBar._count += 1
+        if bCreate: self.createHandle()
 
 
     # -region Public funcs
@@ -177,10 +178,8 @@ def pgbWndProc(hw, msg, wp, lp, scID, refData):
         case con.WM_KILLFOCUS: pgb._lostFocusHandler()
         case con.WM_LBUTTONDOWN: pgb._leftMouseDownHandler(msg, wp, lp)
         case con.WM_LBUTTONUP: pgb._leftMouseUpHandler(msg, wp, lp)
-        case MyMessages.MOUSE_CLICK: pgb._mouse_click_handler()
         case con.WM_RBUTTONDOWN: pgb._rightMouseDownHandler(msg, wp, lp)
         case con.WM_RBUTTONUP: pgb._rightMouseUpHandler(msg, wp, lp)
-        case MyMessages.RIGHT_CLICK: pgb._right_mouse_click_handler()
         case con.WM_MOUSEWHEEL: pgb._mouseWheenHandler(msg, wp, lp)
         case con.WM_MOUSEMOVE: pgb._mouseMoveHandler(msg, wp, lp)
         case con.WM_MOUSELEAVE: pgb._mouseLeaveHandler()

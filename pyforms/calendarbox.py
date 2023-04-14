@@ -30,7 +30,7 @@ class CalendarBox(Control):
                     "_fgColor", "_bgColor", "onSelectionCommitted", "onListClosed", "_value", "_viewMode", "_oldView",
                      "onViewChanged", "onSelectionChanged", "onValueChanged"  )
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, bCreate = False) -> None:
         super().__init__()
 
         self._clsName = "SysMonthCal32"
@@ -60,6 +60,7 @@ class CalendarBox(Control):
         self.onSelectionChanged = 0
 
         CalendarBox._count += 1
+        if bCreate: self.createHandle()
 
 
     # Create's combo box handle
@@ -197,10 +198,8 @@ def calWndProc(hw, msg, wp, lp, scID, refData):
         case con.WM_KILLFOCUS: cal._lostFocusHandler()
         case con.WM_LBUTTONDOWN: cal._leftMouseDownHandler(msg, wp, lp)
         case con.WM_LBUTTONUP: cal._leftMouseUpHandler(msg, wp, lp)
-        case MyMessages.MOUSE_CLICK: cal._mouse_click_handler()
         case con.WM_RBUTTONDOWN: cal._rightMouseDownHandler(msg, wp, lp)
         case con.WM_RBUTTONUP: cal._rightMouseUpHandler(msg, wp, lp)
-        case MyMessages.RIGHT_CLICK: cal._right_mouse_click_handler()
         case con.WM_MOUSEWHEEL: cal._mouseWheenHandler(msg, wp, lp)
         case con.WM_MOUSEMOVE: cal._mouseMoveHandler(msg, wp, lp)
         case con.WM_MOUSELEAVE: cal._mouseLeaveHandler()

@@ -7,6 +7,8 @@ from .apis import SUBCLASSPROC
 from . import apis as api
 from .colors import Color
 from . import constants as con
+from .events import EventArgs
+from ctypes import create_unicode_buffer, addressof
 # from . import winmsgs
 
 tbDict = {}
@@ -17,9 +19,9 @@ tbExStyle = con.WS_EX_LEFT | con.WS_EX_LTRREADING | con.WS_EX_CLIENTEDGE
 class TextBox(Control):
 
     _count = 1
-    __slots__ = ( "_multiLine", "_hideSel", "_readOnly", "_textCase", "_textType", "_textAlign")
+    __slots__ = ( "_multiLine", "_hideSel", "_readOnly", "_textCase", "_textType", "_textAlign", "_cueBanner", "onTextChanged")
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 23) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 23, bCreate = False) -> None:
         super().__init__()
         self._clsName = "EDIT"
         self.name = f"TextBox_{TextBox._count}"
@@ -41,7 +43,10 @@ class TextBox(Control):
         self._textCase = TextCase.NORMAL
         self._textType = TextType.NORMAL
         self._textAlign = TextAlignment.LEFT
+        self._cueBanner = ""
+        self.onTextChanged = None
         TextBox._count += 1
+        if bCreate: self.createHandle()
 
 
     def createHandle(self):
@@ -52,10 +57,13 @@ class TextBox(Control):
             tbDict[self._hwnd] = self
             self._setSubclass(tbWndProc)
             self._setFontInternal()
+            if len(self._cueBanner):
+                cueStr = create_unicode_buffer(self._cueBanner)
+                api.SendMessage(self._hwnd, con.EM_SETCUEBANNER, 1, addressof(cueStr))
 
             # Without this line, textbox looks ugly style. It won't receive WM_NCPAINT message.
             # So we just redraw the non client area and it will receive WM_NCPAINT
-            api.RedrawWindow(self._hwnd, None, None, con.RDW_FRAME| con.RDW_INVALIDATE)
+            # api.RedrawWindow(self._hwnd, None, None, con.RDW_FRAME| con.RDW_INVALIDATE)
 
 
     # Setting text box's style bits
@@ -91,19 +99,53 @@ class TextBox(Control):
         else:
             return self._text
 
-    @Control.backColor.setter
-    def backColor(self, value):
-        if isinstance(value, int):
-            self._bgColor.update_color(value)
-        elif isinstance(value, Color):
-            self._bgColor = value
 
-        if not self._drawFlag & (1 << 1): self._drawFlag += 2
-        if self._isCreated: self._bkgBrush = self._bgColor.createHBrush()
-        self._manageRedraw()
+    @property
+    def textAlign(self):  return self._textAlign
 
-        # api.RedrawWindow(self._hwnd, None, None, con.RDW_INVALIDATE| con.RDW_FRAME)
+    @textAlign.setter
+    def textAlign(self, value: TextAlignment): self._textAlign = value
 
+
+    @property
+    def textCase(self): return self._textCase
+
+    @textCase.setter
+    def textCase(self, value: TextCase): self._textCase = value
+
+    @property
+    def textType(self): return self._textType
+
+    @textType.setter
+    def textType(self, value: TextType):  self._textType = value
+
+    @property
+    def cueBanner(self): return self._cueBanner
+
+    @cueBanner.setter
+    def cueBanner(self, value:str) :
+        self._cueBanner = value
+        if self._isCreated:
+            cueStr = create_unicode_buffer(self._cueBanner)
+            api.SendMessage(self._hwnd, con.EM_SETCUEBANNER, 1, addressof(cueStr))
+
+    @property
+    def multiLine(self): return self._multiLine
+
+    @multiLine.setter
+    def multiLine(self, value: bool) : self._multiLine = value
+
+    @property
+    def hideSelection(self): return self._hideSel
+
+    @hideSelection.setter
+    def hideSelection(self, value: bool): self._hideSel = value
+
+    @property
+    def readOnly(self): return  self._readOnly
+
+    @readOnly.setter
+    def readOnly(self, value: bool) : self._readOnly = value
 
 #End TextBox
 
@@ -121,13 +163,16 @@ def tbWndProc(hw, msg, wp, lp, scID, refData):
         # case con.WM_KILLFOCUS: tb._lostFocusHandler()
         case con.WM_LBUTTONDOWN: tb._leftMouseDownHandler(msg, wp, lp)
         case con.WM_LBUTTONUP: tb._leftMouseUpHandler(msg, wp, lp)
-        case MyMessages.MOUSE_CLICK: tb._mouse_click_handler()
         case con.WM_RBUTTONDOWN: tb._rightMouseDownHandler(msg, wp, lp)
         case con.WM_RBUTTONUP: tb._rightMouseUpHandler(msg, wp, lp)
-        case MyMessages.RIGHT_CLICK: tb._right_mouse_click_handler()
         case con.WM_MOUSEWHEEL: tb._mouseWheenHandler(msg, wp, lp)
         case con.WM_MOUSEMOVE: tb._mouseMoveHandler(msg, wp, lp)
         case con.WM_MOUSELEAVE: tb._mouseLeaveHandler()
+
+        case con.WM_COMMAND:
+            ncode = api.HIWORD(wp)
+            if ncode == con.EN_CHANGE:
+                if tb.onTextChanged: tb.onTextChanged(tb, EventArgs())
 
         case MyMessages.LABEL_COLOR:
             return tb._bkgBrush

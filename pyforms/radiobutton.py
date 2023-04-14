@@ -20,7 +20,7 @@ class RadioButton(Control):
     _count = 1
     __slots__ = ( "_rightAlign", "_txtStyle", "_isChecked", "onCheckedChanged", "_checkOnClick")
 
-    def __init__(self, parent, txt: str, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 23) -> None:
+    def __init__(self, parent, txt: str, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 23, bCreate = False) -> None:
         super().__init__()
         self._clsName = "Button"
         self.name = f"RadioButton_{RadioButton._count}"
@@ -43,6 +43,7 @@ class RadioButton(Control):
         self._isChecked = False
         self.onCheckedChanged = None
         RadioButton._count += 1
+        if bCreate: self.createHandle()
 
 
     def createHandle(self):
@@ -83,6 +84,14 @@ class RadioButton(Control):
         else:
             return self._text
 
+    @property
+    def checked(self) : return self._isChecked
+
+    @checked.setter
+    def checked(self, value: bool) :
+        self._isChecked = value
+        if self._isCreated: api.SendMessage(self._hwnd, con.BM_SETCHECK, self._value, 0)
+
 #End RadioButton
 
 @SUBCLASSPROC
@@ -98,10 +107,8 @@ def rbWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         case con.WM_KILLFOCUS: rb._lostFocusHandler()
         case con.WM_LBUTTONDOWN: rb._leftMouseDownHandler(msg, wp, lp)
         case con.WM_LBUTTONUP: rb._leftMouseUpHandler(msg, wp, lp)
-        case MyMessages.MOUSE_CLICK: rb._mouse_click_handler()
         case con.WM_RBUTTONDOWN: rb._rightMouseDownHandler(msg, wp, lp)
         case con.WM_RBUTTONUP: rb._rightMouseUpHandler(msg, wp, lp)
-        case MyMessages.RIGHT_CLICK: rb._right_mouse_click_handler()
         case con.WM_MOUSEWHEEL: rb._mouseWheenHandler(msg, wp, lp)
         case con.WM_MOUSEMOVE: rb._mouseMoveHandler(msg, wp, lp)
         case con.WM_MOUSELEAVE: rb._mouseLeaveHandler()

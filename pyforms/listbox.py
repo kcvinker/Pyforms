@@ -21,7 +21,7 @@ class ListBox(Control):
     __slots__ = ( "_hasSort", "_noSel", "_multiCol", "_keyPreview", "_useVScroll", "_useHScroll", "_multiSel", "_selIndices",
                     "_items",  "_dummyIndex", "_selIndex", "onSelectionChanged", "onDoubleClick"  )
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 150, height: int = 200) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 150, height: int = 200, bCreate = False) -> None:
         super().__init__()
 
         self._clsName = "LISTBOX"
@@ -50,10 +50,11 @@ class ListBox(Control):
         self._selIndex = -1
 
         # Events
-        self.onSelectionChanged = 0
-        self.onDoubleClick = 0
+        self.onSelectionChanged = None
+        self.onDoubleClick = None
 
         ListBox._count += 1
+        if bCreate: self.createHandle()
 
 # -region Public functions
 
@@ -300,10 +301,8 @@ def lbxWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         case con.WM_KILLFOCUS: lbx._lostFocusHandler()
         case con.WM_LBUTTONDOWN: lbx._leftMouseDownHandler(msg, wp, lp)
         case con.WM_LBUTTONUP: lbx._leftMouseUpHandler(msg, wp, lp)
-        case MyMessages.MOUSE_CLICK: lbx._mouse_click_handler()
         case con.WM_RBUTTONDOWN: lbx._rightMouseDownHandler(msg, wp, lp)
         case con.WM_RBUTTONUP: lbx._rightMouseUpHandler(msg, wp, lp)
-        case MyMessages.RIGHT_CLICK: lbx._right_mouse_click_handler()
         case con.WM_MOUSEWHEEL: lbx._mouseWheenHandler(msg, wp, lp)
         case con.WM_MOUSEMOVE: lbx._mouseMoveHandler(msg, wp, lp)
         case con.WM_MOUSELEAVE: lbx._mouseLeaveHandler()

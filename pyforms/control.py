@@ -3,7 +3,6 @@
 
 from ctypes.wintypes import UINT, HWND
 from ctypes import create_unicode_buffer, byref, sizeof
-
 from .enums import ControlType
 from .commons import Font, MyMessages
 from .apis import INITCOMMONCONTROLSEX, DWORD
@@ -423,42 +422,23 @@ class Control:
 
     # -region Event handlers
     def _leftMouseDownHandler(self, msg, wpm, lpm):
-        self._lBtnDown = True
         if self.onMouseDown:
             self.onMouseDown(self, MouseEventArgs(msg, wpm, lpm))
             return 0
 
 
     def _leftMouseUpHandler(self, msg, wpm, lpm):
-        if self.onMouseUp:
-            self.onMouseUp(self, MouseEventArgs(msg, wpm, lpm))
-
-        if self._lBtnDown:
-            self._lBtnDown = False
-            api.SendMessage(self._hwnd, MyMessages.MOUSE_CLICK, 0, 0)
-            return 0
-
-
-    def _mouse_click_handler(self):
+        if self.onMouseUp: self.onMouseUp(self, MouseEventArgs(msg, wpm, lpm))
         if self.onClick: self.onClick(self, EventArgs())
 
 
     def _rightMouseDownHandler(self, msg, wpm, lpm):
-        self._rBtnDown = True
         if self.onRightMouseDown: self.onRightMouseDown(self, MouseEventArgs(msg, wpm, lpm))
 
 
     def _rightMouseUpHandler(self, msg, wpm, lpm):
         if self.onRightMouseUp: self.onRightMouseUp(self, MouseEventArgs(msg, wpm, lpm))
-        if self._rBtnDown:
-            self._rBtnDown = False
-            self.send_msg(MyMessages.RIGHT_CLICK, 0, 0)
-
-
-
-    def _right_mouse_click_handler(self):
         if self.onRightClick: self.onRightClick(self, EventArgs())
-        return 0
 
 
     def _mouseWheenHandler(self, msg, wpm, lpm):

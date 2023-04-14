@@ -23,9 +23,9 @@ txtFlag = con.DT_SINGLELINE | con.DT_VCENTER | con.DT_CENTER | con.DT_NOPREFIX
 class Button(Control):
     """Represents Button control"""
     _count = 1
-    __slots__ = (  "_fdraw", "_gdraw")
+    __slots__ = ("_fdraw", "_gdraw")
 
-    def __init__(self, parent, txt: str = "", xpos = 20, ypos = 20, width = 120, height = 40) -> None:
+    def __init__(self, parent, txt: str = "", xpos = 20, ypos = 20, width = 120, height = 40, bCreate = False ) -> None:
         super().__init__()
         self.name = f"Button_{Button._count}"
         self._parent = parent
@@ -40,15 +40,11 @@ class Button(Control):
         self._text = self.name if txt == "" else txt
         self._style = btnStyle
         self._exStyle = 0x00000004
-        # self._flatBkg = False
-        # self._gd_brush_click = 0
-        # self._gd_brush_hover = 0
-        # self._gd_brush_main = 0
         self._fdraw = None
         self._gdraw = None
 
         Button._count += 1
-        # print(f"{btnStyle = }")
+        if bCreate: self.createHandle()
 
     def createHandle(self):
         self._createControl()
@@ -233,7 +229,6 @@ class GradDraw:
         self.hotpen = self.gcHot.c1.createHPen(0.4)
 
     def finalize(self):
-        print("btn destro")
         if self.defpen: api.DeleteObject(self.defpen)
         if self.hotpen: api.DeleteObject(self.hotpen)
         if self.defbrush: api.DeleteObject(self.defbrush)
@@ -255,10 +250,8 @@ def btnwndproc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         case con.WM_LBUTTONDOWN:btn._leftMouseDownHandler(msg, wp, lp)
 
         case con.WM_LBUTTONUP: btn._leftMouseUpHandler(msg, wp, lp)
-        case MyMessages.MOUSE_CLICK: btn._mouse_click_handler()
         case con.WM_RBUTTONDOWN: btn._rightMouseDownHandler(msg, wp, lp)
         case con.WM_RBUTTONUP: btn._rightMouseUpHandler(msg, wp, lp)
-        case MyMessages.RIGHT_CLICK: btn._right_mouse_click_handler()
         case con.WM_MOUSEWHEEL: btn._mouseWheenHandler(msg, wp, lp)
         case con.WM_MOUSEMOVE: btn._mouseMoveHandler(msg, wp, lp)
         case con.WM_MOUSELEAVE: btn._mouseLeaveHandler()

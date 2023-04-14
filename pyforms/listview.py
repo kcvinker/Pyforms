@@ -51,7 +51,7 @@ class ListView(Control):
                     "_hdrBgColor", "_hdrFgColor", "_hdrBkBrush", "_hdrOwnDraw", "_hotHdr", "_colIndex",
                     "_hdrHotBrush", "_hdrClickable", "_selectable", "_itemIndex", "_itemDrawn", "_destroyCount", "_layCount" )
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 250, height: int = 200) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 250, height: int = 200, bCreate = False) -> None:
         super().__init__()
 
         self._clsName = "SysListView32"
@@ -100,11 +100,11 @@ class ListView(Control):
         self._colIndex = 0
         self._destroyCount = 0
         self._layCount = 0
-
         # Events
 
 
         ListView._count += 1
+        if bCreate: self.createHandle()
 
 
 # -region Public functions
@@ -327,12 +327,16 @@ class ListView(Control):
 
     @property
     def selectedIndex(self): return self._selIndex
+
     @property
     def selectedSubIndex(self): return self._selSubIndex
+
     @property
     def checked(self): return self._cbChecked
+
     @property
     def columns(self): return self._columns
+
     @property
     def items(self): return self._items
 
@@ -430,7 +434,6 @@ class ListView(Control):
         elif isinstance(value, Color):
             self._hdrBgColor = value
 
-
     @property
     def headerForeColor(self) : return self._hdrFgColor
 
@@ -440,7 +443,6 @@ class ListView(Control):
             self._hdrFgColor.updateColor(value)
         elif isinstance(value, Color):
             self._hdrFgColor = value
-
 
     @property
     def headerFont(self) : return self._hdrFont
@@ -459,9 +461,6 @@ class ListView(Control):
 
     @viewStyle.setter
     def viewStyle(self, value): self._viewStyle = value
-
-
-
     # -endregion Properties
 
 # End ListView
@@ -512,6 +511,26 @@ class ListViewColumn:
             case ColumnAlign.CENTER:
                 self._hdrTxtFlag = con.DT_SINGLELINE | con.DT_VCENTER | con.DT_CENTER | con.DT_NOPREFIX
 
+    @property
+    def backColor(self) : return self._bgColor
+
+    @backColor.setter
+    def backColor(self, value) :
+        if isinstance(value, int):
+            self._bgColor.updateColor(value)
+        elif isinstance(value, Color):
+            self._bgColor = value
+
+    @property
+    def foreColor(self) : return self._fgColor
+
+    @foreColor.setter
+    def foreColor(self, value) :
+        if isinstance(value, int):
+            self._fgColor.updateColor(value)
+        elif isinstance(value, Color):
+            self._fgColor = value
+
 
 # End of ListViewColumn class=====================================================
 
@@ -530,11 +549,49 @@ class ListViewItem:
         ListViewItem._stindex += 1
 
     @property
+    def index(self): return self._index
+
+    @property
+    def subItems(self): return self._subitems
+
+    @property
     def text(self): return self._text
 
     @text.setter
     def text(self, value: str):
         self._text = value
+
+    @property
+    def backColor(self) : return self._bgColor
+
+    @backColor.setter
+    def backColor(self, value) :
+        if isinstance(value, int):
+            self._bgColor.updateColor(value)
+        elif isinstance(value, Color):
+            self._bgColor = value
+
+    @property
+    def foreColor(self) : return self._fgColor
+
+    @foreColor.setter
+    def foreColor(self, value) :
+        if isinstance(value, int):
+            self._fgColor.updateColor(value)
+        elif isinstance(value, Color):
+            self._fgColor = value
+
+    @property
+    def imageIndex(self): return self._imgIndex
+
+    @imageIndex.setter
+    def imageIndex(self, value: int): self._imgIndex = value
+
+    @property
+    def font(self): return self._font
+
+    @font.setter
+    def font(self, value: Font): self._font = value
 
 
 
@@ -626,10 +683,8 @@ def lvWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         case con.WM_KILLFOCUS: lv._lostFocusHandler()
         case con.WM_LBUTTONDOWN: lv._leftMouseDownHandler(msg, wp, lp)
         case con.WM_LBUTTONUP: lv._leftMouseUpHandler(msg, wp, lp)
-        case MyMessages.MOUSE_CLICK: lv._mouse_click_handler()
         case con.WM_RBUTTONDOWN: lv._rightMouseDownHandler(msg, wp, lp)
         case con.WM_RBUTTONUP: lv._rightMouseUpHandler(msg, wp, lp)
-        case MyMessages.RIGHT_CLICK: lv._right_mouse_click_handler()
         case con.WM_MOUSEWHEEL: lv._mouseWheenHandler(msg, wp, lp)
         case con.WM_MOUSEMOVE: lv._mouseMoveHandler(msg, wp, lp)
         case con.WM_MOUSELEAVE: lv._mouseLeaveHandler()

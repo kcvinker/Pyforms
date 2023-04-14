@@ -26,7 +26,7 @@ class TreeView(Control):
     			 "_showSel", "_hotTrack", "_lineColor", "_selNode", "_nodes", "_nodeCount",
                  "_nxtNodeHwnd", "_uniqNodeID", "_nodeDict")
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 80, height: int = 24 ) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 80, height: int = 24, bCreate = False ) -> None:
         super().__init__()
         self._clsName = "SysTreeView32"
         self.name = f"TreeView_{TreeView._count}"
@@ -57,9 +57,9 @@ class TreeView(Control):
         self._nodeDict = {} # This dict will hold all the nodes.
 
         #Events
-        # self.on_value_changed = 0
 
         TreeView._count += 1
+        if bCreate: self.createHandle()
 
 
     # -region Public funcs
@@ -342,16 +342,14 @@ def tvWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         #         tv._display_value()
         #         if tv.on_value_changed: tv.on_value_changed(np, EventArgs())
 
-        # case con.WM_SETFOCUS: tv._gotFocusHandler()
-        # case con.WM_KILLFOCUS: tv._lostFocusHandler()
-        # case con.WM_LBUTTONDOWN: tv._leftMouseDownHandler(msg, wp, lp)
-        # case con.WM_LBUTTONUP: tv._leftMouseUpHandler(msg, wp, lp)
-        # case MyMessages.MOUSE_CLICK: tv._mouse_click_handler()
-        # case con.WM_RBUTTONDOWN: tv._rightMouseDownHandler(msg, wp, lp)
-        # case con.WM_RBUTTONUP: tv._rightMouseUpHandler(msg, wp, lp)
-        # case MyMessages.RIGHT_CLICK: tv._right_mouse_click_handler()
-        # case con.WM_MOUSEWHEEL: tv._mouseWheenHandler(msg, wp, lp)
-        # case con.WM_MOUSEMOVE: tv._mouseMoveHandler(msg, wp, lp)
+        case con.WM_SETFOCUS: tv._gotFocusHandler()
+        case con.WM_KILLFOCUS: tv._lostFocusHandler()
+        case con.WM_LBUTTONDOWN: tv._leftMouseDownHandler(msg, wp, lp)
+        case con.WM_LBUTTONUP: tv._leftMouseUpHandler(msg, wp, lp)
+        case con.WM_RBUTTONDOWN: tv._rightMouseDownHandler(msg, wp, lp)
+        case con.WM_RBUTTONUP: tv._rightMouseUpHandler(msg, wp, lp)
+        case con.WM_MOUSEWHEEL: tv._mouseWheenHandler(msg, wp, lp)
+        case con.WM_MOUSEMOVE: tv._mouseMoveHandler(msg, wp, lp)
         # case con.WM_MOUSELEAVE:
         #     if tv._track_mouse_leave:
         #         if not tv._is_mouse_upon_me():

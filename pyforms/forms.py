@@ -56,10 +56,8 @@ def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
         case con.WM_CHAR: this._keyPressHandler(wParam)
         case con.WM_LBUTTONDOWN: this._leftMouseDownHandler(message, wParam, lParam)
         case con.WM_LBUTTONUP: this._leftMouseUpHandler(message, wParam, lParam)
-        case MyMessages.MOUSE_CLICK: this._mouse_click_handler()
         case con.WM_RBUTTONDOWN: this._rightMouseDownHandler(message, wParam, lParam)
         case con.WM_RBUTTONUP: this._rightMouseUpHandler(message, wParam, lParam)
-        case MyMessages.RIGHT_CLICK: this._right_mouse_click_handler()
         case con.WM_MOUSEWHEEL: this._mouseWheenHandler(message, wParam, lParam)
         case con.WM_MOUSEMOVE: this._formMouseMoveHandler(hw, message, wParam, lParam)
         case con.WM_MOUSELEAVE: this._formMouseLeaveHandler()
@@ -152,7 +150,7 @@ class Form(Control):
                     "onClosed", "onActivate", "onDeActivate", "onMoving", "onMoved", "onSizing", "onSized",
                      "_menuEventDict" )
 
-    def __init__(self, txt = "", width = 500, height = 400) -> None:
+    def __init__(self, txt = "", width = 500, height = 400, bCreate = False) -> None:
         super().__init__()
         self._classStr = ""
         self.name = f"Form_{Form._count}"
@@ -193,6 +191,7 @@ class Form(Control):
         self.onSized = None
 
         Form._count += 1
+        if bCreate: self.createHandle()
     #------------------------------
 
 
@@ -221,7 +220,7 @@ class Form(Control):
             print("window creation failed")
 
     # Print mouse points. Useful for getting mouse points in order to place the controls.
-    def prontPont(self, me):
+    def printPoint(self, me):
         global pp_counter
         print(f"[{pp_counter}] X : {me.xpos}, Y : {me.ypos}")
         pp_counter += 1

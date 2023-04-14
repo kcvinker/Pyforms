@@ -33,7 +33,7 @@ class TrackBar(Control):
                     "_thumbHalf", "_range", "_selColor", "_selBrush", "onValueChanged", "onDragging",
                     "onDragged", "_trackChange", "_lbDown", "_ticList", "_point1", "_point2" )
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 150, height: int = 25) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 150, height: int = 25, bCreate = False) -> None:
         super().__init__()
 
         self._clsName = "msctls_trackbar32"
@@ -88,10 +88,11 @@ class TrackBar(Control):
         self._hasBrush = True
 
         # Events
-        self.onValueChanged = 0
-        self.onDragging = 0
-        self.onDragged = 0
+        self.onValueChanged = None
+        self.onDragging = None
+        self.onDragged = None
         TrackBar._count += 1
+        if bCreate: self.createHandle()
 
 # -region Public functions
 
@@ -772,10 +773,8 @@ def trkWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         case con.WM_LBUTTONUP:
             trk._lbDown = False
             trk._leftMouseUpHandler(msg, wp, lp)
-        case MyMessages.MOUSE_CLICK: trk._mouse_click_handler()
         case con.WM_RBUTTONDOWN: trk._rightMouseDownHandler(msg, wp, lp)
         case con.WM_RBUTTONUP: trk._rightMouseUpHandler(msg, wp, lp)
-        case MyMessages.RIGHT_CLICK: trk._right_mouse_click_handler()
         case con.WM_MOUSEWHEEL: trk._mouseWheenHandler(msg, wp, lp)
         case con.WM_MOUSEMOVE: trk._mouseMoveHandler(msg, wp, lp)
         case con.WM_MOUSELEAVE: trk._mouseLeaveHandler()

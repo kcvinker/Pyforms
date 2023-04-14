@@ -29,7 +29,7 @@ class NumberPicker(Control):
                     "_buddyStyle", "_buddyExStyle", "_buddyHwnd", "_buddyCID", "_buddySubclsID", "_linex", "_destroyCount",
                     "_buddySubclsProc", "_txtPos", "onValueChanged", "_myRect", "_udRect", "_keyPressed" )
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 80, height: int = 24 ) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 80, height: int = 24, bCreate = False ) -> None:
         super().__init__()
         self._clsName = "msctls_updown32"
         self.name = f"NumberPicker_{NumberPicker._count}"
@@ -67,9 +67,10 @@ class NumberPicker(Control):
         self._destroyCount = 0
 
         #Events
-        self.onValueChanged = 0
+        self.onValueChanged = None
 
         NumberPicker._count += 1
+        if bCreate: self.createHandle()
 
 
     # -region Public funcs
@@ -425,10 +426,8 @@ def buddyWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             # api.RedrawWindow(hw, None, None, con.RDW_INTERNALPAINT)
             np._leftMouseDownHandler(msg, wp, lp)
         case con.WM_LBUTTONUP: np._leftMouseUpHandler(msg, wp, lp)
-        case MyMessages.MOUSE_CLICK: np._mouse_click_handler()
         case con.WM_RBUTTONDOWN: np._rightMouseDownHandler(msg, wp, lp)
         case con.WM_RBUTTONUP: np._rightMouseUpHandler(msg, wp, lp)
-        case MyMessages.RIGHT_CLICK: np._right_mouse_click_handler()
         case con.WM_MOUSEWHEEL: np._mouseWheenHandler(msg, wp, lp)
 
         case con.WM_PAINT:
