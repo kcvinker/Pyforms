@@ -222,8 +222,8 @@ Color.fromRGB(red, green, blue) # Create new Color from given values
 ### Functions
 ```python
 updateColor(self, clr: int) -> Color # Updates the color with new value
-createHBrush(self, adj: float = 0) -> HBRUSH # Create an HBRUSH to use win api functions
-createHPen(self, adj: float = 0) -> HPEN # Create HPEN to use in win api functions
+createHBrush(self, adj: float = 0) -> HBRUSH[^4] # Create an HBRUSH[^4] to use win api functions
+createHPen(self, adj: float = 0) -> HPEN[^5] # Create HPEN[^5] to use in win api functions
 
 changeToColorRef(self, adj: float) -> COLORREF[^2]
 # Change the color with given value and returns COLORREF[^2]
@@ -1408,3 +1408,5 @@ _fields_ = [
     ('bottom', LONG)
 ]
 ```
+[^4]: HBRUSH - Windows api data type for a brush object.
+[^5]: HPEN - Windows api data type for a pen object.
