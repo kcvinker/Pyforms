@@ -1,7 +1,7 @@
 
 # Created on 13-Nov-2022 15:06:46
 from ctypes import WINFUNCTYPE, Structure, windll, POINTER, c_void_p
-from ctypes.wintypes import HICON, HWND, UINT, DWORD, LONG, HDC, LPCWSTR, LPWSTR, INT, HMENU, HINSTANCE, LPVOID
+from ctypes.wintypes import HICON, HWND, UINT, DWORD, LONG, HDC, LPCWSTR, LPWSTR, INT, HMENU, HINSTANCE, LPVOID, USHORT
 from ctypes.wintypes import HMODULE, ATOM, BOOL, HBRUSH, HGDIOBJ, HBITMAP, COLORREF, HPEN, HANDLE, BYTE, WCHAR, HFONT, WORD, HRGN
 import ctypes as ct
 # from .colors import clrReffrom_RGB
@@ -20,6 +20,8 @@ HTREEITEM = HANDLE
 
 WNDPROC = WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM)
 SUBCLASSPROC = WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
+LPOFNHOOKPROC = WINFUNCTYPE(UINT_PTR, HWND, UINT, WPARAM, LPARAM)
+BROWSERCBPROC = WINFUNCTYPE(INT, HWND, UINT, LPARAM, LPARAM)
 
 # -region Structures
 
@@ -35,7 +37,7 @@ class POINT(Structure):
         ('y', LONG)
     ]
 
-POINTPTR = POINTER(POINT)
+LPPOINT = POINTER(POINT)
 
 class RECT(Structure):
     _fields_ = [
@@ -45,7 +47,7 @@ class RECT(Structure):
         ('bottom', LONG)
     ]
 
-RECTPTR = POINTER(RECT)
+LPRECT = POINTER(RECT)
 
 
 class WNDCLASSEX(Structure): # tagWNDCLASSEXW
@@ -422,12 +424,111 @@ class MENUINFO(Structure):
         ("dwMenuData", ULONG_PTR),
     ]
 LPMENUINFO = POINTER(MENUINFO)
+
+class MENUITEMINFO(Structure):
+    _fields_ = [
+        ("cbSize", UINT),
+        ("fMask", UINT),
+        ("fType", UINT),
+        ("fSTate", UINT),
+        ("wID", UINT),
+        ("hSubMenu", HMENU),
+        ("hbmpChecked", HBITMAP),
+        ("hbmpUnchecked", HBITMAP),
+        ("dwItemData", ULONG_PTR),
+        ("dwTypeData", LPWSTR),
+        ("cch", UINT),
+        ("hbmpItem", HBITMAP),
+    ]
+LPMENUITEMINFO = POINTER(MENUITEMINFO)
+
+class MEASUREITEMSTRUCT(Structure):
+    _fields_ = [
+        ("CtlType", UINT),
+        ("CtlID", UINT),
+        ("itemID", UINT),
+        ("itemWidth", UINT),
+        ("itemHeight", UINT),
+        ("itemData", ULONG_PTR),
+    ]
+LPMEASUREITEMSTRUCT = POINTER(MEASUREITEMSTRUCT)
+
+class DRAWITEMSTRUCT(Structure):
+    _fields_ = [
+        ("CtlType", UINT),
+        ("CtlID", UINT),
+        ("itemID", UINT),
+        ("itemAction", UINT),
+        ("itemState", UINT),
+        ("hwndItem", HWND),
+        ("hDC", HDC),
+        ("rcItem", RECT),
+        ("itemData", ULONG_PTR),
+    ]
+LPDRAWITEMSTRUCT = POINTER(DRAWITEMSTRUCT)
+
+class OPENFILENAMEW(Structure):
+    _fields_ = [
+        ("lStructSize", DWORD),
+        ("hwndOwner", HWND),
+        ("hInstance", HINSTANCE),
+        ("lpstrFilter", LPCWSTR),
+        ("lpstrCustomFilter", LPWSTR),
+        ("nMaxCustFilter", DWORD),
+        ("nFilterIndex", DWORD),
+        ("lpstrFile", LPWSTR),
+        ("nMaxFile", DWORD),
+        ("lpstrFileTitle", LPWSTR),
+        ("nMaxFileTitle", DWORD),
+        ("lpstrInitialDir", LPCWSTR),
+        ("lpstrTitle", LPCWSTR),
+        ("Flags", DWORD),
+        ("nFileOffset", WORD),
+        ("nFileExtension", WORD),
+        ("lpstrDefExt", LPCWSTR),
+        ("lCustData", LPARAM),
+        ("lpfnHook", LPOFNHOOKPROC),
+        ("lpTemplateName", LPCWSTR),
+    ]
+LPOPENFILENAMEW = POINTER(OPENFILENAMEW)
+
+class SHITEMID(Structure):
+    _fields_ = [
+        ("cb", USHORT),
+        ("abID", BYTE * 1),
+    ]
+
+class ITEMIDLIST(Structure):
+    _fields_ = [
+        ("mkid", SHITEMID),
+    ]
+LPITEMIDLIST = POINTER(ITEMIDLIST)
+ITEMIDLIST_ABSOLUTE = ITEMIDLIST
+PCIDLIST_ABSOLUTE = POINTER(ITEMIDLIST_ABSOLUTE)
+PIDLIST_ABSOLUTE = POINTER(ITEMIDLIST_ABSOLUTE)
+
+class BROWSEINFOW(Structure):
+    _fields_ = [
+        ("hwndOwner", HWND),
+        ("pidlRoot", PCIDLIST_ABSOLUTE),
+        ("pszDisplayName", LPWSTR),
+        ("lpszTitle", LPCWSTR),
+        ("ulFlags", UINT),
+        ("lpfn", BROWSERCBPROC),
+        ("lParam", LPARAM),
+        ("iImage", INT),
+    ]
+LPBROWSEINFOW = POINTER(BROWSEINFOW)
 # -endregion Structures
 
 
 # -region Functions
 
 # -region USER32 Functions
+
+MessageBox = windll.user32.MessageBoxW
+MessageBox.argtypes = [HWND, LPCWSTR, LPCWSTR, UINT]
+MessageBox.restype = INT
 
 CreateWindowEx = windll.user32.CreateWindowExW
 """ ( DWORD, LPCWSTR, LPCWSTR, DWORD, INT, INT, INT, INT, HWND, HMENU, HINSTANCE, LPVOID,) -> HWND"""
@@ -455,8 +556,8 @@ CloseWindow.argtypes = (HWND,)
 CloseWindow.restype = BOOL
 
 InflateRect = windll.user32.InflateRect
-""" (RECTPTR, INT, INT) -> BOOL"""
-InflateRect.argtypes = (RECTPTR, INT, INT)
+""" (LPRECT, INT, INT) -> BOOL"""
+InflateRect.argtypes = (LPRECT, INT, INT)
 InflateRect.restype = BOOL
 
 SetFocus = windll.user32.SetFocus
@@ -500,18 +601,23 @@ TrackMouseEvent.argtypes = [POINTER(TRACKMOUSEEVENT)]
 TrackMouseEvent.restype = BOOL
 
 GetClientRect = windll.user32.GetClientRect
-""" (HWND, RECTPTR, ) -> BOOL"""
-GetClientRect.argtypes = (HWND, RECTPTR, )
+""" (HWND, LPRECT, ) -> BOOL"""
+GetClientRect.argtypes = (HWND, LPRECT, )
 GetClientRect.restype = BOOL
 
 FillRect = windll.user32.FillRect
-""" (HDC, RECTPTR, HBRUSH, ) -> INT"""
-FillRect.argtypes = (HDC, RECTPTR, HBRUSH, )
+""" (HDC, LPRECT, HBRUSH, ) -> INT"""
+FillRect.argtypes = (HDC, LPRECT, HBRUSH, )
 FillRect.restype = INT
 
+FrameRect = windll.user32.FrameRect
+""" (HDC, LPRECT, HBRUSH, ) -> INT"""
+FrameRect.argtypes = (HDC, LPRECT, HBRUSH, )
+FrameRect.restype = INT
+
 DrawEdge = windll.user32.DrawEdge
-""" (HDC, RECTPTR, UINT, UINT ) -> BOOL"""
-DrawEdge.argtypes = (HDC, RECTPTR, UINT, UINT )
+""" (HDC, LPRECT, UINT, UINT ) -> BOOL"""
+DrawEdge.argtypes = (HDC, LPRECT, UINT, UINT )
 DrawEdge.restype = BOOL
 
 SendMessage = windll.user32.SendMessageW
@@ -550,8 +656,8 @@ GetWindowLongPtr.argtypes = [HWND, INT]
 GetWindowLongPtr.restype = LONG_PTR
 
 DrawFrameControl = windll.user32.DrawFrameControl
-""" [HDC, RECTPTR, UINT, UINT] -> BOOL"""
-DrawFrameControl.argtypes = [HDC, RECTPTR, UINT, UINT]
+""" [HDC, LPRECT, UINT, UINT] -> BOOL"""
+DrawFrameControl.argtypes = [HDC, LPRECT, UINT, UINT]
 DrawFrameControl.restype = BOOL
 
 GetDC = windll.user32.GetDC
@@ -565,13 +671,13 @@ ReleaseDC.argtypes = [HWND, HDC]
 ReleaseDC.restype = INT
 
 InvalidateRect = windll.user32.InvalidateRect
-""" [HWND, RECTPTR, BOOL] -> BOOL"""
-InvalidateRect.argtypes = [HWND, RECTPTR, BOOL]
+""" [HWND, LPRECT, BOOL] -> BOOL"""
+InvalidateRect.argtypes = [HWND, LPRECT, BOOL]
 InvalidateRect.restype = BOOL
 
 DrawText = windll.user32.DrawTextW
-""" [HDC, LPCWSTR, INT, RECTPTR, UINT] -> INT"""
-DrawText.argtypes = [HDC, LPCWSTR, INT, RECTPTR, UINT]
+""" [HDC, LPCWSTR, INT, LPRECT, UINT] -> INT"""
+DrawText.argtypes = [HDC, LPCWSTR, INT, LPRECT, UINT]
 DrawText.restype = INT
 
 BeginPaint = windll.user32.BeginPaint
@@ -689,6 +795,39 @@ CreateMenu = windll.user32.CreateMenu
 CreateMenu.argtypes = []
 CreateMenu.restype = HMENU
 
+CreatePopupMenu = windll.user32.CreatePopupMenu
+""" [] -> HMENU"""
+CreatePopupMenu.argtypes = []
+CreatePopupMenu.restype = HMENU
+
+TrackPopupMenu = windll.user32.TrackPopupMenu
+""" [HMENU, UINT, INT, INT, INT, HWND, LPRECT] -> BOOL"""
+TrackPopupMenu.argtypes = [HMENU, UINT, INT, INT, INT, HWND, LPRECT]
+TrackPopupMenu.restype = BOOL
+
+SetMenuItemInfo = windll.user32.SetMenuItemInfoW
+""" [HMENU, UINT, BOOL, LPMENUITEMINFO] -> BOOL"""
+SetMenuItemInfo.argtypes = [HMENU, UINT, BOOL, LPMENUITEMINFO]
+SetMenuItemInfo.restype = BOOL
+
+GetSubMenu = windll.user32.GetSubMenu
+""" [HMENU, INT] -> HMENU"""
+GetSubMenu.argtypes = [HMENU, INT]
+GetSubMenu.restype = HMENU
+
+
+DestroyMenu = windll.user32.DestroyMenu
+""" [HMENU] -> BOOL"""
+DestroyMenu.argtypes = [HMENU]
+DestroyMenu.restype = BOOL
+
+EnableMenuItem = windll.user32.EnableMenuItem
+""" [HMENU, UINT, UINT] -> BOOL"""
+EnableMenuItem.argtypes = [HMENU, UINT, UINT]
+EnableMenuItem.restype = BOOL
+
+
+
 AppendMenu = windll.user32.AppendMenuW
 """ [HMENU, UINT: flags, UINT_PTR: menu id, LPCWSTR: text] -> BOOL"""
 AppendMenu.argtypes = [HMENU, UINT, UINT_PTR, LPCWSTR]
@@ -703,6 +842,26 @@ SetMenuInfo = windll.user32.SetMenuInfo
 """ [HWND, LPMENUINFO] -> BOOL"""
 SetMenuInfo.argtypes = [HWND, LPMENUINFO]
 SetMenuInfo.restype = BOOL
+
+InsertMenuItemW = windll.user32.InsertMenuItemW
+""" [HWND, LPMENUITEMINFO] -> BOOL"""
+InsertMenuItemW.argtypes = [HMENU, UINT, BOOL, LPMENUITEMINFO]
+InsertMenuItemW.restype = BOOL
+
+InsertMenuW = windll.user32.InsertMenuW
+""" [HMENU, UINT, UINT, UINT_PTR, LPCWSTR] -> BOOL"""
+InsertMenuW.argtypes = [HMENU, UINT, UINT, UINT_PTR, LPCWSTR]
+InsertMenuW.restype = BOOL
+
+DrawMenuBar = windll.user32.DrawMenuBar
+""" [HWND] -> BOOL"""
+DrawMenuBar.argtypes = [HWND]
+DrawMenuBar.restype = BOOL
+
+ClientToScreen = windll.user32.ClientToScreen
+""" [HWND, LPPOINT] -> BOOL"""
+ClientToScreen.argtypes = [HWND, LPPOINT]
+ClientToScreen.restype = BOOL
 
 
 
@@ -914,7 +1073,30 @@ SetWindowThemeAttribute = windll.uxtheme.SetWindowThemeAttribute
 SetWindowThemeAttribute.argtypes = [HWND, INT, ct.c_void_p, DWORD]
 SetWindowThemeAttribute.restype = HANDLE
 
+GetOpenFileName = windll.Comdlg32.GetOpenFileNameW
+"""[LPOPENFILENAMEW] -> BOOL"""
+GetOpenFileName.argtypes = [LPOPENFILENAMEW]
+GetOpenFileName.restype = BOOL
 
+GetSaveFileName = windll.Comdlg32.GetSaveFileNameW
+"""[LPOPENFILENAMEW] -> BOOL"""
+GetSaveFileName.argtypes = [LPOPENFILENAMEW]
+GetSaveFileName.restype = BOOL
+
+SHBrowseForFolder = windll.Shell32.SHBrowseForFolderW
+"""[LPBROWSEINFOW] -> PIDLIST_ABSOLUTE"""
+SHBrowseForFolder.argtypes = [LPBROWSEINFOW]
+SHBrowseForFolder.restype = PIDLIST_ABSOLUTE
+
+SHGetPathFromIDList = windll.Shell32.SHGetPathFromIDListW
+"""[PCIDLIST_ABSOLUTE, LPWSTR] -> BOOL"""
+SHGetPathFromIDList.argtypes = [PCIDLIST_ABSOLUTE, LPWSTR]
+SHGetPathFromIDList.restype = BOOL
+
+CoTaskMemFree = windll.Ole32.CoTaskMemFree
+"""[c_void_p] -> BOOL"""
+CoTaskMemFree.argtypes = [c_void_p]
+CoTaskMemFree.restype = None
 
 # -endregion MISC DLL Functions
 
