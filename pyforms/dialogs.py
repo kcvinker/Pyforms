@@ -9,6 +9,7 @@ OFN_ALLOWMULTISELECT = 0x200
 OFN_PATHMUSTEXIST = 0x800
 OFN_FILEMUSTEXIST = 0x1000
 OFN_FORCESHOWHIDDEN = 0x10000000
+OFN_EXPLORER = 0x00080000
 OFN_OVERWRITEPROMPT = 0x2
 BIF_RETURNONLYFSDIRS = 0x00000001
 BIF_NEWDIALOGSTYLE = 0x00000040
@@ -26,6 +27,15 @@ class DialogBase:
         self._fileNameStart = 0
         self._extStart = 0
         self._selPath = ""
+
+    def setMultiFilters(self, description, filterList):
+        self._filter = f"{description}\0"
+        filCount = len(filterList) - 1
+        for i, filter in enumerate(filterList):
+            self._filter += f"*{filter}"
+            if i < filCount: self._filter += ";"
+        self._filter += "\0\0"
+
 
     @property
     def title(self): return self._title
@@ -57,36 +67,61 @@ class DialogBase:
     @property
     def selectedFile(self): return self._selPath
 
+# Parameters
+# 1. obj - may be a FileOpenDialog class or FileSaveDialog class.
+# 2. isOpen - bool
+# 3. hwnd - HWND (A window handle)
+def _showDialogHelper(obj, isOpen, hwnd):
+    maxArrSize = 32768 + 256 * 100 + 1
+    ofn = OPENFILENAMEW()
+    ofn.hwndOwner = hwnd
+    buffer = create_unicode_buffer(maxArrSize)
+    idBuff = None if obj._initDir == "" else cast(create_unicode_buffer(obj._initDir), c_wchar_p)
+    ofn.lStructSize = sizeof(OPENFILENAMEW)
+    ofn.lpstrFilter = cast(create_unicode_buffer(obj._filter), c_wchar_p)
+    ofn.lpstrFile = cast(buffer, c_wchar_p)
+    ofn.lpstrInitialDir = idBuff
+    ofn.lpstrTitle = obj._title
+    ofn.nMaxFile = maxArrSize
+    ofn.nMaxFileTitle = MAX_PATH
+    ofn.lpstrDefExt = '\u0000'
+    retVal = 0
+    if isOpen:
+        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST
+        if obj._multiSel: ofn.Flags |= OFN_ALLOWMULTISELECT | OFN_EXPLORER
+        if obj._showHidden: ofn.Flags |= OFN_FORCESHOWHIDDEN
+        retVal = GetOpenFileName(byref(ofn))
+        if retVal > 0 and obj._multiSel:
+            obj._extractFileNames(buffer, ofn.nFileOffset)
 
+    else:
+        ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT
+        retVal = GetSaveFileName(byref(ofn))
+
+    if retVal != 0:
+        obj._fileNameStart = ofn.nFileOffset
+        obj._extStart = ofn.nFileExtension
+        obj._selPath = buffer.value
+        return True
+    return False
 
 class FileOpenDialog(DialogBase):
-    def __init__(self, title = "Open File", initDir = "", filterStr = "All files\0*.*\0") -> None:
+    def __init__(self, title = "Select File", initDir = "", filterStr = "All files\0*.*\0") -> None:
         super().__init__(title, initDir, filterStr)
         self._multiSel = False
         self._showHidden = False
+        self._fNames = []
+
+    def _extractFileNames(self, buff, startPos):
+        parts = buff[:].rstrip('\0')
+        dirPath = parts[:startPos].rstrip('\0')
+        names = parts[startPos:].split('\0')
+        for name in names:
+            self._fNames.append(f"{dirPath}\{name}")
+
 
     def showDialog(self, hwnd = None):
-        ofn = OPENFILENAMEW()
-        ofn.hwndOwner = hwnd
-        buffer = create_unicode_buffer(MAX_PATH)
-        idBuff = None if self._initDir == "" else cast(create_unicode_buffer(self._initDir), c_wchar_p)
-        ofn.lStructSize = sizeof(OPENFILENAMEW)
-        ofn.lpstrFilter = cast(create_unicode_buffer(self._filter), c_wchar_p)
-        ofn.lpstrFile = cast(buffer, c_wchar_p)
-        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST
-        if self._multiSel: ofn.Flags |= OFN_ALLOWMULTISELECT
-        if self._showHidden: ofn.Flags |= OFN_FORCESHOWHIDDEN
-        ofn.lpstrInitialDir = idBuff
-        ofn.lpstrTitle = self._title
-        ofn.nMaxFile = MAX_PATH
-        ret = GetOpenFileName(byref(ofn))
-        if ret != 0:
-            self._fileNameStart = ofn.nFileOffset
-            self._extStart = ofn.nFileExtension
-            self._selPath = buffer.value
-            return True
-        return False
-
+        return _showDialogHelper(self, True, hwnd)
 
     @property
     def multiSelection(self): return self._multiSel
@@ -102,6 +137,9 @@ class FileOpenDialog(DialogBase):
     def showHiddenFiles(self, value: bool): self._showHidden = value
     #---------------------------------------------------------
 
+    @property
+    def fileNames(self): return self._fNames
+
 # End of FileOpenDialog================================================
 
 
@@ -112,25 +150,7 @@ class FileSaveDialog(DialogBase):
         self._defExt = "txt"
 
     def showDialog(self, hwnd = None):
-        ofn = OPENFILENAMEW()
-        ofn.hwndOwner = hwnd
-        buffer = create_unicode_buffer(MAX_PATH)
-        idBuff = None if self._initDir == "" else cast(create_unicode_buffer(self._initDir), c_wchar_p)
-        ofn.lStructSize = sizeof(OPENFILENAMEW)
-        ofn.lpstrFilter = cast(create_unicode_buffer(self._filter), c_wchar_p)
-        ofn.lpstrFile = cast(buffer, c_wchar_p)
-        ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT
-        ofn.lpstrInitialDir = idBuff
-        ofn.lpstrTitle = self._title
-        ofn.lpstrDefExt = cast(create_unicode_buffer(self._defExt), c_wchar_p)
-        ofn.nMaxFile = MAX_PATH
-        ret = GetSaveFileName(byref(ofn))
-        if ret != 0:
-            self._fileNameStart = ofn.nFileOffset
-            self._extStart = ofn.nFileExtension
-            self._selPath = buffer.value
-            return True
-        return False
+        return _showDialogHelper(self, False, hwnd)
 
     @property
     def defaultExtension(self): return self._defExt
@@ -148,6 +168,7 @@ class FolderBrowserDialog(DialogBase):
         super().__init__(title, initDir)
         self._newFolBtn = False
         self._showFiles = False
+
 
     def showDialog(self, hwnd = None):
         buffer = create_unicode_buffer(MAX_PATH)
@@ -167,6 +188,9 @@ class FolderBrowserDialog(DialogBase):
         return False
 
     @property
+    def selectedPath(self): return self._selPath
+
+    @property
     def newFolderButton(self): return self._newFolBtn
 
     @newFolderButton.setter
@@ -179,3 +203,4 @@ class FolderBrowserDialog(DialogBase):
     @showFiles.setter
     def showFiles(self, value: bool):
         self._showFiles = value
+

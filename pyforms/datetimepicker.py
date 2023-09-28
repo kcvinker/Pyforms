@@ -36,7 +36,7 @@ class DateTimePicker(Control):
         self._ctlType = ControlType.DATE_TIME_PICKER
         self._parent = parent
         self._bgColor = Color(0xFFFFFF)
-        self._fgColor = Color(0x000000)
+        # self._fgColor = Color(0x000000) # Not needed, since Control's init function is doing this.
         self._font = parent._font
         self._width = 0
         self._height = 0

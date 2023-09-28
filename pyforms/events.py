@@ -2,7 +2,7 @@
 
 import ctypes
 import datetime as dt
-from ctypes import POINTER
+from ctypes import POINTER, cast
 from . import constants as con
 from . import apis as api
 from .commons import getWheelDelta, getKeyState, Area
@@ -38,21 +38,34 @@ class MouseEventArgs(EventArgs):
 #--------------------------------End of MouseEventArgs
 
 class KeyEventArgs(EventArgs):
-    def __init__(self, wp) -> None:
+    def __init__(self, ctl, isDown, wp) -> None:
         super().__init__()
         self.keyCode = Keys(wp)
+        self.keyValue = self.keyCode.value
+        self.shiftPressed = False
+        self.ctrlPressed = False
+        self.altPressed = False
+
         match self.keyCode:
             case Keys.SHIFT:
-                self.shiftPressed = True
+                # self.shiftPressed = isDown
                 self.modifier = Keys.SHIFT_MODIFIER
-            case Keys.CTRL:
-                self.ctrlPressed = True
-                self.modifier = Keys.CTRL_MODIFIER
-            case Keys.ALT:
-                self.altPressed = True
-                self.modifier = Keys.ALT_MODIFIER
+                ctl._keyMod += 1 if isDown else -1
 
-        self.keyValue = self.keyCode.value
+            case Keys.CTRL:
+                # self.ctrlPressed = isDown
+                self.modifier = Keys.CTRL_MODIFIER
+                ctl._keyMod += 2 if isDown else -2
+            case Keys.ALT:
+                # self.altPressed = isDown
+                self.modifier = Keys.ALT_MODIFIER
+                ctl._keyMod += 4 if isDown else -4
+
+        self.shiftPressed = bool(ctl._keyMod & 1)
+        self.ctrlPressed = bool(ctl._keyMod & 2)
+        self.altPressed = bool(ctl._keyMod & 4)
+
+
 
 #------------------------End of KeyEventArgs-----------
 
@@ -85,4 +98,20 @@ class DateTimeEventArgs(EventArgs):
 
     @property
     def dateTime(self) -> dt.datetime: return self._dateTime
+
+
+class HeaderEventArgs(EventArgs):
+    __slot__ = ("_index", "_btn")
+    def __init__(self, lpm) -> None:
+        super().__init__()
+        hdr = cast(lpm, api.LPNMHEADER).contents
+        self._index = hdr.iItem
+        self._btn = hdr.iButton
+
+    @property
+    def index(self): return self._index
+
+    @property
+    def button(self): return self._btn
+
 

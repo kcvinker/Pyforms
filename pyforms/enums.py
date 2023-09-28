@@ -21,15 +21,16 @@ class ControlType(Enum):
     COMBO_BOX = 4
     DATE_TIME_PICKER = 5
     GROUP_BOX = 6
-    LABEL = 7
-    LIST_BOX = 8
-    LIST_VIEW = 9
-    NUM_PICKER = 10
-    PROGRESS_BAR = 11
-    RADIO_BUTTON = 12
-    TEXT_BOX = 13
-    TRACK_BAR = 14
-    TREE_VIEW = 15
+    HEADER = 7
+    LABEL = 8
+    LIST_BOX = 9
+    LIST_VIEW = 10
+    NUM_PICKER = 11
+    PROGRESS_BAR = 12
+    RADIO_BUTTON = 13
+    TEXT_BOX = 14
+    TRACK_BAR = 15
+    TREE_VIEW = 16
 
 
 class FormStyle(Enum):
@@ -58,6 +59,14 @@ class FontWeight(Enum):
     BOLD = 700
     EXTRA_BOLD = 800
     THICK = 900
+
+class HeaderItemState(Enum):
+    NONE = 0
+    USE_DEF_ITEMS = 1
+
+class HeaderStyle(Enum):
+    FLAT = 0
+    CURVED = 1
 
 class MouseButton(Enum):
     NONE = 0
@@ -189,6 +198,36 @@ class ProgressBarState(Enum):
     PAUSED = 3
 
 
+class MessageButtons(Enum):
+	OKAY = 0x00000000
+	OKAY_CANCEL = 0x00000001
+	ABORT_RETRY_IGNORE = 0x00000002
+	YES_NO_CANCEL = 0x00000003
+	YES_NO = 0x00000004
+	RETRY_CANCEL = 0x00000005
+	CANCEL_TRY_CONTINUE = 0x00000006
+
+class MessageIcons(Enum):
+	NONE = 0x0
+	ERROR = 0x00000010
+	QUESTION = 0x00000020
+	WARNING = 0x00000030
+	INFORMATION = 0x00000040
+
+class MessageResult(Enum):
+	OKAY = 1
+	CANCEL = 2
+	ABORT = 3
+	RETRY = 4
+	IGNORE = 5
+	YES = 6
+	NO = 7
+	TRY_AGAIN = 10
+	CONTINUE = 11
+
+
+
+
 class Keys(Enum):
     MODIFIER = -65_536
     NONE = 0
@@ -204,10 +243,10 @@ class Keys(Enum):
     CLEAR = 12
     ENTER = 13
     SHIFT = 16
-    CTRL = 14
-    ALT = 15
-    PAUSE = 16
-    CAPS_LOCK = 17
+    CTRL = 17
+    ALT = 18
+    PAUSE = 19
+    CAPS_LOCK = 20
     ESCAPE = 27
     SPACE = 32
     PAGE_UP = 33

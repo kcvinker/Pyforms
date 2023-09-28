@@ -1,5 +1,5 @@
 # Common module - Created on
-from ctypes import c_int, cast, windll, byref, sizeof
+from ctypes import c_int, cast, windll, byref, sizeof, py_object
 from .enums import FontWeight
 from . import apis as api
 from .apis import RECT, LOGFONT, POINT
@@ -11,6 +11,7 @@ INT_MIN   =  -2147483647 - 1
 INT_MAX  =     2147483647
 TRANSPARENT = 0x00000001
 OPAQUE = 0x00000002
+menuTxtFlag = con.DT_LEFT | con.DT_SINGLELINE | con.DT_VCENTER
 
 def getMousePosOnMsg():
     dw_value = windll.user32.GetMessagePos()
@@ -140,7 +141,8 @@ class MyMessages:
     VERT_SCROLL = 9011
     TREENODE_NOTIFY = 9012 # A tree node notify it's tree view control about changes
     BUDDY_RESET = 9013
-    MENU_EVENT_SET = 9014 # To inform a form that a menu event is added
+    MENU_ADDED = 9014
+    THREAD_MSG = con.WM_USER + 5
 
 
 
@@ -189,5 +191,20 @@ def getHalfOfRect(rct, isUpper):
         height = rct[3] - rct[1]
         top = int(rct[1] + (height / 2))
         return (rct[0], top, rct[2], rct[3])
+
+
+def sendThreadMsg(hwnd, wpm, lpm):
+    """Send a message to the window ownd the 'hwnd' and pass the wpm & lpm to it's wndproc function.
+        You can use the 'onThreadMsg' event handler to handle this message. Signature is 'func(wpm, lpm)'
+
+        Params: hwnd - Window handle which receives the message.
+                wpm - 64 bit wParam type (Pass any python object)
+                lpm - 64 bit lParam type (Pass any python object)
+    """
+    return api.SendNotifyMessage(hwnd, MyMessages.THREAD_MSG, wpm, lpm )
+
+
+def castPyObj(value):
+    return cast(value, py_object).value
 
 

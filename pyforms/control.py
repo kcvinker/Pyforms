@@ -9,7 +9,7 @@ from .apis import INITCOMMONCONTROLSEX, DWORD
 from . import apis as api
 from . import constants as con
 from .events import EventArgs, MouseEventArgs, KeyEventArgs, KeyPressEventArgs
-from .colors import Color
+from .colors import Color, COLOR_BLACK
 import datetime
 # from horology import Timing
 
@@ -68,7 +68,7 @@ class Control:
     __slots__ = ("tvar", "name", "_hwnd", "_text", "_width", "_height", "_style", "_exStyle", "_hInst", "_visible",
                  "_clsName", "_cid", "_xpos", "_ypos", "_parent", "_isCreated", "_isTextable", "_lBtnDown",
                  "_rBtnDown", "_isMouseEntered", "_ctlType", "_font", "_fgColor", "_bgColor", "_drawFlag",
-                 "_hasBrush", "_bkgBrush",
+                 "_hasBrush", "_bkgBrush", "_contextMenu", "_keyMod",
                   "_onMouseEnter", "onMouseDown", "onMouseUp", "onRightMouseDown", "onRightMouseUp",
                   "onRightClick", "_onMouseLeave", "onDoubleClick", "onMouseWheel", "onMouseMove",
                   "onMouseHover", "onKeyDown", "onKeyUp", "onKeyPress", "onPaint", "onGotFocus",
@@ -95,11 +95,13 @@ class Control:
         self._isMouseEntered = False
         self._ctlType = ControlType.NONE
         self._font = Font()
-        self._fgColor = Color(0)
-        self._bgColor = Color(0)
+        self._fgColor = Color(0x000000)
+        self._bgColor = Color(0xFFFFFF)
         self._bkgBrush = None
         self._drawFlag = 0
         self._hasBrush = False
+        self._contextMenu = None
+        self._keyMod = 0
 
 
         # Events
@@ -198,6 +200,7 @@ class Control:
     # Internal function to get the text from control
     def _getCtrlText(self):
         """Return the text from this control."""
+
         # with Timing("get text time : "):
         tLen = api.GetWindowTextLength(self._hwnd) + 1
         buffer = create_unicode_buffer(tLen)
@@ -266,6 +269,19 @@ class Control:
         """Returns the hwnd of this control"""
         return self._hwnd
     #------------------------------------------------------HANDLE
+
+    @property
+    def contextMenu(self):
+        """Get the context menu of this Control """
+        return self._contextMenu
+
+    @contextMenu.setter
+    def contextMenu(self, value):
+        """Set the context menu for this Control"""
+        self._contextMenu = value
+        self._contextMenu._font = self._font
+
+
 
     @property
     def parent(self):
@@ -394,7 +410,10 @@ class Control:
     @foreColor.setter
     def foreColor(self, value : int):
         """Set the control's text color"""
-        self._fgColor.updateColor(value)
+        if isinstance(value, int):
+            self._fgColor.updateColor(value)
+        elif isinstance(value, Color):
+            self._fgColor = value
         if not self._drawFlag & 1: self._drawFlag += 1
         self._manageRedraw()
     #--------------------------------------------[9]---------
@@ -434,12 +453,18 @@ class Control:
 
 
     def _rightMouseDownHandler(self, msg, wpm, lpm):
+        # if self._contextMenu:
+        #     self._contextMenu.showContextMenu(self._hwnd, lpm)
         if self.onRightMouseDown: self.onRightMouseDown(self, MouseEventArgs(msg, wpm, lpm))
+        return 0
 
 
     def _rightMouseUpHandler(self, msg, wpm, lpm):
+        # print("control right down")
+        # if self._contextMenu: self._contextMenu.showContextMenu(self._hwnd, lpm)
         if self.onRightMouseUp: self.onRightMouseUp(self, MouseEventArgs(msg, wpm, lpm))
         if self.onRightClick: self.onRightClick(self, EventArgs())
+
 
 
     def _mouseWheenHandler(self, msg, wpm, lpm):
@@ -463,11 +488,11 @@ class Control:
 
 
     def _keyDownHandler(self, wpm):
-        if self.onKeyDown: self.onKeyDown(self, KeyEventArgs(wpm))
+        if self.onKeyDown: self.onKeyDown(self, KeyEventArgs(self, True, wpm))
         return 0
 
     def _keyUpHandler(self, wpm):
-        if self.onKeyUp: self.onKeyUp(self, KeyEventArgs(wpm))
+        if self.onKeyUp: self.onKeyUp(self, KeyEventArgs(self, False, wpm))
         return 0
 
     def _keyPressHandler(self, wp):
@@ -483,6 +508,9 @@ class Control:
         if self.onLostFocus: self.onLostFocus(self, EventArgs())
         return 0
 
+    def _wmContextMenuHandler(self, lpm):
+        if self._contextMenu:
+            self._contextMenu.showContextMenu(lpm)
 
     # -endregion Event handlers
 

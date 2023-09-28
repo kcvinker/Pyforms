@@ -489,6 +489,9 @@ class OPENFILENAMEW(Structure):
         ("lCustData", LPARAM),
         ("lpfnHook", LPOFNHOOKPROC),
         ("lpTemplateName", LPCWSTR),
+        ("pvReserved", c_void_p),
+        ("dwReserved", DWORD),
+        ("FlagsEx", DWORD),
     ]
 LPOPENFILENAMEW = POINTER(OPENFILENAMEW)
 
@@ -624,6 +627,11 @@ SendMessage = windll.user32.SendMessageW
 """ [HWND, UINT, WPARAM, LPARAM] -> LRESULT"""
 SendMessage.argtypes = [HWND, UINT, WPARAM, LPARAM]
 SendMessage.restype = LRESULT
+
+SendNotifyMessage = windll.user32.SendNotifyMessageW
+""" [HWND, UINT, WPARAM, LPARAM] -> LRESULT"""
+SendNotifyMessage.argtypes = [HWND, UINT, WPARAM, LPARAM]
+SendNotifyMessage.restype = BOOL
 
 GetSystemMetrics = windll.user32.GetSystemMetrics
 """ (INT,) -> INT"""

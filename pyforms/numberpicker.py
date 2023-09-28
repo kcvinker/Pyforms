@@ -112,7 +112,7 @@ class NumberPicker(Control):
                 api.SetWindowSubclass(self._buddyHwnd, buddyWndProc, self._buddySubclsID, self._hwnd)
                 api.SendMessage(self._buddyHwnd, con.WM_SETFONT, self.font.handle, 1)
                 old_buddy = api.SendMessage(self._hwnd, con.UDM_SETBUDDY, self._buddyHwnd, 0)
-                api.SendMessage(self._hwnd, con.UDM_SETRANGE32, self._minRange, self._maxRange)
+                api.SendMessage(self._hwnd, con.UDM_SETRANGE32, int(self._minRange), int(self._maxRange))
 
                 api.GetClientRect(self._buddyHwnd, byref(self._buddyRect))
                 api.GetClientRect(self._hwnd, byref(self._udRect))
@@ -144,11 +144,13 @@ class NumberPicker(Control):
             self._text = f"{self._value:,.{self._deciPrecis}f}"
         else:
             self._text = f"{self._value:.{self._deciPrecis}f}"
+            # print(f"{self._text = }")
         api.SetWindowText(self._buddyHwnd, self._text )
 
     # Internal function to calculate value
     def _setNpkValue(self, delta: int):
         value = self._value + (delta * self._step)
+        # print("value 1 : ", value)
         if self._autoRotate:
             if value > self._maxRange:
                 self._value = self._minRange
@@ -157,7 +159,11 @@ class NumberPicker(Control):
             else:
                 self._value = value
         else:
-            self._value = clamp(value, self.minRange, self._maxRange)
+            if value < self._minRange: self._value = self._minRange
+            elif value > self._maxRange: self._value = self._maxRange
+            else: self._value = value
+            # self._value = clamp(value, self.minRange, self._maxRange) #NOTE : Delete this
+
 
     # Internal function to check if mouse is over us.
     def _isMouseUponMe(self) -> bool:
@@ -217,7 +223,9 @@ class NumberPicker(Control):
         """Set minimum value of NumberPicker's range"""
         self._minRange = value
         if self._isCreated:
-            api.SendMessage(self._hwnd, con.UDM_SETRANGE32, self._minRange, self._maxRange)
+            api.SendMessage(self._hwnd, con.UDM_SETRANGE32, int(self._minRange), int(self._maxRange))
+        else:
+            self._value = value
     #----------------------------------------------------------------------------------------[2]
 
     @property
@@ -229,7 +237,7 @@ class NumberPicker(Control):
     def maxRange(self, value: int | float):
         """Set maximum value of NumberPicker's range"""
         self._maxRange = value
-        api.SendMessage(self._hwnd, con.UDM_SETRANGE32, self._minRange, self._maxRange)
+        api.SendMessage(self._hwnd, con.UDM_SETRANGE32, int(self._minRange), int(self._maxRange))
     #-----------------------------------------------------------------------------------[3]
 
     @property
@@ -252,6 +260,10 @@ class NumberPicker(Control):
     def step(self, value: int):
         """Set the step value of NumberPicker. Step is the amount of value jumped at one click."""
         self._step = value
+        stepStr = str(value)
+        if "." in stepStr:
+            stArr = stepStr.split(".")
+            self._deciPrecis = len(stArr)
     #-----------------------------------------------------[5]
 
     @property

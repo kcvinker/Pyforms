@@ -1,0 +1,18 @@
+[project]
+name = "pyforms"
+version = "1.0"
+authors = [
+  { name="Vinod Chandran", email="kcvinu82@gmail.com" },
+]
+description = "A GUI package based on win32 API"
+readme = ""
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Windows",
+]
+
+[project.urls]
+"Homepage" = ""
+"Bug Tracker" = ""

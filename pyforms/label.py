@@ -17,7 +17,7 @@ class Label(Control):
 
     _count = 1
     __slots__ = ("_autoSize", "_multiLine", "_txtAlign", "_borderStyle", "_dwAlignFlag")
-    def __init__(self, parent, txt: str = "", xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 30, bCreate = False ) -> None:
+    def __init__(self, parent, txt: str = "", xpos: int = 10, ypos: int = 10, width: int = 0, height: int = 0, bCreate = False ) -> None:
         super().__init__()
         self._clsName = "Static"
         self.name = f"Label_{Label._count}"
@@ -53,8 +53,9 @@ class Label(Control):
         if self._hwnd:
             lbDict[self._hwnd] = self
             self._setSubclass(lbWndProc)
-            if self._autoSize: self._setAutoSize(False)
             self._setFontInternal()
+            if self._autoSize: self._setAutoSize(False)
+
 
     # -endregion Public funcs
 
@@ -99,20 +100,25 @@ class Label(Control):
 
     # Check if auto sizing needed or not
     def _isAutoSizeNeeded(self):
-        if any([self._multiLine, self._width, self._height]): self._autoSize = True
+        if self._multiLine: self._autoSize = False
+        if self._width > 0: self._autoSize = False
+        if self._height > 0: self._autoSize = False
 
 
     # Set appropriate size for this Label
     def _setAutoSize(self, redraw):
         hdc = api.GetDC(self._hwnd)
         ss = SIZE()
+        rct = api.RECT()
+
         api.SelectObject(hdc, self._font._hwnd)
         api.GetTextExtentPoint32(hdc, self._text, len(self._text), byref(ss))
         api.ReleaseDC(self._hwnd, hdc)
-        self._width = ss.cx + 3
-        self._height = ss.cy
+        self._width = ss.cx + 5
+        self._height = ss.cy + 5
         api.SetWindowPos(self._hwnd, None, self._xpos, self._ypos, self._width, self._height, con.SWP_NOMOVE)
-        if redraw: api.InvalidateRect(self._hwnd, None, True)
+        api.GetClientRect(self._hwnd, byref(rct))
+        if redraw: api.InvalidateRect(self._hwnd, byref(rct), True)
 
 
     # Reser the back gound brush for this Label

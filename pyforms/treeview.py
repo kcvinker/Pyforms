@@ -226,21 +226,92 @@ class TreeView(Control):
 
     # -region Properties
 
-    # @property
-    # def auto_size(self): return self._auto_size
+    @property
+    def nodes(self) : return self._nodes
 
-    # @Control.backColor.setter
-    # def backColor(self, value : int):
-    #     self._bgColor.update_color(value)
-    #     if not self._drawFlag & (1 << 1): self._drawFlag += 2
-    #     self._manageRedraw()
+    @property
+    def selectedNode(self): return self._selNode
 
-    # @property
-    # def decimal_points(self): return self._deci_precis
 
-    # @decimal_points.setter
-    # def decimal_points(self, value: int): self._deci_precis = value
-    #-----------------------------------------------------------------------[1]
+    @Control.foreColor.setter
+    def foreColor(self, value):
+        if isinstance(value, int):
+            self._bgColor.updateColor(value)
+        elif isinstance(value, Color):
+            self._bgColor = value
+
+        api.sendMessage(self._hwnd, con.TVM_SETTEXTCOLOR, 0, self._fgColor.ref)
+        self.manageRedraw()
+
+    @property
+    def noLine(self): return self._noLine
+
+    @noLine.setter
+    def noLine(self, value: bool) : self._noLine = value
+
+
+    @property
+    def noButton(self): return self._noButton
+
+    @noButton.setter
+    def noButton(self, value: bool): self._noButton = value
+
+
+    @property
+    def hasCheckBox(self): return self._hasCheckBox
+
+    @hasCheckBox.setter
+    def hasCheckBox(self, value: bool): self._hasCheckBox = value
+
+
+    @property
+    def fullRowSelect(self): return self._fullRowSel
+
+    @fullRowSelect.setter
+    def fullRowSelect(self, value: bool): self._fullRowSel = value
+
+
+    @property
+    def isEditable(self): return self._editable
+
+    @isEditable.setter
+    def isEditable(self, value: bool): self._editable = value
+
+
+    @property
+    def showSelection(self): bool = self._showSel
+
+    @showSelection.setter
+    def showSelection(self, value: bool): self._showSel = value
+
+
+    @property
+    def hotTrack(self): return self._hotTrack
+
+    @hotTrack.setter
+    def hotTrack(self, value: bool): self._hotTrack = value
+
+
+    @property
+    def nodeCount(self): return self._nodeCount
+
+    @nodeCount.setter
+    def nodeCount(self, value: int): self._nodeCount = value
+
+
+    @property
+    def uniqNodeID(self): return self._uniqNodeID
+
+    @uniqNodeID.setter
+    def uniqNodeID(self, value: int): self._uniqNodeID = value
+
+
+    @property
+    def lineColor(self):return  self._lin
+
+    @lineColor.setter
+    def lineColor(self, value: int): self._lineColor =  Color(value)
+
 
 
     # -endregion Properties

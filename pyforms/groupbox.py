@@ -27,7 +27,7 @@ class GroupBox(Control):
         self._ctlType = ControlType.GROUP_BOX
         self._parent = parent
         self._bgColor = Color(parent._bgColor)
-        self._fgColor = COLOR_BLACK
+        # self._fgColor = COLOR_BLACK # Control class is taking care of this
         self._font = parent._font
         self._width = width
         self._height = height

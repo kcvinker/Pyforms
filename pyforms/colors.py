@@ -138,11 +138,17 @@ class Color:
         b1 = clamp(self.blue * adj)
         return int((b1 << 16) | (g1 << 8) | r1)
 
+    def getCurvedColor(self):
+        pass
 
+
+    def luminance(self): return self.red * 0.2126 + self.green * 0.7152 + self.blue * 0.0722
 
 
     def isDark(self):
         x = ((self.red * 0.2126) + (self.green * 0.7152) + (self.blue * 0.0722))
+        # y = self.red * 0.2126 + self.green * 0.7152 + self.blue * 0.0722
+        # print("luminance ", y)
         return x < 40
 
 

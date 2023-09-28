@@ -17,15 +17,17 @@ pgbExStyle = 0# con.WS_EX_CLIENTEDGE
 class ProgressBar(Control):
 
     _count = 1
-    __slots__ = ( "_barStyle", "_vertical", "_minValue", "_maxValue", "_step", "_value", "_percentage", "_state", "_speed")
+    __slots__ = ( "_barStyle", "_vertical", "_minValue", "_maxValue", "_step", "_value",
+                 "_percentage", "_state", "_speed", "_deciPrec", "_strPrec")
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 180, height: int = 25, bCreate = False ) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10,
+                 width: int = 180, height: int = 25, bDrawPerc = False, bCreate = False ) -> None:
         super().__init__()
         self._clsName = "msctls_progress32"
         self.name = f"ProgressBar_{ProgressBar._count}"
         self._ctlType = ControlType.PROGRESS_BAR
         self._parent = parent
-        self._fgColor = Color(0x000000)
+        # self._fgColor = Color(0x000000) # Control class is taking care of this
         self._font = parent._font
         self._width = width
         self._height = height
@@ -43,7 +45,9 @@ class ProgressBar(Control):
         self._step = 1
         self._value = 0
         self._speed = 30
-        self._percentage = False
+        self._percentage = bDrawPerc
+        self._strPrec = ""
+        self._deciPrec = 0
         ProgressBar._count += 1
         if bCreate: self.createHandle()
 
@@ -87,7 +91,13 @@ class ProgressBar(Control):
     # Draw percentage text on progress bar
     def _drawPercentage(self):
         ss = api.SIZE()
-        txt = create_unicode_buffer(f"{self._value}%")
+        perc = (self._value / self._maxValue) * 100
+        if self._deciPrec == 0:
+            formattedPerc = int(perc)
+        else:
+            formatStr = "{:.%df}" % self._deciPrec
+            formattedPerc = formatStr.format(perc)
+        txt = create_unicode_buffer(f"{formattedPerc}%")
         hdc = api.GetDC(self._hwnd)
         api.SelectObject(hdc, self._font._hwnd)
         api.GetTextExtentPoint32(hdc, txt, len(txt), byref(ss))
@@ -114,6 +124,16 @@ class ProgressBar(Control):
         self._value = value
         if self._isCreated: api.SendMessage(self._hwnd, con.PBM_SETPOS, value, 0)
     #-------------------------------------------------------------------------------[1]
+
+    @property
+    def maxValue(self):
+        return self._maxValue
+
+    @maxValue.setter
+    def maxValue(self, value: int):
+        """Set the maximum value of progress bar"""
+        self._maxValue = value
+        if self._isCreated: api.SendMessage(self._hwnd, con.PBM_SETRANGE32, 0, value)
 
     @property
     def step(self):
@@ -160,6 +180,23 @@ class ProgressBar(Control):
                 api.SendMessage(self._hwnd, con.PBM_SETMARQUEE, 1, self._speed)
 
         self._barStyle = value
+
+    @property
+    def drawPercentage(self):
+        return self._percentage
+
+    @drawPercentage.setter
+    def drawPercentage(self, value: bool):
+        self._percentage = value
+
+    @property
+    def decimalPrecision(self):
+        return self._deciPrec
+
+    @decimalPrecision.setter
+    def decimalPrecision(self, value: int):
+        self._deciPrec = value
+        # self._strPrec = for
 
     # -endregion Properties
 

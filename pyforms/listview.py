@@ -12,7 +12,7 @@ from .enums import ControlType, TextAlignment, ListViewStyle
 from .apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, LPNMCUSTOMDRAW, LVCOLUMNW, WPARAM, LPARAM, SUBCLASSPROC
 from . import apis as api
 from .colors import Color
-# from .winmsgs import log_msg
+from .winmsgs import log_msg
 # from horology import Timing
 
 lvDict = {}
@@ -59,7 +59,7 @@ class ListView(Control):
         self._ctlType = ControlType.LIST_VIEW
         self._parent = parent
         self._bgColor = Color(0xFFFFFF)
-        self._fgColor = Color(0x000000)
+        # self._fgColor = Color(0x000000) # Control class is taking care of this
         self._font = parent._font
         self._width = width
         self._height = height
@@ -107,6 +107,7 @@ class ListView(Control):
         if bCreate: self.createHandle()
 
 
+
 # -region Public functions
 
     def createHandle(self):
@@ -139,6 +140,9 @@ class ListView(Control):
                 ord_list = self._changeColOrder()
                 api.SendMessage(self._hwnd, con.LVM_SETCOLUMNORDERARRAY, len(ord_list), addressof(ord_list))
                 self._cbIsLast = True
+
+            # print("lv hwnd ", self._hwnd)
+            # print("frm hwnd ", self._parent._hwnd)
 
 
     #End of Create function-----------------------------------------------
@@ -314,8 +318,10 @@ class ListView(Control):
             # They did not resize the overall header item. They just reduce...
             # it for drawing text. That means, text is drawing in a small rect.
             # Thus, viewer thinks like header is pressed a little bit.
-            nmcd.rc.left += 2
-            nmcd.rc.top += 2
+            nmcd.rc.left += 1
+            nmcd.rc.top += 1
+            nmcd.rc.right -= 1
+            nmcd.rc.bottom += 1
 
         api.DrawText(nmcd.hdc, col.text, -1, byref(nmcd.rc), col._hdrTxtFlag )
 
@@ -607,10 +613,15 @@ def lvWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     lv = lvDict[hw]
     match msg:
         case con.WM_DESTROY:
+            if lv._contextMenu: lv._contextMenu.destroyContextMenu()
             api.RemoveWindowSubclass(hw, lvWndProc, scID)
             lv._destroyCount += 1
             if lv._destroyCount == 2: del lvDict[hw]
 
+        case con.WM_MEASUREITEM:
+            print("msr item lv")
+
+        case con.WM_CONTEXTMENU: lv._wmContextMenuHandler(lp)
 
         case MyMessages.CTRL_NOTIFY:
             nmh = cast(lp, api.LPNMHDR).contents
@@ -683,11 +694,15 @@ def lvWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         case con.WM_KILLFOCUS: lv._lostFocusHandler()
         case con.WM_LBUTTONDOWN: lv._leftMouseDownHandler(msg, wp, lp)
         case con.WM_LBUTTONUP: lv._leftMouseUpHandler(msg, wp, lp)
-        case con.WM_RBUTTONDOWN: lv._rightMouseDownHandler(msg, wp, lp)
+        case con.WM_RBUTTONDOWN: return lv._rightMouseDownHandler(msg, wp, lp)
+
         case con.WM_RBUTTONUP: lv._rightMouseUpHandler(msg, wp, lp)
         case con.WM_MOUSEWHEEL: lv._mouseWheenHandler(msg, wp, lp)
         case con.WM_MOUSEMOVE: lv._mouseMoveHandler(msg, wp, lp)
         case con.WM_MOUSELEAVE: lv._mouseLeaveHandler()
+
+        case con.WM_COMMAND:
+            print("WM_COMMAND on LV")
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 

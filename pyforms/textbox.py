@@ -63,7 +63,7 @@ class TextBox(Control):
 
             # Without this line, textbox looks ugly style. It won't receive WM_NCPAINT message.
             # So we just redraw the non client area and it will receive WM_NCPAINT
-            # api.RedrawWindow(self._hwnd, None, None, con.RDW_FRAME| con.RDW_INVALIDATE)
+            api.RedrawWindow(self._hwnd, None, None, con.RDW_FRAME| con.RDW_INVALIDATE)
 
 
     # Setting text box's style bits
