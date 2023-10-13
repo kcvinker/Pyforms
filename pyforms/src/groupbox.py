@@ -1,13 +1,13 @@
 # Created on 20-Jan-2023 07:49:20
 
 from ctypes import byref, create_unicode_buffer
-from .control import Control
-from . import constants as con
-from .commons import MyMessages
-from .enums import ControlType
-from .apis import SUBCLASSPROC
-from . import apis as api
-from .colors import Color, COLOR_BLACK
+from pyforms.src.control import Control
+import pyforms.src.constants as con
+from pyforms.src.commons import MyMessages
+from pyforms.src.enums import ControlType
+from pyforms.src.apis import SUBCLASSPROC
+import pyforms.src.apis as api
+from pyforms.src.colors import Color, COLOR_BLACK
 # from horology import Timing
 # from .winmsgs import log_msg
 
@@ -24,7 +24,7 @@ class GroupBox(Control):
         self._clsName = "Button"
         self.name = f"GroupBox_{GroupBox._count}"
         self._text = self.name if txt == "" else txt
-        self._ctlType = ControlType.GROUP_BOX
+        self._ctlType = enums.ControlType.GROUP_BOX
         self._parent = parent
         self._bgColor = Color(parent._bgColor)
         # self._fgColor = COLOR_BLACK # Control class is taking care of this

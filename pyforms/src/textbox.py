@@ -1,13 +1,13 @@
 # textbox module - Created on 22-Nov-2022 00:54:20
 
-from .control import Control
-from .commons import MyMessages
-from .enums import ControlType, TextCase, TextType, TextAlignment
-from .apis import SUBCLASSPROC
-from . import apis as api
-from .colors import Color
-from . import constants as con
-from .events import EventArgs
+from pyforms.src.control import Control
+from pyforms.src.commons import MyMessages
+from pyforms.src.enums import ControlType, TextCase, TextType, TextAlignment
+from pyforms.src.apis import SUBCLASSPROC
+import pyforms.src.apis as api
+from pyforms.src.colors import Color
+import pyforms.src.constants as con
+from pyforms.src.events import EventArgs
 from ctypes import create_unicode_buffer, addressof
 # from . import winmsgs
 

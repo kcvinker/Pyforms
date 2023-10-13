@@ -3,13 +3,13 @@
 
 from ctypes.wintypes import UINT, HWND
 from ctypes import create_unicode_buffer, byref, sizeof
-from .enums import ControlType
-from .commons import Font, MyMessages
-from .apis import INITCOMMONCONTROLSEX, DWORD
-from . import apis as api
-from . import constants as con
-from .events import EventArgs, MouseEventArgs, KeyEventArgs, KeyPressEventArgs
-from .colors import Color, COLOR_BLACK
+from pyforms.src.enums import ControlType
+from pyforms.src.commons import Font, MyMessages
+from pyforms.src.apis import INITCOMMONCONTROLSEX, DWORD
+import pyforms.src.apis as api
+import pyforms.src.constants as con
+from pyforms.src.events import EventArgs, MouseEventArgs, KeyEventArgs, KeyPressEventArgs
+from pyforms.src.colors import Color, COLOR_BLACK
 import datetime
 # from horology import Timing
 
@@ -432,6 +432,25 @@ class Control:
     @onMouseLeave.setter
     def onMouseLeave(self, value): self._onMouseLeave = value
     #--------------------------------------------[11]---------
+
+    @property
+    def right(self):
+        """Get the right point of control's rect"""
+        if self._isCreated:
+            rc = api.get_client_rect(self._hwnd)
+            return rc.right
+        else:
+            return self._xpos + self._width
+
+    @property
+    def bottom(self):
+        """Get the bottom point of control's rect"""
+        if self._isCreated:
+            rc = api.get_client_rect(self._hwnd)
+            return rc.bottom
+        else:
+            return self._ypos + self._height
+
 
     # -endregion
 

@@ -1,18 +1,18 @@
 # menubar module - Created on 21-02-2023 12:48 AM
 
 from enum import Enum
-from . import apis as api
+import pyforms.src.apis as api
 from ctypes import create_unicode_buffer, byref, cast, sizeof, c_wchar_p, py_object
-from .apis import CreateMenu, AppendMenu, SetMenu, SendMessage, POINT, CreatePopupMenu, ClientToScreen, TrackPopupMenu, DestroyMenu
-from .apis import SUBCLASSPROC, LRESULT, DefSubclassProc, CreateWindowEx, SetWindowSubclass, RemoveWindowSubclass, DestroyWindow
-from .apis import LOWORD, HIWORD, DrawMenuBar, InsertMenuW, LPMEASUREITEMSTRUCT, LPDRAWITEMSTRUCT, MENUITEMINFO
-from .apis import DrawText, InsertMenuItemW, SetBkMode, FillRect, CreateSolidBrush, ULONG_PTR, GetDC, ReleaseDC
-from .commons import MyMessages, getMousePoints, getMouseXpoint, getMouseYpoint, getMousePosOnMsg, menuTxtFlag
-from .control import Control
-from .colors import Color
-from .events import EventArgs
-from . import constants as con
-from .winmsgs import log_msg
+from pyforms.src.apis import CreateMenu, AppendMenu, SetMenu, SendMessage, POINT, CreatePopupMenu, ClientToScreen, TrackPopupMenu, DestroyMenu
+from pyforms.src.apis import SUBCLASSPROC, LRESULT, DefSubclassProc, CreateWindowEx, SetWindowSubclass, RemoveWindowSubclass, DestroyWindow
+from pyforms.src.apis import LOWORD, HIWORD, DrawMenuBar, InsertMenuW, LPMEASUREITEMSTRUCT, LPDRAWITEMSTRUCT, MENUITEMINFO
+from pyforms.src.apis import DrawText, InsertMenuItemW, SetBkMode, FillRect, CreateSolidBrush, ULONG_PTR, GetDC, ReleaseDC
+from pyforms.src.commons import MyMessages, getMousePoints, getMouseXpoint, getMouseYpoint, getMousePosOnMsg, menuTxtFlag
+from pyforms.src.control import Control
+from pyforms.src.colors import Color
+from pyforms.src.events import EventArgs
+import pyforms.src.constants as con
+from pyforms.src.winmsgs import log_msg
 
 # region Constants
 MF_POPUP = 0x00000010

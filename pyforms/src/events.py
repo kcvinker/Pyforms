@@ -3,10 +3,10 @@
 import ctypes
 import datetime as dt
 from ctypes import POINTER, cast
-from . import constants as con
-from . import apis as api
-from .commons import getWheelDelta, getKeyState, Area
-from .enums import MouseButtonState, MouseButton, Keys, SizedPositions
+import pyforms.src.constants as con
+import pyforms.src.apis as api
+from pyforms.src.commons import getWheelDelta, getKeyState, Area
+from pyforms.src.enums import MouseButtonState, MouseButton, Keys, SizedPositions
 
 mouseMsgList = [con.WM_MOUSEWHEEL, con.WM_MOUSEMOVE, con.WM_MOUSEHOVER, con.WM_NCHITTEST,
                 con.WM_LBUTTONDOWN, con.WM_LBUTTONUP, con.WM_RBUTTONDOWN, con.WM_RBUTTONUP]

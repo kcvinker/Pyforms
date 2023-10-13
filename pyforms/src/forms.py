@@ -2,18 +2,18 @@
 
 from ctypes import cast, byref, sizeof, POINTER, py_object, create_unicode_buffer
 from ctypes.wintypes import LPCWSTR
-from . import constants as con
-from . import apis as api
-from .apis import WNDPROC, RECT, WNDCLASSEX, LPNMHDR, LRESULT, LPMEASUREITEMSTRUCT, GetDC, MessageBox
-from . import apis as api
-from .control import Control
-from .enums import FormPosition, FormStyle, FormState, FormDrawMode, MessageButtons, MessageIcons
-from .commons import Font, MyMessages, getMouseXpoint, getMouseYpoint, MyMessages, menuTxtFlag, getMousePoints
-from .events import EventArgs, MouseEventArgs, SizeEventArgs
-from .colors import _createGradientBrush, RgbColor, Color, COLOR_BLACK
-from .menubar import MenuType
+import pyforms.src.constants as con
+import pyforms.src.apis as api
+from pyforms.src.apis import WNDPROC, RECT, WNDCLASSEX, LPNMHDR, LRESULT, LPMEASUREITEMSTRUCT, GetDC, MessageBox
+import pyforms.src.apis as api
+from pyforms.src.control import Control
+from pyforms.src.enums import FormPosition, FormStyle, FormState, FormDrawMode, MessageButtons, MessageIcons
+from pyforms.src.commons import Font, MyMessages, getMouseXpoint, getMouseYpoint, MyMessages, menuTxtFlag, getMousePoints
+from pyforms.src.events import EventArgs, MouseEventArgs, SizeEventArgs
+from pyforms.src.colors import _createGradientBrush, RgbColor, Color, COLOR_BLACK
+from pyforms.src.menubar import MenuType
 # from . import messagebox
-from . import winmsgs
+import pyforms.src.winmsgs
 
 
 class StaticData: # A singleton object which used to hold essential data for a form to start
@@ -97,17 +97,22 @@ def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
 
         case con.WM_CTLCOLORLISTBOX:
             from_combo = this._comboDict.get(lParam, 0)
+            # print("setting text color")
             if from_combo:
                 return api.SendMessage(from_combo, MyMessages.LIST_COLOR, wParam, lParam)
             else:
-                return api.SendMessage(lParam, MyMessages.EDIT_COLOR, wParam, lParam)
+                return api.SendMessage(lParam, MyMessages.LIST_COLOR, wParam, lParam)
 
         case con.WM_COMMAND:
-            match api.HIWORD(wParam):
-                case 0: return this._menuClickHandler(api.LOWORD(wParam))
+            # print(f"wm command : {api.HIWORD(wParam) = }, {api.LOWORD(wParam) = }, {lParam = }")
+            match lParam:
+                case 0:
+                    if api.HIWORD(wParam) == 0:
+                        return this._menuClickHandler(api.LOWORD(wParam))
+                    elif api.HIWORD(wParam) == 1:
+                        pass # accelerator key commands
 
-                case 1: pass # accelerator key commands
-                case pointInRect:
+                case _:
                     # ctlHwnd = HWND(lParam)
                     return api.SendMessage(lParam, MyMessages.CTL_COMMAND, wParam, lParam)
 
@@ -279,7 +284,7 @@ class Form(Control):
         self._menuFrameBrush = None
         self._menuGrayBrush = None
         self._menuGrayCref = None
-
+        # print("form inited")
 
 
         # Events

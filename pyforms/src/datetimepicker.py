@@ -2,14 +2,14 @@
 
 from ctypes.wintypes import HWND, UINT
 from ctypes import WINFUNCTYPE, addressof, create_unicode_buffer, cast, create_string_buffer
-from .control import Control
-from . import constants as con
-from .commons import MyMessages
-from .enums import ControlType, DateFormat
-from .events import EventArgs, DateTimeEventArgs
-from .apis import LPNMHDR, LPNMDATETIMECHANGE, SUBCLASSPROC
-from . import apis as api
-from .colors import Color
+from pyforms.src.control import Control
+import pyforms.src.constants as con
+from pyforms.src.commons import MyMessages
+from pyforms.src.enums import ControlType, DateFormat
+from pyforms.src.events import EventArgs, DateTimeEventArgs
+from pyforms.src.apis import LPNMHDR, LPNMDATETIMECHANGE, SUBCLASSPROC
+import pyforms.src.apis as api
+from pyforms.src.colors import Color
 from datetime import datetime
 
 dtpDict = {}

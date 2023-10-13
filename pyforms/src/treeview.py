@@ -2,13 +2,13 @@
 from ctypes.wintypes import HWND, UINT, HDC
 from ctypes import cast, addressof, create_unicode_buffer, c_wchar_p
 import ctypes as ctp
-from .control import Control
-from . import constants as con
-from .commons import MyMessages
-from .enums import ControlType, NodeOp
-from . import apis as api
-from .apis import LRESULT, HTREEITEM, LPNMHDR, LPNMCUSTOMDRAW, SUBCLASSPROC
-from .colors import Color
+from pyforms.src.control import Control
+import pyforms.src.constants as con
+from pyforms.src.commons import MyMessages
+from pyforms.src.enums import ControlType, NodeOp
+import pyforms.src.apis as api
+from pyforms.src.apis import LRESULT, HTREEITEM, LPNMHDR, LPNMCUSTOMDRAW, SUBCLASSPROC
+from pyforms.src.colors import Color
 # from horology import Timing
 # from .winmsgs import log_msg
 

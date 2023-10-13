@@ -1,14 +1,14 @@
 # listbox module - Created on 11-Dec-2022 11:23:20
 
 from ctypes import addressof, create_unicode_buffer, c_int
-from .control import Control
-from . import constants as con
-from .commons import MyMessages
-from .enums import ControlType
-from .events import EventArgs
-from .apis import LRESULT, SUBCLASSPROC
-from . import apis as api
-from .colors import Color
+from pyforms.src.control import Control
+import pyforms.src.constants as con
+from pyforms.src.commons import MyMessages
+from pyforms.src.enums import ControlType
+from pyforms.src.events import EventArgs
+from pyforms.src.apis import LRESULT, SUBCLASSPROC
+import pyforms.src.apis as api
+from pyforms.src.colors import Color
 
 lbxDict = {}
 lbxStyle = con.WS_CHILD | con.WS_VISIBLE | con.WS_BORDER  | con.LBS_NOTIFY | con.LBS_HASSTRINGS
@@ -48,7 +48,7 @@ class ListBox(Control):
         self._items = []
         self._dummyIndex = -1
         self._selIndex = -1
-
+        # print("listbox inited")
         # Events
         self.onSelectionChanged = None
         self.onDoubleClick = None
@@ -76,6 +76,27 @@ class ListBox(Control):
                     buff = create_unicode_buffer(item) if type(item) == str else create_unicode_buffer(str(item))
                     api.SendMessage(self._hwnd, con.LB_ADDSTRING, 0, addressof(buff))
                     if self._dummyIndex > -1: api.SendMessage(self._hwnd, con.LB_SETCURSEL, self._dummyIndex, 0)
+
+    def addItem(self, item):
+        """Add an item to list box """
+        if self._isCreated:
+            buff = create_unicode_buffer(str(item))
+            api.SendMessage(self._hwnd, con.LB_ADDSTRING, 0, addressof(buff))
+        self._items.append(item)
+
+    def addItems(self, *items):
+        """Add an multiple items to list box """
+        self._items.extend(items)
+        if self._isCreated:
+            for item in items:
+                sitem = item if isinstance(item, str) else str(item)
+                buff = create_unicode_buffer(sitem)
+                api.SendMessage(self._hwnd, con.LB_ADDSTRING, 0, addressof(buff))
+        else:
+            for item in items:
+                sitem = item if isinstance(item, str) else str(item)
+                self._items.append(item)
+
 
 
     def selectAll(self):
@@ -137,6 +158,7 @@ class ListBox(Control):
 
     # Internal function to get an item from listbox
     def _getItem(self, index: int) -> str:
+        # print("161")
         item_len = api.SendMessage(self._hwnd, con.LB_GETTEXTLEN, index, 0)
         if item_len != con.LB_ERR:
             buff = create_unicode_buffer(item_len)
@@ -229,7 +251,8 @@ class ListBox(Control):
         """Returns the selected item from list box"""
         if self._isCreated and not self._multiSel:
             sel_ind = api.SendMessage(self._hwnd, con.LB_GETCURSEL, 0, 0)
-            if sel_ind: return self._getItem(sel_ind)
+            # print(f"{sel_ind = }")
+            if sel_ind >= 0: return self._getItem(sel_ind)
         return ""
 
     @selectedItem.setter
@@ -264,7 +287,7 @@ class ListBox(Control):
         """Returns the index of item under mouse pointer"""
         if self._isCreated and self._multiSel:
             indx = api.SendMessage(self._hwnd, con.LB_GETCARETINDEX, 0, 0)
-            if indx: return self._getItem(indx)
+            if indx >= 0: return self._getItem(indx)
         return ""
 
     # -endregion Properties
@@ -283,7 +306,10 @@ def lbxWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         case MyMessages.LIST_COLOR:
             if lbx._drawFlag:
                 api.SetBkMode(wp, 1)
-                if lbx._drawFlag & 1: api.SetTextColor(wp, lbx._fgColor.ref)
+
+                if lbx._drawFlag & 1:
+                    api.SetTextColor(wp, lbx._fgColor.ref)
+
                 if lbx._drawFlag & 2:
                     return api.CreateSolidBrush(lbx._bgColor.ref)
                 else:
@@ -295,6 +321,7 @@ def lbxWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                 case con.LBN_DBLCLK:
                     if lbx.onDoubleClick: lbx.onDoubleClick(lbx, EventArgs())
                 case con.LBN_SELCHANGE:
+
                     if lbx.onSelectionChanged: lbx.onSelectionChanged(lbx, EventArgs())
 
         case con.WM_SETFOCUS: lbx._gotFocusHandler()

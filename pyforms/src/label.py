@@ -1,13 +1,13 @@
 #Label module - Created on 23-Nov-2022 17:09:20
 
 from ctypes import byref
-from .control import Control
-from . import constants as con
-from .commons import MyMessages
-from .enums import ControlType, TextAlignment, LabelBorder, LabelAlignment
-from .apis import SIZE, SUBCLASSPROC
-from . import apis as api
-from .colors import Color
+from pyforms.src.control import Control
+import pyforms.src.constants as con
+from pyforms.src.commons import MyMessages
+from pyforms.src.enums import ControlType, TextAlignment, LabelBorder, LabelAlignment
+from pyforms.src.apis import SIZE, SUBCLASSPROC
+import pyforms.src.apis as api
+from pyforms.src.colors import Color
 
 lbDict = {}
 lbStyle = con.WS_VISIBLE | con.WS_CHILD | con.WS_CLIPCHILDREN | con.WS_CLIPSIBLINGS | con.SS_NOTIFY

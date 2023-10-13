@@ -1,7 +1,7 @@
 
 # Dialogs module - Created on 14-May-2023 16:55
 
-from . apis import OPENFILENAMEW, BROWSEINFOW, GetOpenFileName, GetSaveFileName, SHBrowseForFolder, SHGetPathFromIDList, CoTaskMemFree
+from pyforms.src.apis import OPENFILENAMEW, BROWSEINFOW, GetOpenFileName, GetSaveFileName, SHBrowseForFolder, SHGetPathFromIDList, CoTaskMemFree
 from ctypes import create_unicode_buffer, sizeof, byref, c_wchar_p, cast
 
 MAX_PATH = 260

@@ -2,14 +2,14 @@
 # CheckBox module - Created on 08-Dec-2022 18:49:20
 
 from ctypes import WINFUNCTYPE, byref, cast, addressof
-from .control import Control
-from .commons import MyMessages
-from .enums import ControlType
-from .apis import LRESULT, LPNMCUSTOMDRAW, SUBCLASSPROC
-from . import apis as api
-from .colors import Color
-from . import constants as con
-from .events import EventArgs
+from pyforms.src.control import Control
+from pyforms.src.commons import MyMessages
+from pyforms.src.enums import ControlType
+from pyforms.src.apis import LRESULT, LPNMCUSTOMDRAW, SUBCLASSPROC
+import pyforms.src.apis as api
+from pyforms.src.colors import Color
+import pyforms.src.constants as con
+from pyforms.src.events import EventArgs
 
 cb_dict = {}
 cb_style = con.WS_CHILD | con.WS_VISIBLE | con.WS_TABSTOP | con.BS_AUTOCHECKBOX

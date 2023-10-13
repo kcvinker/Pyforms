@@ -4,15 +4,15 @@ import typing
 from enum import Enum
 from ctypes.wintypes import HWND, UINT
 from ctypes import WINFUNCTYPE, byref, addressof, cast, create_unicode_buffer, c_wchar_p
-from .control import Control
+from pyforms.src.control import Control
 
-from . import constants as con
-from .commons import Font, MyMessages, getMousePoints
-from .enums import ControlType, TextAlignment, ListViewStyle
-from .apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, LPNMCUSTOMDRAW, LVCOLUMNW, WPARAM, LPARAM, SUBCLASSPROC
-from . import apis as api
-from .colors import Color
-from .winmsgs import log_msg
+import pyforms.src.constants as con
+from pyforms.src.commons import Font, MyMessages, getMousePoints
+from pyforms.src.enums import ControlType, TextAlignment, ListViewStyle
+from pyforms.src.apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, LPNMCUSTOMDRAW, LVCOLUMNW, WPARAM, LPARAM, SUBCLASSPROC
+import pyforms.src.apis as api
+from pyforms.src.colors import Color
+from pyforms.src.winmsgs import log_msg
 # from horology import Timing
 
 lvDict = {}

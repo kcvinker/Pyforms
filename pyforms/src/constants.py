@@ -1,7 +1,7 @@
 
 # Created on 16-Nov-2022 23:06
 from ctypes.wintypes import HWND
-from .apis import ULONG_PTR
+from pyforms.src.apis import ULONG_PTR
 
 UINT_MAX = 1 << 32
 ULONG_MAX = 1 << 64

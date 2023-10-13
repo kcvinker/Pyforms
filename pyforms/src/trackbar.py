@@ -2,15 +2,15 @@
 
 from ctypes import byref, addressof, cast
 # import ctypes as ctp
-from .control import Control
-from . import constants as con
-from .commons import MyMessages
-from .enums import ControlType, TickPosition, ChannelStyle, TrackChange
-from .events import EventArgs
-from .apis import LRESULT, RECT, LPNMCUSTOMDRAW, SUBCLASSPROC
-from . import apis as api
-from .colors import Color
-from .winmsgs import log_msg
+from pyforms.src.control import Control
+import pyforms.src.constants as con
+from pyforms.src.commons import MyMessages
+from pyforms.src.enums import ControlType, TickPosition, ChannelStyle, TrackChange
+from pyforms.src.events import EventArgs
+from pyforms.src.apis import LRESULT, RECT, LPNMCUSTOMDRAW, SUBCLASSPROC
+import pyforms.src.apis as api
+from pyforms.src.colors import Color
+from pyforms.src.winmsgs import log_msg
 
 trkDict = {}
 trkStyle = con.WS_CHILD | con.WS_VISIBLE | con.TBS_AUTOTICKS | con.WS_CLIPCHILDREN

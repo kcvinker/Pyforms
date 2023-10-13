@@ -1,13 +1,13 @@
 # Created on 21-Jan-2023 00:41:20
 
 from ctypes import byref, create_unicode_buffer
-from .control import Control
-from . import constants as con
-from .commons import MyMessages
-from .enums import ControlType, ProgressBarStyle, ProgressBarState
-from .apis import SUBCLASSPROC
-from . import apis as api
-from .colors import Color
+from pyforms.src.control import Control
+import pyforms.src.constants as con
+from pyforms.src.commons import MyMessages
+from pyforms.src.enums import ControlType, ProgressBarStyle, ProgressBarState
+from pyforms.src.apis import SUBCLASSPROC
+import pyforms.src.apis as api
+from pyforms.src.colors import Color
 # from .winmsgs import log_msg
 
 pgbDict = {}
@@ -76,13 +76,16 @@ class ProgressBar(Control):
 
     def startMarquee(self):
         """Srat marquee animation in progress bar."""
-        if self._isCreated and self._barStyle == ProgressBarStyle.MARQUEE_STYLE:
+        if self._isCreated:
+            self.style = ProgressBarStyle.MARQUEE_STYLE
             api.SendMessage(self._hwnd, con.PBM_SETMARQUEE, 1, self._speed)
 
     def stopMarquee(self):
         """Stop marquee animation of progress bar."""
-        if self._isCreated and self._barStyle == ProgressBarStyle.MARQUEE_STYLE:
-            api.SendMessage(self._hwnd, con.PBM_SETMARQUEE, 0, 0)
+        if self._isCreated:
+            self.style = ProgressBarStyle.BLOCK_STYLE
+            # api.SendMessage(self._hwnd, con.PBM_SETMARQUEE, 0, 0)
+
 
     # -endregion Public funcs
 
@@ -168,6 +171,7 @@ class ProgressBar(Control):
         """Set the style of progress bar. Check ProgressBarStyle enum."""
         if self._barStyle != value and self._isCreated:
             self.value = 0
+            # old_val = self.
             if value == ProgressBarStyle.BLOCK_STYLE:
                 self._style ^= con.PBS_MARQUEE
                 self._style |= con.PBS_SMOOTH
@@ -178,6 +182,8 @@ class ProgressBar(Control):
             api.SetWindowLongPtr(self.handle, con.GWL_STYLE, self._style)
             if value == ProgressBarStyle.MARQUEE_STYLE:
                 api.SendMessage(self._hwnd, con.PBM_SETMARQUEE, 1, self._speed)
+            else:
+                api.SendMessage(self._hwnd, con.PBM_SETMARQUEE, 0, 0)
 
         self._barStyle = value
 

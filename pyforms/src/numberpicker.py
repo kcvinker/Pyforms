@@ -2,14 +2,14 @@
 
 from ctypes.wintypes import HWND, UINT
 from ctypes import WINFUNCTYPE, byref, cast
-from .control import Control
-from . import constants as con
-from .commons import MyMessages
-from .enums import ControlType, TextAlignment
-from .events import EventArgs
-from . import apis as api
-from .apis import LRESULT, UINT_PTR, DWORD_PTR, WPARAM, LPARAM, SUBCLASSPROC
-from .colors import Color, clamp
+from pyforms.src.control import Control
+import pyforms.src.constants as con
+from pyforms.src.commons import MyMessages
+from pyforms.src.enums import ControlType, TextAlignment
+from pyforms.src.events import EventArgs
+import pyforms.src.apis as api
+from pyforms.src.apis import LRESULT, UINT_PTR, DWORD_PTR, WPARAM, LPARAM, SUBCLASSPROC
+from pyforms.src.colors import Color, clamp
 # from .winmsgs import log_msg
 
 numpDict = {}

@@ -1,16 +1,16 @@
 #Header module - Created on 17-Apr-2023 18:17:00
 
 from ctypes import byref, create_unicode_buffer, cast, c_wchar_p, addressof
-from .control import Control
-from . import constants as con
-from .commons import MyMessages, Font
-from .enums import ControlType, TextAlignment, HeaderStyle
-from .events import EventArgs, HeaderEventArgs
-from .apis import SUBCLASSPROC, LPNMCUSTOMDRAW, LPRECT, LPWINDOWPOS
-from . import apis as api
-from .colors import Color
+from pyforms.src.control import Control
+import pyforms.src.constants as con
+from pyforms.src.commons import MyMessages, Font
+from pyforms.src.enums import ControlType, TextAlignment, HeaderStyle
+from pyforms.src.events import EventArgs, HeaderEventArgs
+from pyforms.src.apis import SUBCLASSPROC, LPNMCUSTOMDRAW, LPRECT, LPWINDOWPOS
+import pyforms.src.apis as api
+from pyforms.src.colors import Color
 
-from .winmsgs import log_msg
+from pyforms.src.winmsgs import log_msg
 
 hdrDict = {}
 hdrStyle = con.WS_VISIBLE | con.WS_CHILD | con.HDS_BUTTONS | con.HDS_HORZ #| con.WS_BORDER

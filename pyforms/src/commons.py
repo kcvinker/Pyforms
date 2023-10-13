@@ -1,9 +1,9 @@
 # Common module - Created on
 from ctypes import c_int, cast, windll, byref, sizeof, py_object
-from .enums import FontWeight
-from . import apis as api
-from .apis import RECT, LOGFONT, POINT
-from . import constants as con
+from pyforms.src.enums import FontWeight
+import pyforms.src.apis as api
+from pyforms.src.apis import RECT, LOGFONT, POINT
+import pyforms.src.constants as con
 from enum import Enum
 import datetime
 

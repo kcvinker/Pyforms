@@ -5,14 +5,14 @@ from ctypes.wintypes import HWND, UINT, LPCWSTR
 from ctypes import addressof, cast
 import sys
 
-from .control import Control
-from . import constants as con
-from .commons import MyMessages
-from .enums import ControlType, ViewMode
-from .events import EventArgs
-from .apis import RECT, LPNMHDR, LPNMSELCHANGE, LPNMVIEWCHANGE, SUBCLASSPROC
-from . import apis as api
-from .colors import Color
+from pyforms.src.control import Control
+import pyforms.src.constants as con
+from pyforms.src.commons import MyMessages
+from pyforms.src.enums import ControlType, ViewMode
+from pyforms.src.events import EventArgs
+from pyforms.src.apis import RECT, LPNMHDR, LPNMSELCHANGE, LPNMVIEWCHANGE, SUBCLASSPROC
+import pyforms.src.apis as api
+from pyforms.src.colors import Color
 from datetime import datetime
 # from horology import Timing
 

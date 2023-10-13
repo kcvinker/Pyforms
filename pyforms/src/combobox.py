@@ -2,14 +2,14 @@
 
 from ctypes.wintypes import HWND, UINT, HDC
 from ctypes import WINFUNCTYPE, byref, sizeof, addressof, create_unicode_buffer
-from .control import Control
-from . import constants as con
-from .commons import MyMessages, getMousePosOnMsg, pointInRect
-from .enums import ControlType
-from .events import EventArgs
-from .apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, COMBOBOXINFO, WPARAM, LPARAM, SUBCLASSPROC
-from . import apis as api
-from .colors import Color
+from pyforms.src.control import Control
+import pyforms.src.constants as con
+from pyforms.src.commons import MyMessages, getMousePosOnMsg, pointInRect
+from pyforms.src.enums import ControlType
+from pyforms.src.events import EventArgs
+from pyforms.src.apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, COMBOBOXINFO, WPARAM, LPARAM, SUBCLASSPROC
+import pyforms.src.apis as api
+from pyforms.src.colors import Color
 # from .winmsgs import log_msg
 # from horology import Timing
 
