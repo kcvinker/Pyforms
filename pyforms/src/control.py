@@ -2,10 +2,10 @@
 
 
 from ctypes.wintypes import UINT, HWND
-from ctypes import create_unicode_buffer, byref, sizeof
+from ctypes import create_unicode_buffer, byref, sizeof, cast
 from pyforms.src.enums import ControlType
 from pyforms.src.commons import Font, MyMessages
-from pyforms.src.apis import INITCOMMONCONTROLSEX, DWORD
+from pyforms.src.apis import MapWindowPoints, LPPOINT, INITCOMMONCONTROLSEX, DWORD
 import pyforms.src.apis as api
 import pyforms.src.constants as con
 from pyforms.src.events import EventArgs, MouseEventArgs, KeyEventArgs, KeyPressEventArgs
@@ -438,6 +438,8 @@ class Control:
         """Get the right point of control's rect"""
         if self._isCreated:
             rc = api.get_client_rect(self._hwnd)
+            MapWindowPoints(self._hwnd, self._parent._hwnd, 
+                            cast(byref(rc), LPPOINT), 2)
             return rc.right
         else:
             return self._xpos + self._width
@@ -447,6 +449,8 @@ class Control:
         """Get the bottom point of control's rect"""
         if self._isCreated:
             rc = api.get_client_rect(self._hwnd)
+            MapWindowPoints(self._hwnd, self._parent._hwnd, 
+                            cast(byref(rc), LPPOINT), 2)
             return rc.bottom
         else:
             return self._ypos + self._height

@@ -140,6 +140,11 @@ IDC_APPSTARTING = 32650
 IDC_HELP = 32651
 # -endregion
 
+# -LoadImage function constants
+LR_LOADFROMFILE = 16
+IMAGE_ICON = 1
+LR_DEFAULTSIZE = 64
+
 # -region Window Style Constants
 WS_VISIBLE = 268435456
 WS_OVERLAPPED = 0

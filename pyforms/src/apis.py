@@ -549,9 +549,14 @@ LoadCursor.argtypes = (HINSTANCE, LPCWSTR)
 LoadCursor.restype = HCURSOR
 
 LoadCursor = windll.user32.LoadCursorW
-""" (HINSTANCE, LPCWSTR,) -> HCURSOR"""
-LoadCursor.argtypes = (HINSTANCE, LPCWSTR,)
+""" (HINSTANCE, LPCWSTR) -> HCURSOR"""
+LoadCursor.argtypes = (HINSTANCE, LPCWSTR)
 LoadCursor.restype = HCURSOR
+
+LoadImage = windll.user32.LoadImageW
+""" (HINSTANCE, LPCWSTR name, UINT type, INT cx, INT cy, UINT fuLoad) -> HANDLE"""
+LoadImage.argtypes = (HINSTANCE, LPCWSTR, UINT, INT, INT, UINT)
+LoadImage.restype = HANDLE
 
 CloseWindow = windll.user32.CloseWindow
 """ (HWND,) -> BOOL"""
@@ -870,6 +875,11 @@ ClientToScreen = windll.user32.ClientToScreen
 """ [HWND, LPPOINT] -> BOOL"""
 ClientToScreen.argtypes = [HWND, LPPOINT]
 ClientToScreen.restype = BOOL
+
+MapWindowPoints = windll.user32.MapWindowPoints
+""" [HWND, HWND, LPPOINT, UINT] -> INT"""
+MapWindowPoints.argtypes = [HWND, HWND, LPPOINT, UINT]
+MapWindowPoints.restype = BOOL
 
 
 

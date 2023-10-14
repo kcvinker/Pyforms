@@ -230,6 +230,8 @@ def make_window_class(proc):
     wc.hInstance = hins
     wc.hCursor =  api.LoadCursor(0, LPCWSTR(con.IDC_ARROW))
     wc.hbrBackground = api.CreateSolidBrush(StaticData.defWinColor.ref)
+    icofile = create_unicode_buffer("D:\Icons\Tatice-Cristal-Intense-Papillon-MSN.ico")
+    wc.hIcon = api.LoadImage(None, icofile, con.IMAGE_ICON, 0, 0, con.LR_LOADFROMFILE | con.LR_DEFAULTSIZE)
     wc.lpszClassName = StaticData.className
     # print("style-----  ", wc.style)
     return wc
