@@ -21,7 +21,7 @@ class TextBox(Control):
     _count = 1
     __slots__ = ( "_multiLine", "_hideSel", "_readOnly", "_textCase", "_textType", "_textAlign", "_cueBanner", "onTextChanged")
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 23, bCreate = False) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 23, auto = False) -> None:
         super().__init__()
         self._clsName = "EDIT"
         self.name = f"TextBox_{TextBox._count}"
@@ -45,8 +45,10 @@ class TextBox(Control):
         self._textAlign = TextAlignment.LEFT
         self._cueBanner = ""
         self.onTextChanged = None
+        self._hwnd = None
+        parent._controls.append(self)
         TextBox._count += 1
-        if bCreate: self.createHandle()
+        if auto: self.createHandle()
 
 
     def createHandle(self):
@@ -68,7 +70,9 @@ class TextBox(Control):
 
     # Setting text box's style bits
     def _setStyles(self):
-        if self._multiLine: self._style |= con.ES_MULTILINE | con.ES_WANTRETURN
+        if self._multiLine:
+            self._style |= con.ES_MULTILINE | con.ES_WANTRETURN | con.ES_AUTOVSCROLL \
+            | con.WS_VSCROLL | con.WS_HSCROLL
         if self._hideSel: self._style |= con.ES_NOHIDESEL
         if self._readOnly: self._style |= con.ES_READONLY
 
@@ -89,7 +93,10 @@ class TextBox(Control):
 
         self._bkgBrush = self._bgColor.createHBrush()
 
-
+    def addLine(self, linetext):
+        if self._isCreated:
+            txtptr = create_unicode_buffer(linetext)
+            api.SendMessage(self._hwnd, con.EM_REPLACESEL, 0, addressof(txtptr))
 
     @Control.text.getter
     def text(self):

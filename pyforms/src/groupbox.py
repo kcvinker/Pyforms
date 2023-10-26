@@ -19,12 +19,12 @@ class GroupBox(Control):
 
     _count = 1
     __slots__ = ("_pen", "_tmpTxt", "_rect", "_txtWidth")
-    def __init__(self, parent, txt: str = "", xpos: int = 10, ypos: int = 10, width: int = 300, height: int = 300, bCreate = False ) -> None:
+    def __init__(self, parent, txt: str = "", xpos: int = 10, ypos: int = 10, width: int = 300, height: int = 300, auto = False ) -> None:
         super().__init__()
         self._clsName = "Button"
         self.name = f"GroupBox_{GroupBox._count}"
         self._text = self.name if txt == "" else txt
-        self._ctlType = enums.ControlType.GROUP_BOX
+        self._ctlType = ControlType.GROUP_BOX
         self._parent = parent
         self._bgColor = Color(parent._bgColor)
         # self._fgColor = COLOR_BLACK # Control class is taking care of this
@@ -38,8 +38,10 @@ class GroupBox(Control):
         self._exStyle = gbExStyle
         self._drawFlag = 0
         self._txtWidth = 0
+        self._hwnd = None
+        parent._controls.append(self)
         GroupBox._count += 1
-        if bCreate: self.createHandle()
+        if auto: self.createHandle()
 
 
     # -region Public funcs

@@ -4,7 +4,7 @@
 from ctypes.wintypes import HPEN
 from ctypes import byref, cast
 
-import horology
+# import horology
 from pyforms.src.apis import LRESULT, LPNMCUSTOMDRAW, SUBCLASSPROC
 from pyforms.src.control import Control
 from pyforms.src.commons import MyMessages, inflateRect
@@ -25,7 +25,7 @@ class Button(Control):
     _count = 1
     __slots__ = ("_fdraw", "_gdraw")
 
-    def __init__(self, parent, txt: str = "", xpos = 20, ypos = 20, width = 120, height = 40, bCreate = False ) -> None:
+    def __init__(self, parent, txt: str = "", xpos = 20, ypos = 20, width = 120, height = 33, auto = False, onclick = None ) -> None:
         super().__init__()
         self.name = f"Button_{Button._count}"
         self._parent = parent
@@ -42,9 +42,11 @@ class Button(Control):
         self._exStyle = 0x00000004
         self._fdraw = None
         self._gdraw = None
-
+        self._hwnd = None
+        parent._controls.append(self)
+        if onclick: self.onClick = onclick
         Button._count += 1
-        if bCreate: self.createHandle()
+        if auto: self.createHandle()
 
     def createHandle(self):
         self._createControl()

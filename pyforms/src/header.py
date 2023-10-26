@@ -112,6 +112,8 @@ class Header(Control):
         self._itemIndex = 0
         # Events
         self.onDrag = None
+        self._hwnd = None
+        parent._controls.append(self)
         Header._count += 1
 
 

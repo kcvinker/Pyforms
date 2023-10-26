@@ -8,7 +8,7 @@ from pyforms.src.enums import ControlType
 from pyforms.src.events import EventArgs
 from pyforms.src.apis import LRESULT, SUBCLASSPROC
 import pyforms.src.apis as api
-from pyforms.src.colors import Color
+from pyforms.src.colors import COLOR_WHITE
 
 lbxDict = {}
 lbxStyle = con.WS_CHILD | con.WS_VISIBLE | con.WS_BORDER  | con.LBS_NOTIFY | con.LBS_HASSTRINGS
@@ -21,14 +21,14 @@ class ListBox(Control):
     __slots__ = ( "_hasSort", "_noSel", "_multiCol", "_keyPreview", "_useVScroll", "_useHScroll", "_multiSel", "_selIndices",
                     "_items",  "_dummyIndex", "_selIndex", "onSelectionChanged", "onDoubleClick"  )
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 150, height: int = 200, bCreate = False) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 150, height: int = 200, auto = False) -> None:
         super().__init__()
 
         self._clsName = "LISTBOX"
         self.name = f"ListBox_{ListBox._count}"
         self._ctlType = ControlType.LIST_BOX
         self._parent = parent
-        self._bgColor = Color(parent._bgColor)
+        self._bgColor = COLOR_WHITE
         self._font = parent._font
         self._width = width
         self._height = height
@@ -52,9 +52,11 @@ class ListBox(Control):
         # Events
         self.onSelectionChanged = None
         self.onDoubleClick = None
+        self._hwnd = None
+        parent._controls.append(self)
 
         ListBox._count += 1
-        if bCreate: self.createHandle()
+        if auto: self.createHandle()
 
 # -region Public functions
 
@@ -65,7 +67,7 @@ class ListBox(Control):
         self._setStyles()
         self._createControl()
         if self._hwnd:
-            # print("list box hwnd ", self._hwnd)
+            print("list box hwnd ", self._hwnd)
             lbxDict[self._hwnd] = self
             self._isCreated = True
             self._setSubclass(lbxWndProc)
@@ -305,15 +307,12 @@ def lbxWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
 
         case MyMessages.LIST_COLOR:
             if lbx._drawFlag:
-                api.SetBkMode(wp, 1)
-
-                if lbx._drawFlag & 1:
-                    api.SetTextColor(wp, lbx._fgColor.ref)
-
-                if lbx._drawFlag & 2:
-                    return api.CreateSolidBrush(lbx._bgColor.ref)
-                else:
-                    return api.GetStockObject(con.DC_BRUSH)
+                api.SetBkMode(wp, 1) # Transparent mode
+                # api.SetBkColor(wp, lbx._bgColor.ref)
+                if lbx._drawFlag & 1: api.SetTextColor(wp, lbx._fgColor.ref)
+                return LRESULT(api.CreateSolidBrush(lbx._bgColor.ref))
+            else:
+                return api.GetStockObject(con.WHITE_BRUSH)
 
         case MyMessages.CTL_COMMAND:
             ncode = api.HIWORD(wp)

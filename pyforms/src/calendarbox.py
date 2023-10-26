@@ -30,7 +30,7 @@ class CalendarBox(Control):
                     "_fgColor", "_bgColor", "onSelectionCommitted", "onListClosed", "_value", "_viewMode", "_oldView",
                      "onViewChanged", "onSelectionChanged", "onValueChanged"  )
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, bCreate = False) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, auto = False) -> None:
         super().__init__()
 
         self._clsName = "SysMonthCal32"
@@ -58,9 +58,11 @@ class CalendarBox(Control):
         self.onValueChanged = 0
         self.onViewChanged = 0
         self.onSelectionChanged = 0
+        self._hwnd = None
+        parent._controls.append(self)
 
         CalendarBox._count += 1
-        if bCreate: self.createHandle()
+        if auto: self.createHandle()
 
 
     # Create's combo box handle
@@ -77,6 +79,8 @@ class CalendarBox(Control):
             # Set the size for CalendarBox, because it is created with zero size
             rc = RECT()
             api.SendMessage(self._hwnd, con.MCM_GETMINREQRECT, 0, addressof(rc))
+            self._width = rc.right
+            self._height = rc.bottom
             api.SetWindowPos(self._hwnd, None, self._xpos, self._ypos, rc.right, rc.bottom, con.SWP_NOZORDER)
 
             # Get current selection from Calendar

@@ -21,7 +21,7 @@ class ProgressBar(Control):
                  "_percentage", "_state", "_speed", "_deciPrec", "_strPrec")
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10,
-                 width: int = 180, height: int = 25, bDrawPerc = False, bCreate = False ) -> None:
+                 width: int = 180, height: int = 25, perc = False, auto = False ) -> None:
         super().__init__()
         self._clsName = "msctls_progress32"
         self.name = f"ProgressBar_{ProgressBar._count}"
@@ -45,11 +45,13 @@ class ProgressBar(Control):
         self._step = 1
         self._value = 0
         self._speed = 30
-        self._percentage = bDrawPerc
+        self._percentage = perc
         self._strPrec = ""
         self._deciPrec = 0
+        self._hwnd = None
+        parent._controls.append(self)
         ProgressBar._count += 1
-        if bCreate: self.createHandle()
+        if auto: self.createHandle()
 
 
     # -region Public funcs

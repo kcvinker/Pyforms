@@ -877,9 +877,14 @@ ClientToScreen.argtypes = [HWND, LPPOINT]
 ClientToScreen.restype = BOOL
 
 MapWindowPoints = windll.user32.MapWindowPoints
-""" [HWND, HWND, LPPOINT, UINT] -> INT"""
+""" [HWND, HWND, LPPOINT, UINT] -> BOOL"""
 MapWindowPoints.argtypes = [HWND, HWND, LPPOINT, UINT]
 MapWindowPoints.restype = BOOL
+
+EnableWindow = windll.user32.EnableWindow
+""" [HWND, BOOL - true for enable] -> BOOL"""
+EnableWindow.argtypes = [HWND, BOOL]
+EnableWindow.restype = BOOL
 
 
 

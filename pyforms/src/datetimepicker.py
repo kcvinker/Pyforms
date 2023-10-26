@@ -63,6 +63,8 @@ class DateTimePicker(Control):
         self.onValueChanged = None
         self.onCalendarOpened = None
         self.onCalendarClosed = None
+        self._hwnd = None
+        parent._controls.append(self)
 
         DateTimePicker._count += 1
 

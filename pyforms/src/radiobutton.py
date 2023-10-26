@@ -20,7 +20,7 @@ class RadioButton(Control):
     _count = 1
     __slots__ = ( "_rightAlign", "_txtStyle", "_isChecked", "onCheckedChanged", "_checkOnClick")
 
-    def __init__(self, parent, txt: str, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 23, bCreate = False) -> None:
+    def __init__(self, parent, txt: str, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 23, auto = False) -> None:
         super().__init__()
         self._clsName = "Button"
         self.name = f"RadioButton_{RadioButton._count}"
@@ -42,8 +42,10 @@ class RadioButton(Control):
         self._rightAlign = False
         self._isChecked = False
         self.onCheckedChanged = None
+        self._hwnd = None
+        parent._controls.append(self)
         RadioButton._count += 1
-        if bCreate: self.createHandle()
+        if auto: self.createHandle()
 
 
     def createHandle(self):
@@ -61,8 +63,7 @@ class RadioButton(Control):
             self._setFontInternal()
             ss = api.SIZE()
             api.SendMessage(self._hwnd, con.BCM_GETIDEALSIZE, 0, addressof(ss))
-
-            self._width = ss.cx
+            self._width = ss.cx + 20
             self._height = ss.cy
             api.MoveWindow(self._hwnd, self._xpos, self._ypos, self._width, self._height, True)
 

@@ -1,7 +1,7 @@
 # Created on 08-Nov-2022 00:05:26
 
 from ctypes import cast, byref, sizeof, POINTER, py_object, create_unicode_buffer
-from ctypes.wintypes import LPCWSTR
+from ctypes.wintypes import LPCWSTR, HBRUSH
 import pyforms.src.constants as con
 import pyforms.src.apis as api
 from pyforms.src.apis import WNDPROC, RECT, WNDCLASSEX, LPNMHDR, LRESULT, LPMEASUREITEMSTRUCT, GetDC, MessageBox
@@ -14,6 +14,7 @@ from pyforms.src.colors import _createGradientBrush, RgbColor, Color, COLOR_BLAC
 from pyforms.src.menubar import MenuType
 # from . import messagebox
 import pyforms.src.winmsgs
+from horology import Timing
 
 
 class StaticData: # A singleton object which used to hold essential data for a form to start
@@ -59,7 +60,7 @@ def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
                 this.onThreadMsg(wParam, lParam)
 
 #   -region No problem messages
-        # case con.WM_SHOWWINDOW: this._formShownHandler()
+        # case con.WM_SHOWWINDOW: this._formShownHandler() # NOT NEEDED
         case con.WM_ACTIVATEAPP: this._formActivateHandler(wParam)
         case con.WM_KEYDOWN | con.WM_SYSKEYDOWN: this._keyDownHandler(wParam)
         case con.WM_KEYUP | con.WM_SYSKEYUP: this._keyUpHandler(wParam)
@@ -79,7 +80,7 @@ def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
         case con.WM_MOVING: return this._formMovingHandler(lParam)
         case con.WM_MOVE: return this._formMovedHandler(lParam)
         case con.WM_ERASEBKGND:
-            if this._drawFlag:
+            if this._drawMode != FormDrawMode.NORMAL:
                 this._formEraseBkgHandler(hw, wParam)
                 return 1
 
@@ -96,12 +97,12 @@ def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
             return api.SendMessage(lParam, MyMessages.LABEL_COLOR, wParam, lParam)
 
         case con.WM_CTLCOLORLISTBOX:
-            from_combo = this._comboDict.get(lParam, 0)
+            from_combo = this._comboDict.get(lParam, lParam)
             # print("setting text color")
-            if from_combo:
-                return api.SendMessage(from_combo, MyMessages.LIST_COLOR, wParam, lParam)
-            else:
-                return api.SendMessage(lParam, MyMessages.LIST_COLOR, wParam, lParam)
+            # if from_combo:
+            return api.SendMessage(from_combo, MyMessages.LIST_COLOR, wParam, lParam)
+            # else:
+                # return api.SendMessage(lParam, MyMessages.LIST_COLOR, wParam, lParam)
 
         case con.WM_COMMAND:
             # print(f"wm command : {api.HIWORD(wParam) = }, {api.LOWORD(wParam) = }, {lParam = }")
@@ -252,10 +253,10 @@ class Form(Control):
                     "_mainWinHwnd", "_isMainWindow", "_isMouseTracking", "_drawMode", "_isNormalDraw", "_updRect",
                     "_formID", "_comboDict", "onLoad", "onMinimized", "onMaximized", "onRestored", "onClosing",
                     "onClosed", "onActivate", "onDeActivate", "onMoving", "onMoved", "onSizing", "onSized",
-                    "onThreadMsg", "_menuGrayBrush", "_menuGrayCref", "_menuEventDict", "_menuItemDict",
-                    "_menuDefBgBrush", "_menuHotBgBrush", "_menuFont", "_menuFrameBrush")
+                    "onThreadMsg", "_menuGrayBrush", "_menuGrayCref", "_menuEventDict", "_menuItemDict", "_controls",
+                    "_menuDefBgBrush", "_menuHotBgBrush", "_menuFont", "_menuFrameBrush", "_mGClr1", "_mGClr2", "_mGt2b")
 
-    def __init__(self, txt = "", width = 500, height = 400, bCreate = False) -> None:
+    def __init__(self, txt = "", width = 500, height = 400, auto = False) -> None:
         super().__init__()
         self._classStr = ""
         self.name = f"Form_{Form._count}"
@@ -286,6 +287,10 @@ class Form(Control):
         self._menuFrameBrush = None
         self._menuGrayBrush = None
         self._menuGrayCref = None
+        self._mGClr1 = None
+        self._mGClr2 = None
+        self._mGt2b = None
+        self._controls = []
         # print("form inited")
 
 
@@ -305,7 +310,7 @@ class Form(Control):
         self.onThreadMsg = None
 
         Form._count += 1
-        if bCreate: self.createHandle()
+        if auto: self.createHandle()
     #------------------------------
 
 
@@ -348,20 +353,19 @@ class Form(Control):
         self._mGt2b = top2btm
         self._drawMode = FormDrawMode.GRADIENT
         self._isNormalDraw = False
-        if self._isCreated: pass
+        if self._isCreated: api.InvalidateRect(self._hwnd, None, True)
 
     def display(self):
         """Display a window. If it's the first window, then it will start the main loop"""
-
+        with Timing("Time for creating control hwnd: "):
+            self._createChildHandles() # Create child control hwnds
         api.ShowWindow(self._hwnd, con.SW_SHOW)
-
         if self.formState == FormState.MINIMIZED :
             api.CloseWindow(self._hwnd)
         else:
             api.UpdateWindow(self._hwnd)
 
         if self.onLoad: self._formShownHandler() # We moved onLoad event to here. WM_SHOWWINDOW is not working.
-
         if not StaticData.loopStarted:
             self._isMainWindow = True
             StaticData.loopStarted = True
@@ -381,6 +385,7 @@ class Form(Control):
     # -endregion
 
     # -region Private functions
+
     def _setLocation(self) :
         match self._formPos:
             case FormPosition.CENTER:
@@ -470,13 +475,15 @@ class Form(Control):
             if menu.onClick: menu.onClick(menu, EventArgs())
         return 0
 
-
-
     def _getMenuFromHmenu(self, menuHandle):
         for menu in self._menuItemDict.values():
             if menu._hmenu == menuHandle: return menu
         return None
 
+    def _createChildHandles(self):
+        if len(self._controls) > 0:
+            for ctl in self._controls:
+                if ctl._hwnd == None: ctl.createHandle()
 
     # -endregion private functions
 
@@ -544,13 +551,11 @@ class Form(Control):
             self.onSizing(self, ea)
         return 0
 
-
     def _formSizedHandler(self, msg, wp, lp):
         if self.onSizing:
             ea = SizeEventArgs(msg, wp, lp)
             self.onSizing(self, ea)
         return 0
-
 
     def _formMovingHandler(self, lp):
         rct = cast(lp, POINTER(RECT)).contents
@@ -592,8 +597,6 @@ class Form(Control):
             #     self._selMenuPt = getMousePoints(lp)
                 # print(pt.x, pt.y)
 
-
-
     def _formClosingHandler(self):
         if self.onClosing:
             ea = EventArgs()
@@ -604,16 +607,18 @@ class Form(Control):
             ea = EventArgs()
             self.onClosed(self, ea)
 
-    def _formEraseBkgHandler(self, hwnd, wp):
-        # if self._drawMode != FormDrawMode.NORMAL:
-        # dch = cast(wp, HDC).value
-        rct = api.get_client_rect(hwnd)
-        # api.GetClientRect(hwnd, byref(rct))
 
+    def _formEraseBkgHandler(self, hwnd, wp):
+        # print("_formEraseBkgHandler started")
+        rct = api.get_client_rect(hwnd)
         if self._drawMode == FormDrawMode.COLORED:
-            hbr = api.CreateSolidBrush(self._bkClrRef)
-        else:
+            hbr = api.CreateSolidBrush(self._bgColor.ref)
+            api.FillRect(wp, byref(rct), hbr)
+            api.DeleteObject(hbr)
+        elif self._drawMode == FormDrawMode.GRADIENT:
             # with Timing("create gradient speed : "):
+            # print("612 worked")
+            # self._formGradientNew(hwnd, wp, rct)
             hbr = _createGradientBrush( wp, rct, self._mGClr1, self._mGClr2, self._mGt2b )
         api.FillRect(wp, byref(rct), hbr)
         api.DeleteObject(hbr)
@@ -676,16 +681,13 @@ class Form(Control):
 
     #---------------------------------------
 
-
-
     @Control.backColor.setter
     def backColor(self, value):
-        self._bgColor.update_color(value)
+        self._bgColor.updateColor(value)
         self._drawMode = FormDrawMode.COLORED
         if not self._drawFlag: self._drawFlag = 1
         self._isNormalDraw = False
         self._manageRedraw() # This will re draw the window if needed
-
 
 
     def enablePrintPoint(self):

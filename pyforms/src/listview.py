@@ -51,7 +51,7 @@ class ListView(Control):
                     "_hdrBgColor", "_hdrFgColor", "_hdrBkBrush", "_hdrOwnDraw", "_hotHdr", "_colIndex",
                     "_hdrHotBrush", "_hdrClickable", "_selectable", "_itemIndex", "_itemDrawn", "_destroyCount", "_layCount" )
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 250, height: int = 200, bCreate = False) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 250, height: int = 200, auto = False, cols = None) -> None:
         super().__init__()
 
         self._clsName = "SysListView32"
@@ -100,11 +100,13 @@ class ListView(Control):
         self._colIndex = 0
         self._destroyCount = 0
         self._layCount = 0
+        self._hwnd = None
+        parent._controls.append(self)
         # Events
 
-
         ListView._count += 1
-        if bCreate: self.createHandle()
+        if auto: self.createHandle()
+        if isinstance(cols, list): self.addColumnsEx(*cols)
 
 
 
@@ -162,6 +164,19 @@ class ListView(Control):
         for (name, width) in zip(col_names, col_widths):
             col = ListViewColumn(name, width)
             self._addColInternal(col)
+
+    def addColumnsEx(self, *colsAndWidths):
+        cols = []
+        wids = []
+        for item in colsAndWidths:
+            if isinstance(item, int): wids.append(item)
+            if isinstance(item, str): cols.append(item)
+
+        if len(cols) == len(wids):
+            for (name, width) in zip(cols, wids):
+                col = ListViewColumn(name, width)
+                self._addColInternal(col)
+
 
 
     def addRow(self, *items):

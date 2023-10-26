@@ -68,7 +68,7 @@ class Control:
     __slots__ = ("tvar", "name", "_hwnd", "_text", "_width", "_height", "_style", "_exStyle", "_hInst", "_visible",
                  "_clsName", "_cid", "_xpos", "_ypos", "_parent", "_isCreated", "_isTextable", "_lBtnDown",
                  "_rBtnDown", "_isMouseEntered", "_ctlType", "_font", "_fgColor", "_bgColor", "_drawFlag",
-                 "_hasBrush", "_bkgBrush", "_contextMenu", "_keyMod",
+                 "_hasBrush", "_bkgBrush", "_contextMenu", "_keyMod", "_disable",
                   "_onMouseEnter", "onMouseDown", "onMouseUp", "onRightMouseDown", "onRightMouseUp",
                   "onRightClick", "_onMouseLeave", "onDoubleClick", "onMouseWheel", "onMouseMove",
                   "onMouseHover", "onKeyDown", "onKeyUp", "onKeyPress", "onPaint", "onGotFocus",
@@ -102,6 +102,7 @@ class Control:
         self._hasBrush = False
         self._contextMenu = None
         self._keyMod = 0
+        self._disable = False
 
 
         # Events
@@ -147,6 +148,8 @@ class Control:
         if self._isCreated:
             api.SetWindowPos(self._hwnd, None, self._xpos, self._ypos, self._width, self._height, con.SWP_NOZORDER)
 
+    def focus(self):
+        if self._isCreated: api.SetFocus(self._hwnd)
     # -endregion
 
 
@@ -368,7 +371,7 @@ class Control:
         """Set the control's height"""
         self._height = value
         if self._isCreated:
-            pass
+            api.SetWindowPos(self._hwnd, None, self._xpos, self._ypos, self._width, self._height, con.SWP_NOMOVE)
     #--------------------------------------------HEIGHT
 
     @property
@@ -436,30 +439,40 @@ class Control:
     @property
     def right(self):
         """Get the right point of control's rect"""
-        if self._isCreated:
-            rc = api.get_client_rect(self._hwnd)
-            MapWindowPoints(self._hwnd, self._parent._hwnd, 
-                            cast(byref(rc), LPPOINT), 2)
-            return rc.right
-        else:
-            return self._xpos + self._width
+        return self._getMappedPoints(True)
 
     @property
     def bottom(self):
         """Get the bottom point of control's rect"""
-        if self._isCreated:
-            rc = api.get_client_rect(self._hwnd)
-            MapWindowPoints(self._hwnd, self._parent._hwnd, 
-                            cast(byref(rc), LPPOINT), 2)
-            return rc.bottom
-        else:
-            return self._ypos + self._height
+        return self._getMappedPoints(False)
+
+    @property
+    def disable(self):
+        """Get the disble state of this Control """
+        return self._disable
+
+    @disable.setter
+    def disable(self, value):
+        """Set this control disable or enable"""
+        self._disable = value
+        if self._isCreated: api.EnableWindow(self._hwnd, not value)
+
 
 
     # -endregion
 
 
-
+    # -region Private members
+    def _getMappedPoints(self, isRight):
+        if self._isCreated:
+            rc = api.get_client_rect(self._hwnd)
+            hwnd1 = self._hwnd
+        else:
+            rc = api.RECT(self._xpos, self._ypos, self._xpos + self._width, self._ypos + self._height)
+            hwnd1 = self._parent._hwnd
+        MapWindowPoints(hwnd1, self._parent._hwnd, cast(byref(rc), LPPOINT), 2)
+        return rc.right if isRight else rc.bottom
+    # -endregion
 
 
 

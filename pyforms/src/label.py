@@ -17,7 +17,7 @@ class Label(Control):
 
     _count = 1
     __slots__ = ("_autoSize", "_multiLine", "_txtAlign", "_borderStyle", "_dwAlignFlag")
-    def __init__(self, parent, txt: str = "", xpos: int = 10, ypos: int = 10, width: int = 0, height: int = 0, bCreate = False ) -> None:
+    def __init__(self, parent, txt: str = "", xpos: int = 10, ypos: int = 10, width: int = 0, height: int = 0, auto = False ) -> None:
         super().__init__()
         self._clsName = "Static"
         self.name = f"Label_{Label._count}"
@@ -39,8 +39,10 @@ class Label(Control):
         self._borderStyle = LabelBorder.NONE
         self._dwAlignFlag = 0
         self._hasBrush = True
+        self._hwnd = None
+        parent._controls.append(self)
         Label._count += 1
-        if bCreate: self.createHandle()
+        if auto: self.createHandle()
 
 
     # -region Public funcs

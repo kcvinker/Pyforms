@@ -26,7 +26,7 @@ class TreeView(Control):
     			 "_showSel", "_hotTrack", "_lineColor", "_selNode", "_nodes", "_nodeCount",
                  "_nxtNodeHwnd", "_uniqNodeID", "_nodeDict")
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 80, height: int = 24, bCreate = False ) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 80, height: int = 24, auto = False ) -> None:
         super().__init__()
         self._clsName = "SysTreeView32"
         self.name = f"TreeView_{TreeView._count}"
@@ -55,11 +55,12 @@ class TreeView(Control):
         self._nxtNodeHwnd = 0
         self._uniqNodeID = 100
         self._nodeDict = {} # This dict will hold all the nodes.
-
+        self._hwnd = None
+        parent._controls.append(self)
         #Events
 
         TreeView._count += 1
-        if bCreate: self.createHandle()
+        if auto: self.createHandle()
 
 
     # -region Public funcs
@@ -106,6 +107,17 @@ class TreeView(Control):
 
     def insertChildNode(self, node, parent, pos):
         self._manageNodeOps(NodeOp.INSERT_CHILD, node, pos, parent)
+
+    def addNodeWithChilds(self, nodeTxt, *childTxts):
+        pnode = TreeNode(nodeTxt)
+        self._manageNodeOps(NodeOp.ADD_NODE, pnode)
+        for txt in childTxts:
+            cnode = TreeNode(txt)
+            self._manageNodeOps(NodeOp.ADD_CHILD, cnode, pnode=pnode)
+
+
+
+
 
     # def addChildNode(self, txt: str, parent_node, )
 

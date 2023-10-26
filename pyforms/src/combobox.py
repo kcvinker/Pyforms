@@ -9,7 +9,7 @@ from pyforms.src.enums import ControlType
 from pyforms.src.events import EventArgs
 from pyforms.src.apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, COMBOBOXINFO, WPARAM, LPARAM, SUBCLASSPROC
 import pyforms.src.apis as api
-from pyforms.src.colors import Color
+from pyforms.src.colors import COLOR_WHITE
 # from .winmsgs import log_msg
 # from horology import Timing
 
@@ -27,13 +27,13 @@ class ComboBox(Control):
                     "onListOpened", "onTextUpdated", "onTextChanged", "onSelectionChanged",
                     "onSelectionCancelled" )
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 150, height: int = 30, bCreate = False) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 150, height: int = 30, auto = False, items = None) -> None:
         super().__init__()
         self._clsName = "ComboBox"
         self.name = f"ComboBox_{ComboBox._count}"
         self._ctlType = ControlType.COMBO_BOX
         self._parent = parent
-        self._bgColor = Color(parent._bgColor)
+        self._bgColor = COLOR_WHITE
         self._font = parent._font
         self._width = width
         self._height = height
@@ -57,9 +57,12 @@ class ComboBox(Control):
         self.onListOpened = None
         self.onListClosed = None
         self.onSelectionCommitted = None
+        self._hwnd = None
+        parent._controls.append(self)
 
         ComboBox._count += 1
-        if bCreate: self.createHandle()
+        if auto: self.createHandle()
+        if isinstance(items, list): self.addItems(*items)
 
 
     # Create's combo box handle
@@ -84,6 +87,7 @@ class ComboBox(Control):
                                         self._parent._hwnd,
                                         self._cid,
                                         self._parent.wnd_class.hInstance, None )
+
         if self._hwnd:
             cmbDict[self._hwnd] = self
             if not self._isCreated:
