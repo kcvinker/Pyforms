@@ -223,6 +223,15 @@ class MenuItem:
 			case MenuType.SEPARATOR:
 				AppendMenu(self._parentHmenu, MF_SEPARATOR, 0, None)
 
+	def _cmenuInsertInternal(self):
+		if len(self._menus) > 0:
+			for menu in self._menus:
+				menu._cmenuInsertInternal()
+
+		if self._type == MenuType.CONTEXT_MENU:
+			self._insertMenuInternal(self._hMenu)
+		elif self._type == MenuType.CONTEXT_SEP:
+			AppendMenu(self._hMenu, MF_SEPARATOR, 0, None)
 
 	def getChildFromIndex(self, index):
 		for menu in self._menus.values():
@@ -366,7 +375,7 @@ def createDummy(hwndParent, hInst): # We need this dummy window to receive messa
 class ContextMenu:
 
 	__slots__ = ("_menus", "_hMenu", "_font", "_width", "_height", "_dummyHwnd", "_defBgBrush", "_hotBgBrush", "_borderBrush",
-	      		"_selTxtClr", "_grayCref", "_grayBrush", "_menuCount", "onMenuShown", "onMenuClose")
+	      		"_selTxtClr", "_grayCref", "_grayBrush", "_menuCount", "_menuInserted", "onMenuShown", "onMenuClose")
 
 	def __init__(self, parent, *menuNames) -> None:
 		self._menus = []
@@ -382,6 +391,7 @@ class ContextMenu:
 		self._grayBrush = Color(0xced4da).createHBrush()
 		self._grayCref = Color(0x979dac).ref
 		self._menuCount = 0
+		self._menuInserted = False
 		cmDict[MenuData.staticMenuID] = self
 		self._dummyHwnd = createDummy(parent._hwnd, parent.wnd_class.hInstance)
 
@@ -391,15 +401,12 @@ class ContextMenu:
 				mtyp = MenuType.CONTEXT_SEP if name == '_' else MenuType.CONTEXT_MENU
 				mi = MenuItem(name, mtyp, parent, self._menuCount)
 				self._menuCount += 1
-				if mtyp == MenuType.CONTEXT_MENU:
-					mi._insertMenuInternal(self._hMenu)
-					self._menus.append(mi)
-				elif mtyp == MenuType.CONTEXT_SEP:
-					AppendMenu(self._hMenu, MF_SEPARATOR, 0, None)
+				self._menus.append(mi)
 				indx += 1
 
 
 	def showContextMenu(self, lpm):
+		if not self._menuInserted: self._cmenuCreateHandle()
 		xp = getMouseXpoint(lpm)
 		yp = getMouseYpoint(lpm)
 		if xp == -1 or yp == -1:
@@ -407,12 +414,18 @@ class ContextMenu:
 			# So we need to find the mouse position.
 			pt = getMousePosOnMsg()
 			xp, yp = pt.x, pt.y
+
 		TrackPopupMenu(self._hMenu, TPM_RIGHTBUTTON, xp, yp, 0, self._dummyHwnd, None)
 
 	def getMenuItem(self, idNum):
 		for menu in self._menus:
 			if menu._id == idNum: return menu
 		return None
+
+	def _cmenuCreateHandle(self):
+		if len(self._menus) > 0:
+			for menu in self._menus:
+				menu._cmenuInsertInternal()
 
 
 

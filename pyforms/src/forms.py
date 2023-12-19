@@ -1,13 +1,13 @@
 # Created on 08-Nov-2022 00:05:26
 
-from ctypes import cast, byref, sizeof, POINTER, py_object, create_unicode_buffer
+from ctypes import cast, byref, sizeof, POINTER, py_object, create_unicode_buffer, WINFUNCTYPE
 from ctypes.wintypes import LPCWSTR, HBRUSH
 import pyforms.src.constants as con
 import pyforms.src.apis as api
 from pyforms.src.apis import WNDPROC, RECT, WNDCLASSEX, LPNMHDR, LRESULT, LPMEASUREITEMSTRUCT, GetDC, MessageBox
 import pyforms.src.apis as api
 from pyforms.src.control import Control
-from pyforms.src.enums import FormPosition, FormStyle, FormState, FormDrawMode, MessageButtons, MessageIcons
+from pyforms.src.enums import FormPosition, FormStyle, FormState, FormDrawMode, MessageButtons, MessageIcons, ControlType
 from pyforms.src.commons import Font, MyMessages, getMouseXpoint, getMouseYpoint, MyMessages, menuTxtFlag, getMousePoints
 from pyforms.src.events import EventArgs, MouseEventArgs, SizeEventArgs
 from pyforms.src.colors import _createGradientBrush, RgbColor, Color, COLOR_BLACK
@@ -15,7 +15,7 @@ from pyforms.src.menubar import MenuType
 # from . import messagebox
 import pyforms.src.winmsgs
 from horology import Timing
-
+import os
 
 class StaticData: # A singleton object which used to hold essential data for a form to start
     hInstance = 0
@@ -52,12 +52,16 @@ def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
 
     match message:
         case con.WM_NCDESTROY:
+            this.cleanTimers()
             if this._isMainWindow :
                 api.PostQuitMessage(0)
                 return 1
         case MyMessages.THREAD_MSG:
             if this.onThreadMsg:
                 this.onThreadMsg(wParam, lParam)
+
+        case con.WM_TIMER: this.handle_wmtimer(wParam)
+
 
 #   -region No problem messages
         # case con.WM_SHOWWINDOW: this._formShownHandler() # NOT NEEDED
@@ -222,7 +226,14 @@ def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
 #//////////////////////////////////////////////////////////////
 #//   Create a Window class for our library.
 #//////////////////////////////////////////////////////////////
+def getPyformsIcon():
+    file_dir = os.path.dirname(__file__)
+    iconpath = f"{file_dir}\\pyforms_icon.ico"
+    icofile = create_unicode_buffer(iconpath)
+    return api.LoadImage(None, icofile, con.IMAGE_ICON, 0, 0, con.LR_LOADFROMFILE | con.LR_DEFAULTSIZE)
+
 def make_window_class(proc):
+    # print(os.path.dirname(__file__), " == real path")
     hins = api.GetModuleHandle(LPCWSTR(0))
     wc = WNDCLASSEX()
     wc.cbSize = sizeof(WNDCLASSEX)
@@ -231,11 +242,37 @@ def make_window_class(proc):
     wc.hInstance = hins
     wc.hCursor =  api.LoadCursor(0, LPCWSTR(con.IDC_ARROW))
     wc.hbrBackground = api.CreateSolidBrush(StaticData.defWinColor.ref)
-    icofile = create_unicode_buffer("D:\Icons\Tatice-Cristal-Intense-Papillon-MSN.ico")
-    wc.hIcon = api.LoadImage(None, icofile, con.IMAGE_ICON, 0, 0, con.LR_LOADFROMFILE | con.LR_DEFAULTSIZE)
+    wc.hIcon = getPyformsIcon()
     wc.lpszClassName = StaticData.className
-    # print("style-----  ", wc.style)
+    # print("StaticData.defWinColor.ref-----  ", StaticData.defWinColor.ref)
     return wc
+
+class Timer:
+    def __init__(self, parent, tickInterval = 100, tickHandler = None) -> None:
+        self.interval = tickInterval
+        self.onTick = tickHandler
+        self._isEnabled = False
+        if parent._staticTimerID > 0:
+            parent._staticTimerID += 1
+        else:
+            parent._staticTimerID = parent._count * 1000
+
+        self._idNum = parent._staticTimerID
+        self._parent = parent
+
+    def start(self):
+        self._isEnabled = True
+        api.SetTimer(self._parent._hwnd, self._idNum, self.interval, api.TIMERPROC(0))
+
+    def stop(self):
+        api.KillTimer(self._parent._hwnd, self._idNum)
+        self._isEnabled = False
+
+    def _destructor(self):
+        if self._isEnabled:
+            api.KillTimer(self._parent._hwnd, self._idNum)
+
+
 
 
 
@@ -254,7 +291,8 @@ class Form(Control):
                     "_formID", "_comboDict", "onLoad", "onMinimized", "onMaximized", "onRestored", "onClosing",
                     "onClosed", "onActivate", "onDeActivate", "onMoving", "onMoved", "onSizing", "onSized",
                     "onThreadMsg", "_menuGrayBrush", "_menuGrayCref", "_menuEventDict", "_menuItemDict", "_controls",
-                    "_menuDefBgBrush", "_menuHotBgBrush", "_menuFont", "_menuFrameBrush", "_mGClr1", "_mGClr2", "_mGt2b")
+                    "_menuDefBgBrush", "_menuHotBgBrush", "_menuFont", "_menuFrameBrush", "_mGClr1", "_mGClr2",
+                    "_mGt2b", "_timerDic", "_staticTimerID", "_dummyEA" )
 
     def __init__(self, txt = "", width = 500, height = 400, auto = False) -> None:
         super().__init__()
@@ -291,6 +329,9 @@ class Form(Control):
         self._mGClr2 = None
         self._mGt2b = None
         self._controls = []
+        self._timerDic = {}
+        self._staticTimerID = 0
+        self._dummyEA = EventArgs()
         # print("form inited")
 
 
@@ -318,7 +359,6 @@ class Form(Control):
     # -region Public functions
     def createHandle(self):
         """Creating window handle """
-
         self._setLocation()
         self._setStyles()
         StaticData.currForm = self
@@ -335,6 +375,7 @@ class Form(Control):
             self._isCreated = True
             self._setFontInternal()
             StaticData.currForm = None
+            # print(f"{self._exStyle = }, {self._style = }")
         else:
             print("window creation failed")
 
@@ -381,6 +422,10 @@ class Form(Control):
             wCap = create_unicode_buffer(title)
             return MessageBox(0, wMsg, wCap, btns.value | icon.value)
 
+    def addTimer(self, tickInterval = 100, tickHandler = None):
+        timer = Timer(self, tickInterval, tickHandler)
+        self._timerDic[timer._idNum] = timer
+        return timer
 
     # -endregion
 
@@ -483,8 +528,20 @@ class Form(Control):
     def _createChildHandles(self):
         if len(self._controls) > 0:
             for ctl in self._controls:
+                # if not self._isNormalDraw:
+                    # if ctl._ctlType == ControlType.GROUP_BOX:
+                    #     ctl._setBackColorFromParent(self._bgColor)
                 if ctl._hwnd == None: ctl.createHandle()
 
+    def handle_wmtimer(self, wpm):
+        timer = self._timerDic.get(wpm, None)
+        if not timer is None and timer.onTick:
+            timer.onTick(self, self._dummyEA)
+
+    def cleanTimers(self):
+        if len(self._timerDic) > 0:
+            for timer in self._timerDic.values():
+                timer._destructor()
     # -endregion private functions
 
     # -region Event handlers
@@ -613,8 +670,8 @@ class Form(Control):
         rct = api.get_client_rect(hwnd)
         if self._drawMode == FormDrawMode.COLORED:
             hbr = api.CreateSolidBrush(self._bgColor.ref)
-            api.FillRect(wp, byref(rct), hbr)
-            api.DeleteObject(hbr)
+            # api.FillRect(wp, byref(rct), hbr)
+            # api.DeleteObject(hbr)
         elif self._drawMode == FormDrawMode.GRADIENT:
             # with Timing("create gradient speed : "):
             # print("612 worked")
@@ -692,6 +749,7 @@ class Form(Control):
 
     def enablePrintPoint(self):
         self.onMouseDown = printPoint2
+
 
     # -endregion
 

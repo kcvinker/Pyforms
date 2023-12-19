@@ -230,7 +230,8 @@ def pgbWndProc(hw, msg, wp, lp, scID, refData):
         case con.WM_MOUSELEAVE: pgb._mouseLeaveHandler()
         case con.WM_PAINT:
             ret = api.DefSubclassProc(hw, msg, wp, lp)
-            if pgb._percentage and pgb._barStyle != ProgressBarStyle.MARQUEE_STYLE: pgb._drawPercentage()
+            if pgb._percentage and pgb._barStyle != ProgressBarStyle.MARQUEE_STYLE:
+                pgb._drawPercentage()
             return ret
 
     return api.DefSubclassProc(hw, msg, wp, lp)

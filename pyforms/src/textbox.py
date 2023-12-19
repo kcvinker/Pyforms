@@ -21,7 +21,7 @@ class TextBox(Control):
     _count = 1
     __slots__ = ( "_multiLine", "_hideSel", "_readOnly", "_textCase", "_textType", "_textAlign", "_cueBanner", "onTextChanged")
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 23, auto = False) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 23, txt="", auto = False, multi=False) -> None:
         super().__init__()
         self._clsName = "EDIT"
         self.name = f"TextBox_{TextBox._count}"
@@ -37,12 +37,13 @@ class TextBox(Control):
         self._exStyle = 0x00000204
         self._bgColor = Color(0xFFFFFF)
         self._drawFlag = 0
-        self._multiLine = False
+        self._multiLine = multi
         self._hideSel = False
         self._readOnly = False
         self._textCase = TextCase.NORMAL
         self._textType = TextType.NORMAL
         self._textAlign = TextAlignment.LEFT
+        self._text = txt
         self._cueBanner = ""
         self.onTextChanged = None
         self._hwnd = None
@@ -67,12 +68,15 @@ class TextBox(Control):
             # So we just redraw the non client area and it will receive WM_NCPAINT
             api.RedrawWindow(self._hwnd, None, None, con.RDW_FRAME| con.RDW_INVALIDATE)
 
+    def selectAll(self):
+        if self._isCreated:
+            api.SendMessage(self._hwnd, con.EM_SETSEL, 0, -1)
 
     # Setting text box's style bits
     def _setStyles(self):
         if self._multiLine:
-            self._style |= con.ES_MULTILINE | con.ES_WANTRETURN | con.ES_AUTOVSCROLL \
-            | con.WS_VSCROLL | con.WS_HSCROLL
+            self._style |= con.ES_MULTILINE | con.ES_WANTRETURN | con.ES_AUTOVSCROLL | con.ES_AUTOVSCROLL
+            #| con.WS_VSCROLL | con.WS_HSCROLL
         if self._hideSel: self._style |= con.ES_NOHIDESEL
         if self._readOnly: self._style |= con.ES_READONLY
 
@@ -176,8 +180,9 @@ def tbWndProc(hw, msg, wp, lp, scID, refData):
         case con.WM_MOUSEMOVE: tb._mouseMoveHandler(msg, wp, lp)
         case con.WM_MOUSELEAVE: tb._mouseLeaveHandler()
 
-        case con.WM_COMMAND:
+        case MyMessages.CTL_COMMAND:
             ncode = api.HIWORD(wp)
+            # print(f"{ncode = }")
             if ncode == con.EN_CHANGE:
                 if tb.onTextChanged: tb.onTextChanged(tb, EventArgs())
 

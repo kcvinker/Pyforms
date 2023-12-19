@@ -55,6 +55,7 @@ class GroupBox(Control):
             self._setFontInternal()
             self._getTextSize()
             self._setSubclass(gbWndProc)
+            # print(f"group bgc {self._bgColor.value:X}")
 
     # -endregion Public funcs
 
@@ -85,6 +86,13 @@ class GroupBox(Control):
         api.SetTextColor(hdc, self._fgColor.ref)
         api.TextOut(hdc, 10, 0, create_unicode_buffer(self._text), len(self._text))
         api.ReleaseDC(self._hwnd, hdc)
+
+    def _setBackColorFromParent(self, clr):
+        if self._drawFlag & 2 != 2: self._drawFlag += 2
+        self._bgColor = clr
+        self._bkgBrush = self._bgColor.createHBrush()
+        self._pen = self._bgColor.createHPen()
+
 
     # -endregion Private funcs
 

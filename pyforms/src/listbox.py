@@ -67,7 +67,7 @@ class ListBox(Control):
         self._setStyles()
         self._createControl()
         if self._hwnd:
-            print("list box hwnd ", self._hwnd)
+            # print("list box hwnd ", self._hwnd)
             lbxDict[self._hwnd] = self
             self._isCreated = True
             self._setSubclass(lbxWndProc)

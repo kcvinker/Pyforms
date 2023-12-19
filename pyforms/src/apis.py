@@ -22,6 +22,7 @@ WNDPROC = WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM)
 SUBCLASSPROC = WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
 LPOFNHOOKPROC = WINFUNCTYPE(UINT_PTR, HWND, UINT, WPARAM, LPARAM)
 BROWSERCBPROC = WINFUNCTYPE(INT, HWND, UINT, LPARAM, LPARAM)
+TIMERPROC = WINFUNCTYPE(UINT_PTR, HWND, UINT, UINT_PTR, DWORD)
 
 # -region Structures
 
@@ -839,8 +840,6 @@ EnableMenuItem = windll.user32.EnableMenuItem
 EnableMenuItem.argtypes = [HMENU, UINT, UINT]
 EnableMenuItem.restype = BOOL
 
-
-
 AppendMenu = windll.user32.AppendMenuW
 """ [HMENU, UINT: flags, UINT_PTR: menu id, LPCWSTR: text] -> BOOL"""
 AppendMenu.argtypes = [HMENU, UINT, UINT_PTR, LPCWSTR]
@@ -885,6 +884,16 @@ EnableWindow = windll.user32.EnableWindow
 """ [HWND, BOOL - true for enable] -> BOOL"""
 EnableWindow.argtypes = [HWND, BOOL]
 EnableWindow.restype = BOOL
+
+SetTimer = windll.user32.SetTimer
+""" [HWND, UINT_PTR, UINT, TIMERPROC] -> UINT_PTR"""
+SetTimer.argtypes = [HWND, UINT_PTR, UINT, TIMERPROC]
+SetTimer.restype = UINT_PTR
+
+KillTimer = windll.user32.KillTimer
+""" [HWND, UINT_PTR, UINT, TIMERPROC] -> BOOL"""
+KillTimer.argtypes = [HWND, UINT_PTR]
+KillTimer.restype = BOOL
 
 
 
@@ -1128,7 +1137,9 @@ CoTaskMemFree.restype = None
 # Sample text
 
 # -region Misc Functions
-def print_rct(rc, txt):print(f"{txt} --- Left = {rc.left}, Top = {rc.top}, Right = {rc.right}, Bottom = {rc.bottom}")
+def print_rct(rc, txt):
+    print(f"{txt} --- Left = {rc.left}, Top = {rc.top}, Right = {rc.right}, Bottom = {rc.bottom}")
+
 def get_client_rect(hw: HWND) -> RECT:
     rc = RECT()
     GetClientRect(hw, ct.byref(rc))

@@ -24,6 +24,7 @@ LV_VIEW_SMALLICON       = 0x0002
 LV_VIEW_LIST            = 0x0003
 LV_VIEW_TILE            = 0x0004
 LV_VIEW_MAX             = 0x0004
+LVS_EX_DOUBLEBUFFER     = 0x00010000
 HDI_FORMAT = 0x0004
 HDF_OWNERDRAW = 0x8000
 ITEM_POSTPAINT = (con.CDDS_SUBITEM | con.CDDS_ITEMPOSTPAINT) - 1
@@ -217,12 +218,13 @@ class ListView(Control):
 
     def _setLVExStyles(self):
         # Setup the different ex styles for this list view
-        lv_ex_style = 0x0000
+        lv_ex_style = LVS_EX_DOUBLEBUFFER # 0x0000
         if self._showGrid: lv_ex_style |= con.LVS_EX_GRIDLINES
         if self._checkBox: lv_ex_style |= con.LVS_EX_CHECKBOXES
         if self._fullRowSel: lv_ex_style |= con.LVS_EX_FULLROWSELECT
         if self._oneClickAct: lv_ex_style |= con.LVS_EX_ONECLICKACTIVATE
         if self._hotTrackSel: lv_ex_style |= con.LVS_EX_TRACKSELECT
+
         # if self._viewStyle == ListViewStyle.TILE_VIEW: api.SendMessage(self._hwnd, con.LVM_SETVIEW, 0x0004, 0)
         api.SendMessage(self._hwnd, con.LVM_SETEXTENDEDLISTVIEWSTYLE, 0 , lv_ex_style)
 
@@ -338,7 +340,7 @@ class ListView(Control):
             nmcd.rc.right -= 1
             nmcd.rc.bottom += 1
 
-        api.DrawText(nmcd.hdc, col.text, -1, byref(nmcd.rc), col._hdrTxtFlag )
+        api.DrawText(nmcd.hdc, col._wideText, -1, byref(nmcd.rc), col._hdrTxtFlag )
 
 
     #------------------------------------------End
@@ -498,7 +500,7 @@ class ListViewColumn:
     """Class for representing ListView Column"""
 
     __slots__ = ("_drawNeed", "_isHotItem", "text", "width", "index", "imageIndex", "_order", "_hdrTxtFlag",
-                "_bgColor", "_fgColor", "imageOnRight", "textAlign", "_hdrTxtAlign", "lvc")
+                "_bgColor", "_fgColor", "imageOnRight", "_wideText", "textAlign", "_hdrTxtAlign", "lvc")
 
     def __init__(self, hdr_txt: str, width: int, img:int = -1, img_right: bool = False) -> None:
         self.text = hdr_txt
@@ -509,6 +511,7 @@ class ListViewColumn:
         self.index = -1
         self._hdrTxtAlign = ColumnAlign.CENTER
         self._isHotItem = False
+        self._wideText = create_unicode_buffer(hdr_txt)
         self._hdrTxtFlag = con.DT_SINGLELINE | con.DT_VCENTER | con.DT_CENTER | con.DT_NOPREFIX
 
 
@@ -633,8 +636,8 @@ def lvWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             lv._destroyCount += 1
             if lv._destroyCount == 2: del lvDict[hw]
 
-        case con.WM_MEASUREITEM:
-            print("msr item lv")
+        # case con.WM_MEASUREITEM:
+        #     print("msr item lv")
 
         case con.WM_CONTEXTMENU: lv._wmContextMenuHandler(lp)
 
@@ -716,8 +719,8 @@ def lvWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         case con.WM_MOUSEMOVE: lv._mouseMoveHandler(msg, wp, lp)
         case con.WM_MOUSELEAVE: lv._mouseLeaveHandler()
 
-        case con.WM_COMMAND:
-            print("WM_COMMAND on LV")
+        # case con.WM_COMMAND:
+        #     print("WM_COMMAND on LV")
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 

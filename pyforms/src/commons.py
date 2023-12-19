@@ -142,6 +142,7 @@ class MyMessages:
     TREENODE_NOTIFY = 9012 # A tree node notify it's tree view control about changes
     BUDDY_RESET = 9013
     MENU_ADDED = 9014
+    NOTIFY_GPBOX = 9015
     THREAD_MSG = con.WM_USER + 5
 
 

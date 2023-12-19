@@ -18,9 +18,9 @@ txtFlag = con.DT_SINGLELINE | con.DT_VCENTER | con.DT_CENTER | con.DT_NOPREFIX
 class RadioButton(Control):
 
     _count = 1
-    __slots__ = ( "_rightAlign", "_txtStyle", "_isChecked", "onCheckedChanged", "_checkOnClick")
+    __slots__ = ( "_rightAlign", "_txtStyle", "_isChecked", "onCheckedChanged", "_checkOnClick", "_value")
 
-    def __init__(self, parent, txt: str, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 23, auto = False) -> None:
+    def __init__(self, parent, txt: str, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 23, auto = False, check=False) -> None:
         super().__init__()
         self._clsName = "Button"
         self.name = f"RadioButton_{RadioButton._count}"
@@ -43,6 +43,7 @@ class RadioButton(Control):
         self._isChecked = False
         self.onCheckedChanged = None
         self._hwnd = None
+        self._value = check
         parent._controls.append(self)
         RadioButton._count += 1
         if auto: self.createHandle()
@@ -63,17 +64,18 @@ class RadioButton(Control):
             self._setFontInternal()
             ss = api.SIZE()
             api.SendMessage(self._hwnd, con.BCM_GETIDEALSIZE, 0, addressof(ss))
-            self._width = ss.cx + 20
+            self._width = ss.cx + 2
             self._height = ss.cy
             api.MoveWindow(self._hwnd, self._xpos, self._ypos, self._width, self._height, True)
+            if self._value: api.SendMessage(self._hwnd, con.BM_SETCHECK, self._value, 0)
 
 
 
     @Control.backColor.setter
     def backColor(self, value):
         """Set back color of radio button."""
-        self._bgColor.update_color(value)
-        self._bg_brush = api.CreateSolidBrush(self._bgColor.ref)
+        self._bgColor.updateColor(value)
+        self._bkgBrush = api.CreateSolidBrush(self._bgColor.ref)
         if not self._drawFlag & (1 << 1): self._drawFlag += 2
 
 
@@ -86,7 +88,10 @@ class RadioButton(Control):
             return self._text
 
     @property
-    def checked(self) : return self._isChecked
+    def checked(self) :
+        if self._isCreated:
+            self._isChecked = bool(api.SendMessage(self._hwnd, con.BM_GETCHECK, 0, 0))
+        return self._isChecked
 
     @checked.setter
     def checked(self, value: bool) :
@@ -135,7 +140,7 @@ def rbWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                     return con.CDRF_SKIPDEFAULT
 
         case MyMessages.CTL_COMMAND:
-            rb._isChecked = bool(api.SendMessage(hw, con.BM_GETCHECK, 0, 0))
+            # print(f"Radio {rb.text = }, {rb._isChecked = }")
             if rb.onCheckedChanged: rb.onCheckedChanged(rb, EventArgs() )
 
     return api.DefSubclassProc(hw, msg, wp, lp)

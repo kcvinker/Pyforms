@@ -375,16 +375,18 @@ class Control:
     #--------------------------------------------HEIGHT
 
     @property
-    def visibile(self):
+    def visible(self):
         """Get the control's visibility"""
-        return self._visibile
+        return self._visible
 
-    @visibile.setter
-    def visibile(self, value : bool):
+    @visible.setter
+    def visible(self, value : bool):
         """Set the control's visibility"""
-        self._visibile = value
+        self._visible = value
         if self._isCreated:
-            pass
+            uFlag = con.SW_SHOW if value else con.SW_HIDE
+            x = api.ShowWindow(self._hwnd, uFlag)
+            print(f"visible result {x}, {uFlag = }")
     #--------------------------------------------VISIBLE
 
     @property
@@ -400,7 +402,7 @@ class Control:
         elif isinstance(value, Color):
             self._bgColor = value
 
-        if self._drawFlag & 2 != 2: self._drawFlag += 2
+        if self._drawFlag & 2 != 2: self._drawFlag += 2 # _drawFlag --> 0=no_color, 1=fore_color, 2=back_color
         if self._isCreated and self._hasBrush: self._bkgBrush = self._bgColor.createHBrush()
         self._manageRedraw()
     #--------------------------------------------BACKCOLOR
@@ -417,7 +419,7 @@ class Control:
             self._fgColor.updateColor(value)
         elif isinstance(value, Color):
             self._fgColor = value
-        if not self._drawFlag & 1: self._drawFlag += 1
+        if not self._drawFlag & 1: self._drawFlag += 1 # _drawFlag --> 0=no_color, 1=fore_color, 2=back_color
         self._manageRedraw()
     #--------------------------------------------[9]---------
 
