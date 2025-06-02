@@ -38,7 +38,7 @@ class CalendarBox(Control):
         self._ctlType = ControlType.CALENDAR_BOX
         self._parent = parent
         self._bgColor = Color(parent._bgColor)
-        self._font = parent._font
+        # self._font = parent._font
         self._width = 0
         self._height = 0
         self._xpos = xpos

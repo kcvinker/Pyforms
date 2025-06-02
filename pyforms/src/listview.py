@@ -9,10 +9,12 @@ from pyforms.src.control import Control
 import pyforms.src.constants as con
 from pyforms.src.commons import Font, MyMessages, getMousePoints
 from pyforms.src.enums import ControlType, TextAlignment, ListViewStyle
-from pyforms.src.apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, LPNMCUSTOMDRAW, LVCOLUMNW, WPARAM, LPARAM, SUBCLASSPROC
+from pyforms.src.apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, LPNMCUSTOMDRAW, LVCOLUMNW
+from pyforms.src.apis import WPARAM, LPARAM, SUBCLASSPROC
 import pyforms.src.apis as api
 from pyforms.src.colors import Color
 from pyforms.src.winmsgs import log_msg
+# from horology import timed
 # from horology import Timing
 
 lvDict = {}
@@ -61,7 +63,8 @@ class ListView(Control):
         self._parent = parent
         self._bgColor = Color(0xFFFFFF)
         # self._fgColor = Color(0x000000) # Control class is taking care of this
-        self._font = parent._font
+        # self._font = parent._font
+        self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
         self._xpos = xpos
@@ -311,7 +314,7 @@ class ListView(Control):
         self._items[item_index]._subitems.append(sitem) # Put the subitem in our item's bag.
 
 
-    def _drawHeader(self, nmcd: LPNMCUSTOMDRAW) -> int:
+    def _drawHeader2(self, nmcd: LPNMCUSTOMDRAW) -> int:
         # Windows's own header drawing is white bkg color.
         # But listview itself is white bkg. We can't allow both hdr & listview in white.
         # So, we need to draw it on our own.
@@ -343,6 +346,12 @@ class ListView(Control):
         api.DrawText(nmcd.hdc, col._wideText, -1, byref(nmcd.rc), col._hdrTxtFlag )
 
 
+    def _drawHeader(self, nmcd: LPNMCUSTOMDRAW):
+        if nmcd.dwItemSpec != 0: nmcd.rc.left += 1 # Give room for header divider.
+        col = self._columns[nmcd.dwItemSpec] # Get our column class
+        api.drawHdrD(nmcd, self._hdrBkBrush, self._hdrHotBrush, self._hdrFont.handle,
+                        self._hdrFgColor.ref, self._hotHdr, self._hdrClickable,
+                        col._wideText, col._hdrTxtFlag)
     #------------------------------------------End
     # -endregion Private funcs
 

@@ -202,7 +202,7 @@ class Header(Control):
                 api.DrawEdge(nmcd.hdc, byref(nmcd.rc), con.BDR_RAISEDINNER, con.BF_BOTTOMRIGHT)
 
         api.SetBkMode(nmcd.hdc, con.TRANSPARENT)
-        api.SelectObject(nmcd.hdc, self._font._hwnd)
+        api.SelectObject(nmcd.hdc, self._font._handle)
         api.SetTextColor(nmcd.hdc, self._fgColor.ref)
         api.DrawText(nmcd.hdc, item.text, -1, byref(nmcd.rc), self._txtFlag )
 
@@ -235,7 +235,7 @@ class Header(Control):
                 # api.DrawEdge(nmcd.hdc, byref(nmcd.rc), con.BDR_RAISEDINNER, con.BF_BOTTOMRIGHT)
 
         api.SetBkMode(nmcd.hdc, con.TRANSPARENT)
-        api.SelectObject(nmcd.hdc, self._font._hwnd)
+        api.SelectObject(nmcd.hdc, self._font._handle)
         api.SetTextColor(nmcd.hdc, self._fgColor.ref)
         api.DrawText(nmcd.hdc, item.text, -1, byref(nmcd.rc), self._txtFlag )
 

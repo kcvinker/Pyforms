@@ -11,6 +11,7 @@ from pyforms.src.apis import LPNMHDR, LPNMDATETIMECHANGE, SUBCLASSPROC
 import pyforms.src.apis as api
 from pyforms.src.colors import Color
 from datetime import datetime
+# from horology import Timing
 
 dtpDict = {}
 dtpStyle = con.WS_CHILD | con.WS_VISIBLE
@@ -37,7 +38,8 @@ class DateTimePicker(Control):
         self._parent = parent
         self._bgColor = Color(0xFFFFFF)
         # self._fgColor = Color(0x000000) # Not needed, since Control's init function is doing this.
-        self._font = parent._font
+        # self._font = parent._font
+        self._font.colneFrom(parent._font)
         self._width = 0
         self._height = 0
         self._xpos = xpos
@@ -82,6 +84,7 @@ class DateTimePicker(Control):
             self._setFontInternal()
             #
             if self._format == DateFormat.CUSTOM_DATE:
+                # with Timing("pyforms unicode time : "):
                 buff = create_unicode_buffer(self._fmtString)
                 api.SendMessage(self._hwnd, con.DTM_SETFORMATW, 0, addressof(buff))
 

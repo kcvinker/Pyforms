@@ -28,7 +28,8 @@ class GroupBox(Control):
         self._parent = parent
         self._bgColor = Color(parent._bgColor)
         # self._fgColor = COLOR_BLACK # Control class is taking care of this
-        self._font = parent._font
+        # self._font = parent._font
+        self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
         self._xpos = xpos
@@ -64,7 +65,7 @@ class GroupBox(Control):
         # with Timing("Time for normal hdc  : "):
         hdc = api.GetDC(self._hwnd)
         size = api.SIZE()
-        api.SelectObject(hdc, self._font._hwnd)
+        api.SelectObject(hdc, self._font._handle)
         api.GetTextExtentPoint32(hdc, self._text, len(self._text), byref(size))
         api.ReleaseDC(self._hwnd, hdc)
         self._txtWidth = size.cx + 10
@@ -82,9 +83,9 @@ class GroupBox(Control):
         api.LineTo(hdc, self._txtWidth, yp)
 
         api.SetBkMode(hdc, con.TRANSPARENT)
-        api.SelectObject(hdc, self._font._hwnd)
+        api.SelectObject(hdc, self._font._handle)
         api.SetTextColor(hdc, self._fgColor.ref)
-        api.TextOut(hdc, 10, 0, create_unicode_buffer(self._text), len(self._text))
+        api.TextOut(hdc, 10, 0, self._text, len(self._text))
         api.ReleaseDC(self._hwnd, hdc)
 
     def _setBackColorFromParent(self, clr):

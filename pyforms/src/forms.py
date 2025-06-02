@@ -1,14 +1,14 @@
 # Created on 08-Nov-2022 00:05:26
 
-from ctypes import cast, byref, sizeof, POINTER, py_object, create_unicode_buffer, WINFUNCTYPE
-from ctypes.wintypes import LPCWSTR, HBRUSH
+from ctypes import cast, byref, sizeof, POINTER, py_object, create_unicode_buffer, WINFUNCTYPE, c_void_p
+from ctypes.wintypes import LPCWSTR, HBRUSH, LPWSTR
 import pyforms.src.constants as con
 import pyforms.src.apis as api
 from pyforms.src.apis import WNDPROC, RECT, WNDCLASSEX, LPNMHDR, LRESULT, LPMEASUREITEMSTRUCT, GetDC, MessageBox
 import pyforms.src.apis as api
 from pyforms.src.control import Control
 from pyforms.src.enums import FormPosition, FormStyle, FormState, FormDrawMode, MessageButtons, MessageIcons, ControlType
-from pyforms.src.commons import Font, MyMessages, getMouseXpoint, getMouseYpoint, MyMessages, menuTxtFlag, getMousePoints
+from pyforms.src.commons import Font, MyMessages, getMouseXpoint, getMouseYpoint, MyMessages, menuTxtFlag, getMousePoints, getSystemDPI
 from pyforms.src.events import EventArgs, MouseEventArgs, SizeEventArgs
 from pyforms.src.colors import _createGradientBrush, RgbColor, Color, COLOR_BLACK
 from pyforms.src.menubar import MenuType
@@ -16,6 +16,10 @@ from pyforms.src.menubar import MenuType
 import pyforms.src.winmsgs
 from horology import Timing
 import os
+
+
+    
+
 
 class StaticData: # A singleton object which used to hold essential data for a form to start
     hInstance = 0
@@ -25,6 +29,7 @@ class StaticData: # A singleton object which used to hold essential data for a f
     screenHeight = api.GetSystemMetrics(1)
     defWinColor = Color(0xf0f0f0)# Color.from_RGB(230, 230, 230)
     currForm = None
+    
 
 
 formDict = {} # This dictionary contains all the form class. We can get them in wndProcMain function
@@ -63,7 +68,7 @@ def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
         case con.WM_TIMER: this.handle_wmtimer(wParam)
 
 
-#   -region No problem messages
+    # -region No problem messages
         # case con.WM_SHOWWINDOW: this._formShownHandler() # NOT NEEDED
         case con.WM_ACTIVATEAPP: this._formActivateHandler(wParam)
         case con.WM_KEYDOWN | con.WM_SYSKEYDOWN: this._keyDownHandler(wParam)
@@ -91,9 +96,9 @@ def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
         case con.WM_SYSCOMMAND: this._frmSysCommandHandler(wParam, lParam)
         case con.WM_CLOSE: this._formClosingHandler()
         case con.WM_DESTROY: this._formClosedHandler()
-#   -endregion No problem messages
+    #   -endregion No problem messages
 
-# -region Diverted messages
+    # -region Diverted messages
         case con.WM_CTLCOLOREDIT:
             return api.SendMessage(lParam, MyMessages.EDIT_COLOR, wParam, lParam)
 
@@ -137,7 +142,7 @@ def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
         #     menu = cast(lParam, py_object).value
         #     this._menuEventDict[menu._id] = menu
 
-# -region Menu Section
+    # -region Menu Section
         case con.WM_MEASUREITEM:
             pmi = cast(lParam, LPMEASUREITEMSTRUCT).contents
             mi = cast(pmi.itemData, py_object).value
@@ -158,7 +163,6 @@ def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
             dis = cast(lParam, api.LPDRAWITEMSTRUCT).contents
             mi = cast(dis.itemData, py_object).value
             txtClrRef = mi._fgColor.ref
-
             if dis.itemState == 320 or dis.itemState == 257:
                 if mi._isEnabled:
                     rc = api.RECT(dis.rcItem.left + 4, dis.rcItem.top + 2, dis.rcItem.right, dis.rcItem.bottom - 2)
@@ -216,7 +220,7 @@ def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
             menu = this._getMenuFromHmenu(wParam)
             if menu and menu.onCloseup:
                 menu.onCloseup(menu, EventArgs())
-# -endregion Menu section
+    # -endregion Menu section
 
 
 
@@ -233,7 +237,7 @@ def getPyformsIcon():
     return api.LoadImage(None, icofile, con.IMAGE_ICON, 0, 0, con.LR_LOADFROMFILE | con.LR_DEFAULTSIZE)
 
 def make_window_class(proc):
-    # print(os.path.dirname(__file__), " == real path")
+    getSystemDPI()
     hins = api.GetModuleHandle(LPCWSTR(0))
     wc = WNDCLASSEX()
     wc.cbSize = sizeof(WNDCLASSEX)
@@ -244,33 +248,28 @@ def make_window_class(proc):
     wc.hbrBackground = api.CreateSolidBrush(StaticData.defWinColor.ref)
     wc.hIcon = getPyformsIcon()
     wc.lpszClassName = StaticData.className
-    # print("StaticData.defWinColor.ref-----  ", StaticData.defWinColor.ref)
+    # print(f"{StaticData.scaleFactor = }")
     return wc
 
 class Timer:
-    def __init__(self, parent, tickInterval = 100, tickHandler = None) -> None:
+    def __init__(self, parentHwnd, tickInterval = 100, tickHandler = None) -> None:
         self.interval = tickInterval
         self.onTick = tickHandler
         self._isEnabled = False
-        if parent._staticTimerID > 0:
-            parent._staticTimerID += 1
-        else:
-            parent._staticTimerID = parent._count * 1000
-
-        self._idNum = parent._staticTimerID
-        self._parent = parent
+        self._idNum = id(self)
+        self._pHwnd = parentHwnd
 
     def start(self):
         self._isEnabled = True
-        api.SetTimer(self._parent._hwnd, self._idNum, self.interval, api.TIMERPROC(0))
+        api.SetTimer(self._pHwnd, self._idNum, self.interval, api.TIMERPROC(0))
 
     def stop(self):
-        api.KillTimer(self._parent._hwnd, self._idNum)
+        api.KillTimer(self._pHwnd, self._idNum)
         self._isEnabled = False
 
     def _destructor(self):
         if self._isEnabled:
-            api.KillTimer(self._parent._hwnd, self._idNum)
+            api.KillTimer(self._pHwnd, self._idNum)
 
 
 
@@ -292,7 +291,7 @@ class Form(Control):
                     "onClosed", "onActivate", "onDeActivate", "onMoving", "onMoved", "onSizing", "onSized",
                     "onThreadMsg", "_menuGrayBrush", "_menuGrayCref", "_menuEventDict", "_menuItemDict", "_controls",
                     "_menuDefBgBrush", "_menuHotBgBrush", "_menuFont", "_menuFrameBrush", "_mGClr1", "_mGClr2",
-                    "_mGt2b", "_timerDic", "_staticTimerID", "_dummyEA" )
+                    "_mGt2b", "_timerDic", "_dummyEA" )
 
     def __init__(self, txt = "", width = 500, height = 400, auto = False) -> None:
         super().__init__()
@@ -330,7 +329,6 @@ class Form(Control):
         self._mGt2b = None
         self._controls = []
         self._timerDic = {}
-        self._staticTimerID = 0
         self._dummyEA = EventArgs()
         # print("form inited")
 
@@ -352,6 +350,7 @@ class Form(Control):
 
         Form._count += 1
         if auto: self.createHandle()
+        # print(f"ws overlapped {con.WS_OVERLAPPEDWINDOW}")
     #------------------------------
 
 
@@ -375,7 +374,7 @@ class Form(Control):
             self._isCreated = True
             self._setFontInternal()
             StaticData.currForm = None
-            # print(f"{self._exStyle = }, {self._style = }")
+            # print(f" ws over lap {con.WS_OVERLAPPEDWINDOW}")
         else:
             print("window creation failed")
 
@@ -398,8 +397,8 @@ class Form(Control):
 
     def display(self):
         """Display a window. If it's the first window, then it will start the main loop"""
-        with Timing("Time for creating control hwnd: "):
-            self._createChildHandles() # Create child control hwnds
+        # with Timing("Time for creating control hwnd: "):
+        self._createChildHandles() # Create child control hwnds
         api.ShowWindow(self._hwnd, con.SW_SHOW)
         if self.formState == FormState.MINIMIZED :
             api.CloseWindow(self._hwnd)
@@ -423,7 +422,7 @@ class Form(Control):
             return MessageBox(0, wMsg, wCap, btns.value | icon.value)
 
     def addTimer(self, tickInterval = 100, tickHandler = None):
-        timer = Timer(self, tickInterval, tickHandler)
+        timer = Timer(self._hwnd, tickInterval, tickHandler)
         self._timerDic[timer._idNum] = timer
         return timer
 
@@ -495,7 +494,7 @@ class Form(Control):
             if not self._minimizeBox : self._style ^= con.WS_MINIMIZEBOX
             # print(f"state of maximize box {self._maximizeBox}")
 
-        if self._topMost: self._exStyle = self._exStyle or con.WS_EX_top_most
+        if self._topMost: self._exStyle = self._exStyle or con.WS_EX_TOPMOST
         if self._formState == FormState.MAXIMIZED: self._style |= con.WS_MAXIMIZE
         # print(f"Ex style bits of this form - {hex(self._exStyle)}")
         # print(f"style bits of this form - {hex(self._style)}")
@@ -750,6 +749,13 @@ class Form(Control):
     def enablePrintPoint(self):
         self.onMouseDown = printPoint2
 
+    @property
+    def topMost(self):
+        return self._topMost
+    
+    @topMost.setter
+    def topMost(self, value:bool):
+        self._topMost = value
 
     # -endregion
 

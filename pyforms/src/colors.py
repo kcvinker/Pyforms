@@ -3,10 +3,19 @@
 from pyforms.src. apis import CreateSolidBrush, CreatePen
 from pyforms.src. constants import PS_SOLID
 from ctypes import byref
+import ctypes as ct
 from ctypes.wintypes import HDC, COLORREF, HBRUSH
 from pyforms.src.apis import RECT, CreateSolidBrush, FillRect, DeleteObject, DeleteDC
-from pyforms.src.apis import CreatePatternBrush, SelectObject
+from pyforms.src.apis import CreatePatternBrush, SelectObject, gbrushInD
 from pyforms.src.apis import CreateCompatibleDC, CreateCompatibleBitmap
+from horology import timed
+# import sys
+# sys.path.append(r"C:\Users\kcvin\OneDrive\Programming\Python\CFFI\tests")
+# from gbrushcffi import lib, ffi
+
+# from pyforms.src.
+# from pyforms.src.pywin2 import createGradientBrush
+# from pyforms.src.pyhelper import createGbrushInCython
 
 def getColorRef(clr: int) -> COLORREF:
     red = clr >> 16
@@ -212,7 +221,7 @@ def clamp(n, minVal = 0, maxVal = 255): return int(max(min(maxVal, n), minVal))
 def ref_from_RGB(r, g, b) -> COLORREF: return int((b << 16) | (g << 8) | r)
 
 
-def _createGradientBrush(dc: HDC, rct: RECT, rc1, rc2, isT2B: bool):
+def _createGradientBrush2(dc: HDC, rct: RECT, rc1, rc2, isT2B: bool):
     # tBrush = wt.HBRUSH()
     memHdc = CreateCompatibleDC(dc)
     hBmp = CreateCompatibleBitmap(dc, rct.right, rct.bottom)
@@ -240,3 +249,23 @@ def _createGradientBrush(dc: HDC, rct: RECT, rc1, rc2, isT2B: bool):
     DeleteObject(hBmp)
     return gBrush
 
+
+
+def _createGradientBrush(dc: HDC, rct: RECT, rc1, rc2, isT2B: bool):
+    return gbrushInD(dc, rct, rc1.red, rc1.green, rc1.blue,
+                                        rc2.red, rc2.green, rc2.blue, isT2B)
+    # return ffi.cast("HBRUSH",lib.createGBrushInC(ffi.cast("HDC", dc), rct.left, rct.top, rct.right, rct.bottom, rc1.red, rc1.green, rc1.blue,
+    #                                     rc2.red, rc2.green, rc2.blue, int(isT2B)))
+    # return createGbrushInCython(dc, rct, rc1.red, rc1.green, rc1.blue,
+    #                                     rc2.red, rc2.green, rc2.blue, isT2B)
+    # return gBrushInC3(dc, rct, rc1.red, rc1.green, rc1.blue,
+    #                                     rc2.red, rc2.green, rc2.blue, isT2B)
+    # print_rct(rct, "From python")
+    # hbr = HBRUSH(createGradientBrush(dc, rct.left, rct.top, rct.right, rct.bottom,
+    #                             rc1.red, rc1.green, rc1.blue,
+    #                             rc2.red, rc2.green, rc2.blue, isT2B))
+    # return hbr
+
+# nim dll - 216 us & 195 us
+# d dll - 85.9 us & 92.1 us ---- Speedest
+# python - 188 us & 175 us

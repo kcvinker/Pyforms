@@ -11,6 +11,7 @@ from pyforms.src.commons import MyMessages, getMousePoints, getMouseXpoint, getM
 from pyforms.src.control import Control
 from pyforms.src.colors import Color
 from pyforms.src.events import EventArgs
+from pyforms.src.enums import ControlType
 import pyforms.src.constants as con
 from pyforms.src.winmsgs import log_msg
 
@@ -208,6 +209,7 @@ class MenuItem:
 		mii.hSubMenu = self._hmenu if self._popup else None
 		InsertMenuItemW(parentHmenu, self._index, True, byref(mii))
 		self._isCreated = True
+		# cmDict[self._id] = self
 		# print(f"{self._text = }, {self._state = }")
 
 
@@ -223,15 +225,19 @@ class MenuItem:
 			case MenuType.SEPARATOR:
 				AppendMenu(self._parentHmenu, MF_SEPARATOR, 0, None)
 
+
 	def _cmenuInsertInternal(self):
 		if len(self._menus) > 0:
 			for menu in self._menus:
 				menu._cmenuInsertInternal()
 
 		if self._type == MenuType.CONTEXT_MENU:
-			self._insertMenuInternal(self._hMenu)
+			# print(f"cmenu name : {self._text}, handle : {self._hmenu}")
+			self._insertMenuInternal(self._parentHmenu)
+
 		elif self._type == MenuType.CONTEXT_SEP:
-			AppendMenu(self._hMenu, MF_SEPARATOR, 0, None)
+			AppendMenu(self._parentHmenu, MF_SEPARATOR, 0, None)
+
 
 	def getChildFromIndex(self, index):
 		for menu in self._menus.values():
@@ -315,6 +321,7 @@ def cmenuWndProc(hw, msg, wp, lp, scID, refData):
 			dis = cast(lp, LPDRAWITEMSTRUCT).contents
 			mi = cast(dis.itemData, py_object).value
 			txtClrRef = mi._fgColor.ref
+			# print(f"cmenu : {dis.itemState = }")
 			if dis.itemState == 257:
 				rc = api.RECT(dis.rcItem.left + 4, dis.rcItem.top + 2, dis.rcItem.right, dis.rcItem.bottom - 2)
 				if mi._isEnabled:
@@ -372,12 +379,84 @@ def createDummy(hwndParent, hInst): # We need this dummy window to receive messa
 
 #========= Context Menu======================================================
 
+# def contextMenuEventFunc(msg, wp, lp):
+# 	mid = api.LOWORD(wp)
+# 	match msg:
+# 		case con.WM_MEASUREITEM:
+# 			this = cmDict[mid]
+# 			pmi = cast(lp, LPMEASUREITEMSTRUCT).contents
+# 			# mi = cast(pmi.itemData, py_object).value
+# 			# hdc = GetDC(hw)
+# 			# size = api.SIZE()
+# 			# api.GetTextExtentPoint32(hdc, mi._wideText, len(mi._text), byref(size))
+# 			# api.ReleaseDC(hw, hdc)
+# 			pmi.itemWidth = this._width #size.cx + 10
+# 			pmi.itemHeight = this._height #size.cy + 10
+# 			return True
+		
+# 		case con.WM_DRAWITEM:
+# 			this = cmDict[mid]
+# 			dis = cast(lp, LPDRAWITEMSTRUCT).contents
+# 			mi = cast(dis.itemData, py_object).value
+# 			txtClrRef = mi._fgColor.ref
+# 			if dis.itemState == 257:
+# 				rc = api.RECT(dis.rcItem.left + 4, dis.rcItem.top + 2, dis.rcItem.right, dis.rcItem.bottom - 2)
+# 				if mi._isEnabled:
+# 					FillRect(dis.hDC, byref(rc), this._hotBgBrush)
+# 					api.FrameRect(dis.hDC, byref(rc), this._borderBrush)
+# 					txtClrRef = 0x00000000
+# 				else:
+# 					FillRect(dis.hDC, byref(rc), this._grayBrush)
+# 					# api.FrameRect(dis.hDC, byref(rc), this._borderBrush)
+# 					txtClrRef = this._grayCref
+
+# 			else:
+# 				FillRect(dis.hDC, byref(dis.rcItem), this._defBgBrush)
+# 				if not mi._isEnabled: txtClrRef = this._grayCref
+
+# 			SetBkMode(dis.hDC, con.TRANSPARENT)
+# 			dis.rcItem.left += 20
+# 			api.SetTextColor(dis.hDC, txtClrRef)
+# 			api.SelectObject(dis.hDC, this._font.handle)
+# 			DrawText(dis.hDC, mi._wideText, -1, byref(dis.rcItem), menuTxtFlag)
+# 			return 0
+		
+# 		case con.WM_ENTERMENULOOP:
+# 			this = cmDict[mid]
+# 			if this.onMenuShown: this.onMenuShown(this, EventArgs())
+
+# 		case con.WM_EXITMENULOOP:
+# 			this = cmDict[mid]
+# 			if this.onMenuClose: this.onMenuClose(this, EventArgs())
+
+# 		case con.WM_MENUSELECT:
+# 			this = cmDict[mid]
+# 			# print(f"lpm : {lp}, loword WPM : {LOWORD(wp)}")
+# 			idNum = LOWORD(wp)
+# 			if lp and idNum:
+# 				menu = this.getMenuItem(idNum)
+# 				if menu and menu._isEnabled:
+# 					if menu.onFocus: menu.onFocus(menu, EventArgs())
+
+# 		case con.WM_COMMAND:
+# 			this = cmDict[mid]
+# 			idNum = LOWORD(wp)
+# 			if idNum:
+# 				menu = this.getMenuItem(idNum)
+# 				if menu and menu._isEnabled:
+# 					if menu.onClick: menu.onClick(menu, EventArgs())
+
+# 	return 0
+
+
+
 class ContextMenu:
 
 	__slots__ = ("_menus", "_hMenu", "_font", "_width", "_height", "_dummyHwnd", "_defBgBrush", "_hotBgBrush", "_borderBrush",
 	      		"_selTxtClr", "_grayCref", "_grayBrush", "_menuCount", "_menuInserted", "onMenuShown", "onMenuClose")
 
 	def __init__(self, parent, *menuNames) -> None:
+		# parent = Control class object. Might be a Form or any controls.
 		self._menus = []
 		self._hMenu = CreatePopupMenu()
 		self._width = 120
@@ -393,13 +472,14 @@ class ContextMenu:
 		self._menuCount = 0
 		self._menuInserted = False
 		cmDict[MenuData.staticMenuID] = self
-		self._dummyHwnd = createDummy(parent._hwnd, parent.wnd_class.hInstance)
+		phwnd = parent._hwnd if parent._ctlType == ControlType.NONE else parent._parent._hwnd
+		self._dummyHwnd = createDummy(phwnd, parent.wnd_class.hInstance)
 
 		if len(menuNames):
 			indx = 0
 			for name in menuNames:
 				mtyp = MenuType.CONTEXT_SEP if name == '_' else MenuType.CONTEXT_MENU
-				mi = MenuItem(name, mtyp, parent, self._menuCount)
+				mi = MenuItem(name, mtyp, self._hMenu, self._menuCount)
 				self._menuCount += 1
 				self._menus.append(mi)
 				indx += 1
@@ -426,6 +506,8 @@ class ContextMenu:
 		if len(self._menus) > 0:
 			for menu in self._menus:
 				menu._cmenuInsertInternal()
+
+		self._menuInserted = True
 
 
 

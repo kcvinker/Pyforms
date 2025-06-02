@@ -1,9 +1,10 @@
 
 # Created on 13-Nov-2022 15:06:46
-from ctypes import WINFUNCTYPE, Structure, windll, POINTER, c_void_p
+from ctypes import WINFUNCTYPE, Structure, windll, POINTER, c_void_p, c_char_p
 from ctypes.wintypes import HICON, HWND, UINT, DWORD, LONG, HDC, LPCWSTR, LPWSTR, INT, HMENU, HINSTANCE, LPVOID, USHORT
 from ctypes.wintypes import HMODULE, ATOM, BOOL, HBRUSH, HGDIOBJ, HBITMAP, COLORREF, HPEN, HANDLE, BYTE, WCHAR, HFONT, WORD, HRGN
 import ctypes as ct
+import os
 # from .colors import clrReffrom_RGB
 
 LONG_PTR = ct.c_longlong
@@ -549,10 +550,10 @@ LoadCursor = windll.user32.LoadCursorW
 LoadCursor.argtypes = (HINSTANCE, LPCWSTR)
 LoadCursor.restype = HCURSOR
 
-LoadCursor = windll.user32.LoadCursorW
-""" (HINSTANCE, LPCWSTR) -> HCURSOR"""
-LoadCursor.argtypes = (HINSTANCE, LPCWSTR)
-LoadCursor.restype = HCURSOR
+# LoadCursor = windll.user32.LoadCursorW
+# """ (HINSTANCE, LPCWSTR) -> HCURSOR"""
+# LoadCursor.argtypes = (HINSTANCE, LPCWSTR)
+# LoadCursor.restype = HCURSOR
 
 LoadImage = windll.user32.LoadImageW
 """ (HINSTANCE, LPCWSTR name, UINT type, INT cx, INT cy, UINT fuLoad) -> HANDLE"""
@@ -1033,6 +1034,9 @@ FillPath = windll.gdi32.FillPath
 FillPath.argtypes = [HDC]
 FillPath.restype = BOOL
 
+GetObject = windll.gdi32.GetObjectW
+GetObject.argtypes = [HANDLE, INT, LPVOID]
+GetObject.restype = INT
 
 
 # GetObject = windll.gdi32.GetObject
@@ -1052,6 +1056,14 @@ MulDiv = windll.kernel32.MulDiv
 """ [INT, INT, INT] -> INT"""
 MulDiv.argtypes = [INT, INT, INT]
 MulDiv.restype = INT
+
+MbtWc = windll.kernel32.MultiByteToWideChar
+MbtWc.argtypes = [UINT, DWORD, c_char_p, INT, LPWSTR, INT ]
+MbtWc.restype = INT
+
+WctMb = windll.kernel32.WideCharToMultiByte
+WctMb.argtypes = [UINT, DWORD, LPCWSTR, INT, c_char_p, INT, c_char_p, INT]
+WctMb.restype = INT
 
 GetLastError = windll.kernel32.GetLastError
 """NONE -> DWORD"""
@@ -1130,6 +1142,10 @@ CoTaskMemFree = windll.Ole32.CoTaskMemFree
 CoTaskMemFree.argtypes = [c_void_p]
 CoTaskMemFree.restype = None
 
+GetScaleFactorForDevice = windll.ShCore.GetScaleFactorForDevice
+GetScaleFactorForDevice.argtypes = [INT]
+GetScaleFactorForDevice.restype = INT
+
 # -endregion MISC DLL Functions
 
 # -endregion Functions
@@ -1154,3 +1170,29 @@ def LOBYTE(value): return value & 0x000000FF
 def HIBYTE(value): return value >> 8
 # -endregion Misc Functions
 
+# ddll = ct.WinDLL(r"C:\Users\kcvin\OneDrive\Programming\D_Lang\PyHelper\pydhelper.dll")
+src_dir = script_directory = os.path.dirname(os.path.abspath(__file__))
+ddll = ct.WinDLL(f"{src_dir}\\pydhelper.dll")
+
+# ddll = ct.WinDLL(r"E:\OneDrive Folder\OneDrive\Programming\Python\PyForms\pyforms\pydhelper.dll")
+
+# nimdll = ct.WinDLL(r"C:\Users\kcvin\OneDrive\Programming\Nim\PyNim\pynim\pynim.dll")
+# c3dll = ct.WinDLL(r"C:\Users\kcvin\OneDrive\Programming\C3\Pyc3\pyhelper\pyhelper.dll")
+
+gbrushInD = ddll.createGBrushInD
+gbrushInD.argtypes = [HDC, RECT, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_bool ]
+gbrushInD.restype = HBRUSH
+
+drawHdrD = ddll.drawHeaderInD
+drawHdrD.argtypes = [LPNMCUSTOMDRAW, HBRUSH, HBRUSH, HFONT, COLORREF, INT, ct.c_bool, LPCWSTR, DWORD]
+
+# gbrushInNimDll = nimdll.gradientNimDLL
+# gbrushInNimDll.argtypes = [HDC, RECT, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_bool ]
+# gbrushInNimDll.restype = HBRUSH
+
+# gBrushInC3 = c3dll.gBrushInC3
+# gBrushInC3.argtypes = [HDC, RECT, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_bool ]
+# gBrushInC3.restype = HBRUSH
+
+# pyniminit = nimdll.pynimInit
+# pyniminit()

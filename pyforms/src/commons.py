@@ -5,13 +5,27 @@ import pyforms.src.apis as api
 from pyforms.src.apis import RECT, LOGFONT, POINT
 import pyforms.src.constants as con
 from enum import Enum
+# from pyforms.src.forms import globalScaleFactor, globalSysDPI
 import datetime
+
 
 INT_MIN   =  -2147483647 - 1
 INT_MAX  =     2147483647
 TRANSPARENT = 0x00000001
 OPAQUE = 0x00000002
 menuTxtFlag = con.DT_LEFT | con.DT_SINGLELINE | con.DT_VCENTER
+
+globalScaleFactor = 0.0
+globalSysDPI = 0
+
+def getSystemDPI():
+    global globalScaleFactor
+    global globalSysDPI
+    hdc = api.GetDC(None)
+    globalSysDPI = api.GetDeviceCaps(hdc, con.LOGPIXELSY)
+    api.ReleaseDC(None, hdc)
+    scaleF = api.GetScaleFactorForDevice(0)
+    globalScaleFactor = scaleF / 100.0
 
 def getMousePosOnMsg():
     dw_value = windll.user32.GetMessagePos()
@@ -23,7 +37,7 @@ def pointInRect(rct, pt): return api.PtInRect(byref(rct), pt)
 
 
 class Font:
-    __slots__ = ("_name", "_size", "_weight", "_italics", "_underLine", "_hwnd")
+    __slots__ = ("_name", "_size", "_weight", "_italics", "_underLine", "_handle")
 
     def __init__(   self, name: str = "Tahoma",
                     size: int = 11,
@@ -35,12 +49,11 @@ class Font:
         self._weight = weight
         self._italics = italics
         self._underLine = underLine
-        self._hwnd = 0
+        self._handle = 0
 
-    def createHandle(self, hwnd):
-        dcHwnd = api.GetDC(hwnd)
-        iHeight = -api.MulDiv(self._size, api.GetDeviceCaps(dcHwnd, con.LOGPIXELSY), 72)
-        api.ReleaseDC(hwnd, dcHwnd)
+    def createHandle(self):       
+        fnsz = int(globalScaleFactor * float(self._size))
+        iHeight = -api.MulDiv(fnsz, globalSysDPI, 72)
 
         lf = LOGFONT()
         lf.lfFaceName = self._name
@@ -51,8 +64,21 @@ class Font:
         lf.lfClipPrecision = con.CLIP_DEFAULT_PRECIS
         lf.lfQuality = con.PROOF_QUALITY
         lf.lfPitchAndFamily = 1
-        self._hwnd = api.CreateFontIndirect(byref(lf))
+        self._handle = api.CreateFontIndirect(byref(lf))
 
+    def colneFrom(self, srcFont):   
+        self._name = srcFont._name
+        self._size = srcFont._size
+        self._weight = srcFont._weight
+        self._italics = srcFont._italics
+        self._underLine = srcFont._underLine
+        if srcFont._handle:
+            lf = LOGFONT()
+            x = api.GetObject(srcFont._handle, sizeof(LOGFONT), byref(lf))
+            if x :
+                self._handle = api.CreateFontIndirect(byref(lf))
+            else:
+                print("Font handle error, line 77, commons.py")
 
     @property
     def name(self): return self._name
@@ -90,10 +116,10 @@ class Font:
     #-----------------------------------------------------
 
     @property
-    def handle(self): return self._hwnd
+    def handle(self): return self._handle
 
     @handle.setter
-    def handle(self, value: bool): self._hwnd = value
+    def handle(self, value: bool): self._handle = value
 #-----------------End of Font Class----------------------------
 
 class Timing:

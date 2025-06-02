@@ -29,7 +29,7 @@ class Button(Control):
         super().__init__()
         self.name = f"Button_{Button._count}"
         self._parent = parent
-        self._font = parent._font
+        # self._font = parent._font
         self._clsName = "Button"
         self._ctlType = ControlType.BUTTON
         self._width = width
@@ -43,10 +43,12 @@ class Button(Control):
         self._fdraw = None
         self._gdraw = None
         self._hwnd = None
+        self._font.colneFrom(parent._font)
         parent._controls.append(self)
         if onclick: self.onClick = onclick
         Button._count += 1
         if auto: self.createHandle()
+        # print(f"btn style {self._style}")
 
     def createHandle(self):
         self._createControl()

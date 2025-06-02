@@ -27,7 +27,8 @@ class TextBox(Control):
         self.name = f"TextBox_{TextBox._count}"
         self._ctlType = ControlType.TEXT_BOX
         self._parent = parent
-        self._font = parent._font
+        # self._font = parent._font
+        self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
         self._xpos = xpos

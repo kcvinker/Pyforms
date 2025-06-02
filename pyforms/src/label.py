@@ -25,7 +25,8 @@ class Label(Control):
         self._ctlType = ControlType.LABEL
         self._parent = parent
         self._bgColor = Color(parent._bgColor)
-        self._font = parent._font
+        # self._font = parent._font
+        self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
         self._xpos = xpos
@@ -113,7 +114,7 @@ class Label(Control):
         ss = SIZE()
         rct = api.RECT()
 
-        api.SelectObject(hdc, self._font._hwnd)
+        api.SelectObject(hdc, self._font._handle)
         api.GetTextExtentPoint32(hdc, self._text, len(self._text), byref(ss))
         api.ReleaseDC(self._hwnd, hdc)
         self._width = ss.cx + 5
@@ -182,6 +183,7 @@ def lbWndProc(hw, msg, wp, lp, scID, refData):
     match msg:
         case con.WM_DESTROY:
             api.RemoveWindowSubclass(hw, lbWndProc, scID)
+            
             del lbDict[hw]
 
         case MyMessages.LABEL_COLOR:

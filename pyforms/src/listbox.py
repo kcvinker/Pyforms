@@ -29,7 +29,8 @@ class ListBox(Control):
         self._ctlType = ControlType.LIST_BOX
         self._parent = parent
         self._bgColor = COLOR_WHITE
-        self._font = parent._font
+        # self._font = parent._font
+        self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
         self._xpos = xpos

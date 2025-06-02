@@ -36,7 +36,8 @@ class NumberPicker(Control):
         self._ctlType = ControlType.NUM_PICKER
         self._parent = parent
         self._bgColor = Color(0xFFFFFF)
-        self._font = parent._font
+        # self._font = parent._font
+        self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
         self._xpos = xpos

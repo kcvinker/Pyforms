@@ -28,7 +28,8 @@ class ProgressBar(Control):
         self._ctlType = ControlType.PROGRESS_BAR
         self._parent = parent
         # self._fgColor = Color(0x000000) # Control class is taking care of this
-        self._font = parent._font
+        # self._font = parent._font
+        self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
         self._xpos = xpos
@@ -104,7 +105,7 @@ class ProgressBar(Control):
             formattedPerc = formatStr.format(perc)
         txt = create_unicode_buffer(f"{formattedPerc}%")
         hdc = api.GetDC(self._hwnd)
-        api.SelectObject(hdc, self._font._hwnd)
+        api.SelectObject(hdc, self._font._handle)
         api.GetTextExtentPoint32(hdc, txt, len(txt), byref(ss))
         x = (self._width - ss.cx) // 2
         y = (self._height - ss.cy) // 2

@@ -27,7 +27,8 @@ class CheckBox(Control):
         self._ctlType = ControlType.CHECK_BOX
         self._text = self.name if txt == "" else txt
         self._parent = parent
-        self._font = parent._font
+        # self._font = parent._font
+        self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
         self._xpos = xpos

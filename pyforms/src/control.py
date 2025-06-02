@@ -126,6 +126,11 @@ class Control:
         self.onLostFocus = None
 
 
+    def __del__(self):
+        if self._font._handle:
+            api.DeleteObject(self._font._handle)
+            # print("Font handle deleted")
+
     # -region Public funcs
 
     def delete(self):
@@ -188,10 +193,10 @@ class Control:
 
     # Creating font handle if needed and apply it in the control.
     def _setFontInternal(self):
-        if self._font._hwnd == 0:
-            self._font.createHandle(self._hwnd)
+        if self._font._handle == 0:
+            self._font.createHandle()
 
-        api.SendMessage(self._hwnd, con.WM_SETFONT, self._font._hwnd, True)
+        api.SendMessage(self._hwnd, con.WM_SETFONT, self._font._handle, True)
 
 
     # Setting subclass for this control.
