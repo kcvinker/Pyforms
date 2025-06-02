@@ -4,7 +4,7 @@ from ctypes import byref, create_unicode_buffer
 from pyforms.src.control import Control
 import pyforms.src.constants as con
 from pyforms.src.commons import MyMessages
-from pyforms.src.enums import ControlType
+from pyforms.src.enums import ControlType, GroupBoxStyle
 from pyforms.src.apis import SUBCLASSPROC
 import pyforms.src.apis as api
 from pyforms.src.colors import Color, COLOR_BLACK
@@ -12,13 +12,16 @@ from pyforms.src.colors import Color, COLOR_BLACK
 # from .winmsgs import log_msg
 
 gbDict = {}
+penWidth = 4
+EMPTY_WCHAR = '\0'
 gbStyle = con.WS_CHILD | con.WS_VISIBLE | con.BS_GROUPBOX | con.BS_NOTIFY | con.BS_TOP | con.WS_OVERLAPPED |con.WS_CLIPCHILDREN| con.WS_CLIPSIBLINGS
 gbExStyle = con.WS_EX_RIGHTSCROLLBAR| con.WS_EX_CONTROLPARENT
 
 class GroupBox(Control):
 
     _count = 1
-    __slots__ = ("_pen", "_tmpTxt", "_rect", "_txtWidth")
+    __slots__ = ("_pen", "_tmpTxt", "_rect", "_txtWidth", "_gstyle", "_dbFill", 
+                 "_getWidth", "_themeOff", "_hdc", "_hbmp" )
     def __init__(self, parent, txt: str = "", xpos: int = 10, ypos: int = 10, width: int = 300, height: int = 300, auto = False ) -> None:
         super().__init__()
         self._clsName = "Button"
@@ -27,8 +30,13 @@ class GroupBox(Control):
         self._ctlType = ControlType.GROUP_BOX
         self._parent = parent
         self._bgColor = Color(parent._bgColor)
-        # self._fgColor = COLOR_BLACK # Control class is taking care of this
-        # self._font = parent._font
+        self._gstyle = GroupBoxStyle.SYSTEM
+        self._dbFill = True
+        self._getWidth = True
+        self._themeOff = False
+        self._hdc = None
+        self._hbmp = None
+        self._pen = None
         self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
@@ -48,27 +56,129 @@ class GroupBox(Control):
     # -region Public funcs
     def createHandle(self):
         self._bkgBrush = self._bgColor.createHBrush()
-        self._pen = self._bgColor.createHPen()
-        self._rect = api.RECT(0, 10, self._width, self._height - 2)
+        if self._gstyle == GroupBoxStyle.OVERRIDEN:
+            self._pen = self._bgColor.createHPen(pWidth=penWidth)
+
+        self._rect = api.RECT(0, 0, self._width, self._height)
         self._createControl()
         if self._hwnd:
             gbDict[self._hwnd] = self
-            self._setFontInternal()
-            self._getTextSize()
+            if self._gstyle == GroupBoxStyle.CLASSIC:
+                api.SetWindowTheme(self._handle, EMPTY_WCHAR, EMPTY_WCHAR)
+                self._themeOff = True
+
             self._setSubclass(gbWndProc)
+            self._setFontInternal()
             # print(f"group bgc {self._bgColor.value:X}")
+
+    @Control.backColor.setter
+    def backColor(self, value):
+        self._bgColor = Color(value) if isinstance(value, int) else value
+        self.resetGdiObjects(True)
+        self._manageRedraw()
+
+    @Control.foreColor.setter
+    def foreColor(self, value):
+        self._fgColor = Color(value) if isinstance(value, int) else value
+        if self._gstyle == GroupBoxStyle.SYSTEM:
+            self._gstyle = GroupBoxStyle.CLASSIC
+        if self._gstyle == GroupBoxStyle.CLASSIC:
+            if not self._themeOff:
+                api.SetWindowTheme(self._hwnd, EMPTY_WCHAR, EMPTY_WCHAR)
+                self._themeOff = True
+            #-------------------
+        if self._gstyle == GroupBoxStyle.OVERRIDEN:
+            self._getWidth = True
+            if self._pen == None:
+                self._pen = api.CreatePen(con.PS_SOLID, penWidth, self._bgColor.ref)
+        self._manageRedraw()
+
+    def setForeColor(self, clr, style = GroupBoxStyle.CLASSIC):
+        self._fgColor = Color(clr) if isinstance(clr, int) else clr
+        self._gstyle = style
+        if self._gstyle == GroupBoxStyle.CLASSIC:
+            api.SetWindowTheme(self._handle, EMPTY_WCHAR, EMPTY_WCHAR)
+            self._themeOff = True
+
+        if self._gstyle == GroupBoxStyle.OVERRIDEN:
+            self._getWidth = True
+            if self._pen == None:
+                self._pen = self._bgColor.createHPen(pWidth=penWidth)
+        self._manageRedraw()
+
+    @Control.text.setter
+    def text(self, value):
+        self._text = value
+        self._getWidth = True
+        self._manageRedraw()
+
+    @Control.width.setter
+    def width(self, value):
+        self._width = value
+        self.resetGdiObjects(False)
+        if self._isCreated:
+            self.setPosInternal()
+
+    @Control.height.setter
+    def height(self, value):
+        self._height = value
+        self.resetGdiObjects(False)
+        if self._isCreated:
+            self.setPosInternal()
+
+    @Control.font.setter
+    def font(self, value):
+        self._font.colneFrom(value)
+        if value._handle == None:
+            self._font.createHandle()
+        self.sendMsg(con.WM_SETFONT, self._font._handle, 1)
+        self._getWidth = True
+        self._manageRedraw()
+
+    def style(self, value):
+        self._gstyle = value
+        if value == GroupBoxStyle.CLASSIC:
+            if not self._themeOff:
+                # self._gstyle = GroupBoxStyle.CLASSIC
+                api.SetWindowTheme(self._handle, EMPTY_WCHAR, EMPTY_WCHAR)
+                self._themeOff = True
+
+        if value == GroupBoxStyle.OVERRIDEN:
+            self._getWidth = True
+            if self._pen == None: 
+                self._pen = api.CreatePen(con.PS_SOLID, penWidth, self._bgColor.ref)
+        #----------------------------------------------------------
+        if self._isCreated: 
+            api.InvalidateRect(self._handle, None, 0)
 
     # -endregion Public funcs
 
+    def resetGdiObjects(self, brpn):
+        # brpn = Reset Hbrush and Hpen
+        if brpn:
+            if self._bkgBrush != None: 
+                api.DeleteObject(self._bkgBrush)        
+            self._bkgBrush = api.CreateSolidBrush(self._bgColor.ref)
+            if self._gstyle == GroupBoxStyle.OVERRIDEN:
+                if self._pen != None: 
+                    api.DeleteObject(self._pen)
+                self._pen = api.CreatePen(con.PS_SOLID, penWidth, self._bgColor.ref)
+        #------------------------------------------------
+        if self._hdc != None: 
+            api.DeleteDC(self._hdc)
+        if self._hbmp != None: 
+            api.DeleteObject(self._hbmp)    
+        self._dbFill = True
 
-    def _getTextSize(self):
-        # with Timing("Time for normal hdc  : "):
-        hdc = api.GetDC(self._hwnd)
-        size = api.SIZE()
-        api.SelectObject(hdc, self._font._handle)
-        api.GetTextExtentPoint32(hdc, self._text, len(self._text), byref(size))
-        api.ReleaseDC(self._hwnd, hdc)
-        self._txtWidth = size.cx + 10
+
+    # def _getTextSize(self):
+    #     # with Timing("Time for normal hdc  : "):
+    #     hdc = api.GetDC(self._hwnd)
+    #     size = api.SIZE()
+    #     api.SelectObject(hdc, self._font._handle)
+    #     api.GetTextExtentPoint32(hdc, self._text, len(self._text), byref(size))
+    #     api.ReleaseDC(self._hwnd, hdc)
+    #     self._txtWidth = size.cx + 10
 
     def _draw_text(self):
         # By drawing text on our own, we can control the look of...
@@ -76,7 +186,7 @@ class GroupBox(Control):
         # back ground looks transparent. If user doesn't change...
         # back color, text will remain fully transparent bkg.
         # If anyone complaints about flickering, consider double buffering.
-        yp = 9
+        yp = 10
         hdc = api.GetDC(self._hwnd)
         api.SelectObject(hdc, self._pen)
         api.MoveToEx(hdc, 10, yp, None)
@@ -94,18 +204,42 @@ class GroupBox(Control):
         self._bkgBrush = self._bgColor.createHBrush()
         self._pen = self._bgColor.createHPen()
 
+    def handleWmEraseBKG(self, wp):
+        if self._getWidth:
+            size = api.SIZE()
+            api.SelectObject(wp, self._font._handle)
+            api.GetTextExtentPoint32(wp, self._text, len(self._text), byref(size))
+            self._txtWidth = size.cx + 10
+            self._getWidth = False  
+        #------------------------------
+        if self._dbFill:
+            self._hdc = api.CreateCompatibleDC(wp)
+            self._hbmp = api.CreateCompatibleBitmap(wp, self._width, self._height)
+            api.SelectObject(self._hdc, self._hbmp)
+            api.FillRect(self._hdc, byref(self._rect), self._bkgBrush)
+            self._dbFill = False
+        #------------------------------------
+        api.BitBlt(wp, 0, 0, self._width, self._height, self._hdc, 0, 0, con.SRCCOPY)
+        return 1 
 
+    def finalize(self):
+        if self._pen != None: 
+            api.DeleteObject(self._pen)
+        if self._hdc != None: 
+            api. DeleteDC(self._hdc)
+        if self._hbmp != None: 
+            api.DeleteObject(self._hbmp)
     # -endregion Private funcs
 
     # -region Properties
 
-    @Control.text.setter
-    def text(self, value: str):
-        """Set the text for group box"""
-        self._text = value
-        if self._isCreated:
-            self._getTextSize()
-            self._manageRedraw()
+    # @Control.text.setter
+    # def text(self, value: str):
+    #     """Set the text for group box"""
+    #     self._text = value
+    #     if self._isCreated:
+    #         self._getTextSize()
+    #         self._manageRedraw()
 
 
     # @property
@@ -139,6 +273,7 @@ def gbWndProc(hw, msg, wp, lp, scID, refData):
     match msg:
         case con.WM_DESTROY:
             api.RemoveWindowSubclass(hw, gbWndProc, scID)
+            gb.finalize()
             del gbDict[hw]
 
         case con.WM_SETFOCUS: gb._gotFocusHandler()
@@ -151,21 +286,33 @@ def gbWndProc(hw, msg, wp, lp, scID, refData):
         case con.WM_MOUSEMOVE: gb._mouseMoveHandler(msg, wp, lp)
         case con.WM_MOUSELEAVE: gb._mouseLeaveHandler()
         case con.WM_ERASEBKGND:
-            if gb._drawFlag:
-                rc = api.get_client_rect(hw)
-                api.FillRect(wp, byref(rc), gb._bkgBrush)
-                return 1
+            return gb.handleWmEraseBKG(wp)
+            # if gb._drawFlag:
+            #     rc = api.get_client_rect(hw)
+            #     api.FillRect(wp, byref(rc), gb._bkgBrush)
+            #     return 1
             # NOTE: Do not return anything outside the 'if', as it will make every static control a mess.
+        
+        case MyMessages.LABEL_COLOR:
+            if gb._gstyle == GroupBoxStyle.CLASSIC:
+                api.SetBkMode(wp, 1)
+                # SelectObject(wp, cast[HGDIOBJ](gb.mFont.handle))
+                api.SetTextColor(wp, gb._fgColor.ref)        
+        
+            return gb._bkgBrush
 
         case con.WM_PAINT:
-            # Let the control do it's painting works.
-            ret = api.DefSubclassProc(hw, msg, wp, lp)
+            if gb._gstyle == GroupBoxStyle.OVERRIDEN:
+                # Let the control do it's painting works.
+                ret = api.DefSubclassProc(hw, msg, wp, lp)
 
-            # Now, we can draw the text over this group box.
-            gb._draw_text()
-            return ret
+                # Now, we can draw the text over this group box.
+                gb._draw_text()
+                return ret
 
-        case con.WM_GETTEXTLENGTH: return 0
+        case con.WM_GETTEXTLENGTH: 
+            if gb._gstyle == GroupBoxStyle.OVERRIDEN:
+                return 0
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 

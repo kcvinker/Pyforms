@@ -131,15 +131,15 @@ class Color:
             cref = int((b1 << 16) | (g1 << 8) | r1)
             return CreateSolidBrush(cref)
 
-    def createHPen(self, adj: float = 0):
+    def createHPen(self, adj: float = 0, pWidth = 1):
         if adj > 0:
             r1 = clamp(self.red * adj)
             g1 = clamp(self.green * adj)
             b1 = clamp(self.blue * adj)
             cref = int((b1 << 16) | (g1 << 8) | r1)
-            return CreatePen(PS_SOLID, 1, cref)
+            return CreatePen(PS_SOLID, pWidth, cref)
         else:
-            return CreatePen(PS_SOLID, 1, self.ref)
+            return CreatePen(PS_SOLID, pWidth, self.ref)
 
     def changeToColorRef(self, adj: float):
         r1 = clamp(self.red * adj)

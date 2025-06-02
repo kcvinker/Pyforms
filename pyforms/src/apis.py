@@ -1038,10 +1038,11 @@ GetObject = windll.gdi32.GetObjectW
 GetObject.argtypes = [HANDLE, INT, LPVOID]
 GetObject.restype = INT
 
+BitBlt = windll.gdi32.BitBlt
+BitBlt.argtypes = [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD]
+BitBlt.restype = BOOL
 
-# GetObject = windll.gdi32.GetObject
-# GetObject.argtypes = [HANDLE, INT, LPVOID]
-# GetObject.restype = INT
+
 
 # -endregion GDI32 Functions
 

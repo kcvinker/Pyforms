@@ -60,6 +60,11 @@ class FontWeight(Enum):
     EXTRA_BOLD = 800
     THICK = 900
 
+class GroupBoxStyle(Enum):
+    SYSTEM = 0
+    CLASSIC = 1
+    OVERRIDEN = 2
+
 class HeaderItemState(Enum):
     NONE = 0
     USE_DEF_ITEMS = 1

@@ -65,14 +65,19 @@ class Control:
     _ctl_id = 101
     _subclass_id = 1001
     icc = InitComCtls()
-    __slots__ = ("tvar", "name", "_hwnd", "_text", "_width", "_height", "_style", "_exStyle", "_hInst", "_visible",
-                 "_clsName", "_cid", "_xpos", "_ypos", "_parent", "_isCreated", "_isTextable", "_lBtnDown",
-                 "_rBtnDown", "_isMouseEntered", "_ctlType", "_font", "_fgColor", "_bgColor", "_drawFlag",
-                 "_hasBrush", "_bkgBrush", "_contextMenu", "_keyMod", "_disable",
-                  "_onMouseEnter", "onMouseDown", "onMouseUp", "onRightMouseDown", "onRightMouseUp",
-                  "onRightClick", "_onMouseLeave", "onDoubleClick", "onMouseWheel", "onMouseMove",
-                  "onMouseHover", "onKeyDown", "onKeyUp", "onKeyPress", "onPaint", "onGotFocus",
-                  "onLostFocus", "onClick")
+    __slots__ = ("tvar", "name", "_hwnd", "_text", "_width", "_height", 
+                 "_style", "_exStyle", "_hInst", "_visible",
+                 "_clsName", "_cid", "_xpos", "_ypos", "_parent", 
+                 "_isCreated", "_isTextable", "_lBtnDown",
+                 "_rBtnDown", "_isMouseEntered", "_ctlType", 
+                 "_font", "_fgColor", "_bgColor", "_drawFlag",
+                 "_hasBrush", "_bkgBrush", "_contextMenu", 
+                 "_keyMod", "_disable", "_onMouseEnter", "onMouseDown", 
+                 "onMouseUp", "onRightMouseDown", "onRightMouseUp",
+                  "onRightClick", "_onMouseLeave", "onDoubleClick", 
+                  "onMouseWheel", "onMouseMove", "onMouseHover", 
+                  "onKeyDown", "onKeyUp", "onKeyPress", "onPaint", 
+                  "onGotFocus", "onLostFocus", "onClick")
 
     def __init__(self) -> None:
         self.name = ""
@@ -130,6 +135,8 @@ class Control:
         if self._font._handle:
             api.DeleteObject(self._font._handle)
             # print("Font handle deleted")
+        if self._bkgBrush:
+            api.DeleteObject(self._bkgBrush)
 
     # -region Public funcs
 
@@ -152,6 +159,11 @@ class Control:
         self._ypos = ypos
         if self._isCreated:
             api.SetWindowPos(self._hwnd, None, self._xpos, self._ypos, self._width, self._height, con.SWP_NOZORDER)
+
+    def setPosInternal(self, flag = con.SWP_NOZORDER):
+        api.SetWindowPos(self._handle, None, self._xpos, self._ypos, 
+                         self._width, self._height, flag)
+
 
     def focus(self):
         if self._isCreated: api.SetFocus(self._hwnd)
