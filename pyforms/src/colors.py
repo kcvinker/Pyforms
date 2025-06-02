@@ -6,7 +6,7 @@ from ctypes import byref
 import ctypes as ct
 from ctypes.wintypes import HDC, COLORREF, HBRUSH
 from pyforms.src.apis import RECT, CreateSolidBrush, FillRect, DeleteObject, DeleteDC
-from pyforms.src.apis import CreatePatternBrush, SelectObject, gbrushInD
+from pyforms.src.apis import CreatePatternBrush, SelectObject #, gbrushInD
 from pyforms.src.apis import CreateCompatibleDC, CreateCompatibleBitmap
 from horology import timed
 # import sys
@@ -221,7 +221,7 @@ def clamp(n, minVal = 0, maxVal = 255): return int(max(min(maxVal, n), minVal))
 def ref_from_RGB(r, g, b) -> COLORREF: return int((b << 16) | (g << 8) | r)
 
 
-def _createGradientBrush2(dc: HDC, rct: RECT, rc1, rc2, isT2B: bool):
+def _createGradientBrush(dc: HDC, rct: RECT, rc1, rc2, isT2B: bool):
     # tBrush = wt.HBRUSH()
     memHdc = CreateCompatibleDC(dc)
     hBmp = CreateCompatibleBitmap(dc, rct.right, rct.bottom)
@@ -251,9 +251,9 @@ def _createGradientBrush2(dc: HDC, rct: RECT, rc1, rc2, isT2B: bool):
 
 
 
-def _createGradientBrush(dc: HDC, rct: RECT, rc1, rc2, isT2B: bool):
-    return gbrushInD(dc, rct, rc1.red, rc1.green, rc1.blue,
-                                        rc2.red, rc2.green, rc2.blue, isT2B)
+# def _createGradientBrush2(dc: HDC, rct: RECT, rc1, rc2, isT2B: bool):
+#     return gbrushInD(dc, rct, rc1.red, rc1.green, rc1.blue,
+                                        # rc2.red, rc2.green, rc2.blue, isT2B)
     # return ffi.cast("HBRUSH",lib.createGBrushInC(ffi.cast("HDC", dc), rct.left, rct.top, rct.right, rct.bottom, rc1.red, rc1.green, rc1.blue,
     #                                     rc2.red, rc2.green, rc2.blue, int(isT2B)))
     # return createGbrushInCython(dc, rct, rc1.red, rc1.green, rc1.blue,

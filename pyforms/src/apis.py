@@ -1171,20 +1171,20 @@ def HIBYTE(value): return value >> 8
 # -endregion Misc Functions
 
 # ddll = ct.WinDLL(r"C:\Users\kcvin\OneDrive\Programming\D_Lang\PyHelper\pydhelper.dll")
-src_dir = script_directory = os.path.dirname(os.path.abspath(__file__))
-ddll = ct.WinDLL(f"{src_dir}\\pydhelper.dll")
+# src_dir = script_directory = os.path.dirname(os.path.abspath(__file__))
+# ddll = ct.WinDLL(f"{src_dir}\\pydhelper.dll")
 
 # ddll = ct.WinDLL(r"E:\OneDrive Folder\OneDrive\Programming\Python\PyForms\pyforms\pydhelper.dll")
 
 # nimdll = ct.WinDLL(r"C:\Users\kcvin\OneDrive\Programming\Nim\PyNim\pynim\pynim.dll")
 # c3dll = ct.WinDLL(r"C:\Users\kcvin\OneDrive\Programming\C3\Pyc3\pyhelper\pyhelper.dll")
 
-gbrushInD = ddll.createGBrushInD
-gbrushInD.argtypes = [HDC, RECT, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_bool ]
-gbrushInD.restype = HBRUSH
+# gbrushInD = ddll.createGBrushInD
+# gbrushInD.argtypes = [HDC, RECT, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_bool ]
+# gbrushInD.restype = HBRUSH
 
-drawHdrD = ddll.drawHeaderInD
-drawHdrD.argtypes = [LPNMCUSTOMDRAW, HBRUSH, HBRUSH, HFONT, COLORREF, INT, ct.c_bool, LPCWSTR, DWORD]
+# drawHdrD = ddll.drawHeaderInD
+# drawHdrD.argtypes = [LPNMCUSTOMDRAW, HBRUSH, HBRUSH, HFONT, COLORREF, INT, ct.c_bool, LPCWSTR, DWORD]
 
 # gbrushInNimDll = nimdll.gradientNimDLL
 # gbrushInNimDll.argtypes = [HDC, RECT, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_bool ]
