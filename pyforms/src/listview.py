@@ -3,7 +3,7 @@
 import typing
 from enum import Enum
 from ctypes.wintypes import HWND, UINT
-from ctypes import WINFUNCTYPE, byref, addressof, cast, create_unicode_buffer, c_wchar_p
+from ctypes import WINFUNCTYPE, byref, addressof, cast, c_wchar_p
 from pyforms.src.control import Control
 
 import pyforms.src.constants as con
@@ -54,7 +54,8 @@ class ListView(Control):
                     "_hdrBgColor", "_hdrFgColor", "_hdrBkBrush", "_hdrOwnDraw", "_hotHdr", "_colIndex",
                     "_hdrHotBrush", "_hdrClickable", "_selectable", "_itemIndex", "_itemDrawn", "_destroyCount", "_layCount" )
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 250, height: int = 200, auto = False, cols = None) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
+                 width: int = 250, height: int = 200, cols = None) -> None:
         super().__init__()
 
         self._clsName = "SysListView32"
@@ -63,7 +64,6 @@ class ListView(Control):
         self._parent = parent
         self._bgColor = Color(0xFFFFFF)
         # self._fgColor = Color(0x000000) # Control class is taking care of this
-        # self._font = parent._font
         self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
@@ -73,7 +73,6 @@ class ListView(Control):
         self._style = lvStyle
         self._exStyle = 0
         self._text = ""
-
         self._columns = []
         self._items = []
         self._colIndList = []
@@ -109,7 +108,7 @@ class ListView(Control):
         # Events
 
         ListView._count += 1
-        if auto: self.createHandle()
+        if parent.createChilds: self.createHandle()
         if isinstance(cols, list): self.addColumnsEx(*cols)
 
 
@@ -262,12 +261,13 @@ class ListView(Control):
 
 
     def _addColInternal(self, lvcol):
+        self._smBuffer.fillBuffer(lvcol.text)
         lvcol.index = self._colIndex
         lvc = LVCOLUMNW()
         lvc.mask = con.LVCF_TEXT  | con.LVCF_WIDTH | con.LVCF_FMT | con.LVCF_SUBITEM
         lvc.fmt = lvcol.textAlign.value
         lvc.cx = lvcol.width
-        lvc.pszText = cast(create_unicode_buffer(lvcol.text), c_wchar_p)
+        lvc.pszText = cast(self._smBuffer.addr, c_wchar_p)
         # lvc.iOrder = lvcol.index
 
         if lvcol.hasImage:
@@ -286,6 +286,7 @@ class ListView(Control):
 
 
     def _addItemInternal(self, item):
+        self._smBuffer.fillBuffer(item.text)
         lvi = api.LVITEMW()
         lvi.mask = con.LVIF_TEXT | con.LVIF_PARAM | con.LVIF_STATE
         if item._imgIndex != -1: lvi.mask |= con.LVIF_IMAGE
@@ -294,7 +295,7 @@ class ListView(Control):
         lvi.iItem = item._index
         lvi.iSubItem = 0
         lvi.iImage = item._imgIndex
-        lvi.pszText = cast(create_unicode_buffer(item.text), c_wchar_p)
+        lvi.pszText = cast(self._smBuffer.addr, c_wchar_p)
         lvi.cchTextMax = len(item._text) + 1
         # lvi.lParam = id(item)
         api.SendMessage(self._hwnd, con.LVM_INSERTITEMW, 0, addressof(lvi))
@@ -304,11 +305,12 @@ class ListView(Control):
     def _addSubItemInternal(self, subitem: str, item_index: int, sub_index: int, imageIndex: int = -1):
 
         sitem = subitem if isinstance(subitem, str) else str(subitem)
+        self._smBuffer.fillBuffer(sitem)
         lvi = api.LVITEMW()
         # lvi.mask = con.LVIF_TEXT | con.LVIF_STATE
         # lvi.iItem = item_index
         lvi.iSubItem = sub_index
-        lvi.pszText = cast(create_unicode_buffer(sitem), c_wchar_p)
+        lvi.pszText = cast(self._smBuffer.addr, c_wchar_p)
         lvi.iImage = imageIndex
         api.SendMessage(self._hwnd, con.LVM_SETITEMTEXTW, item_index, addressof(lvi))
         self._items[item_index]._subitems.append(sitem) # Put the subitem in our item's bag.
@@ -343,7 +345,8 @@ class ListView(Control):
             nmcd.rc.right -= 1
             nmcd.rc.bottom += 1
 
-        api.DrawText(nmcd.hdc, col._wideText, -1, byref(nmcd.rc), col._hdrTxtFlag )
+        # api.DrawText(nmcd.hdc, col._wideText, -1, byref(nmcd.rc), col._hdrTxtFlag )
+        api.DrawText(nmcd.hdc, col.text, len(col.text), byref(nmcd.rc), col._hdrTxtFlag )
 
 
     # def _drawHeader2(self, nmcd: LPNMCUSTOMDRAW):
@@ -509,7 +512,7 @@ class ListViewColumn:
     """Class for representing ListView Column"""
 
     __slots__ = ("_drawNeed", "_isHotItem", "text", "width", "index", "imageIndex", "_order", "_hdrTxtFlag",
-                "_bgColor", "_fgColor", "imageOnRight", "_wideText", "textAlign", "_hdrTxtAlign", "lvc")
+                "_bgColor", "_fgColor", "imageOnRight", "textAlign", "_hdrTxtAlign", "lvc")
 
     def __init__(self, hdr_txt: str, width: int, img:int = -1, img_right: bool = False) -> None:
         self.text = hdr_txt
@@ -520,7 +523,6 @@ class ListViewColumn:
         self.index = -1
         self._hdrTxtAlign = ColumnAlign.CENTER
         self._isHotItem = False
-        self._wideText = create_unicode_buffer(hdr_txt)
         self._hdrTxtFlag = con.DT_SINGLELINE | con.DT_VCENTER | con.DT_CENTER | con.DT_NOPREFIX
 
 
@@ -640,7 +642,6 @@ def lvWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     lv = lvDict[hw]
     match msg:
         case con.WM_DESTROY:
-            if lv._contextMenu: lv._contextMenu.destroyContextMenu()
             api.RemoveWindowSubclass(hw, lvWndProc, scID)
             lv._destroyCount += 1
             if lv._destroyCount == 2: del lvDict[hw]

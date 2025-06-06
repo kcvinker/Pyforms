@@ -67,9 +67,8 @@ class DateTimePicker(Control):
         self.onCalendarClosed = None
         self._hwnd = None
         parent._controls.append(self)
-
         DateTimePicker._count += 1
-
+        if parent.createChilds: self.createHandle()
 
     # Create's combo box handle
     def createHandle(self):
@@ -85,8 +84,8 @@ class DateTimePicker(Control):
             #
             if self._format == DateFormat.CUSTOM_DATE:
                 # with Timing("pyforms unicode time : "):
-                buff = create_unicode_buffer(self._fmtString)
-                api.SendMessage(self._hwnd, con.DTM_SETFORMATW, 0, addressof(buff))
+                self._smBuffer.fillBuffer(self._fmtString)
+                api.SendMessage(self._hwnd, con.DTM_SETFORMATW, 0, self._smBuffer.addr)
 
             if self._calStyle > 0:
                 api.SendMessage(self._hwnd, con.DTM_SETMCSTYLE, 0, self._calStyle)

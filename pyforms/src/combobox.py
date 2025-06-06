@@ -27,7 +27,8 @@ class ComboBox(Control):
                     "onListOpened", "onTextUpdated", "onTextChanged", "onSelectionChanged",
                     "onSelectionCancelled" )
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 150, height: int = 30, auto = False, items = None) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
+                 width: int = 150, height: int = 30, items = None) -> None:
         super().__init__()
         self._clsName = "ComboBox"
         self.name = f"ComboBox_{ComboBox._count}"
@@ -62,7 +63,7 @@ class ComboBox(Control):
         parent._controls.append(self)
 
         ComboBox._count += 1
-        if auto: self.createHandle()
+        if parent.createChilds: self.createHandle()
         if isinstance(items, list): self.addItems(*items)
 
 
@@ -127,8 +128,8 @@ class ComboBox(Control):
         if self._items:
             for item in self._items:
                 sitem = item if isinstance(item, str) else str(item)
-                buff = create_unicode_buffer(sitem)
-                api.SendMessage(self._hwnd, con.CB_ADDSTRING, 0, addressof(buff))
+                self._smBuffer.fillBuffer(sitem)
+                api.SendMessage(self._hwnd, con.CB_ADDSTRING, 0, self._smBuffer.addr) #addressof(buff))
 
 
     # Helper function for checking mouse lieaved from combo
@@ -199,8 +200,8 @@ class ComboBox(Control):
         self._items.append(item)
         if self._isCreated:
             sitem = item if isinstance(item, str) else str(item)
-            buff = create_unicode_buffer(sitem)
-            api.SendMessage(self._hwnd, con.CB_ADDSTRING, 0, addressof(buff))
+            self._smBuffer.fillBuffer(sitem)
+            api.SendMessage(self._hwnd, con.CB_ADDSTRING, 0, self._smBuffer.addr)
 
 
     def addItems(self, *args):
@@ -209,8 +210,8 @@ class ComboBox(Control):
         if self._isCreated:
             for item in args:
                 sitem = item if isinstance(item, str) else str(item)
-                buff = create_unicode_buffer(sitem)
-                api.SendMessage(self._hwnd, con.CB_ADDSTRING, 0, addressof(buff))
+                self._smBuffer.fillBuffer(sitem)
+                api.SendMessage(self._hwnd, con.CB_ADDSTRING, 0, self._smBuffer.addr)
 
 
     def removeItemAt(self, index):
@@ -218,8 +219,7 @@ class ComboBox(Control):
         if index in range(len(self._items)):
             item = self._items[index]
             sitem = item if isinstance(item, str) else str(item)
-            create_unicode_buffer(sitem)
-            cIndex = api.SendMessage(self._hwnd, con.CB_FINDSTRING, -1, addressof(item))
+            cIndex = api.SendMessage(self._hwnd, con.CB_FINDSTRING, -1, addressof(sitem))
             if cIndex > -1 :
                 api.SendMessage(self._hwnd, con.CB_DELETESTRING, cIndex, 0)
                 del self._items[index]
@@ -229,8 +229,8 @@ class ComboBox(Control):
         """Remove the given item from combo"""
         if self._items.__contains__(item):
             sitem = item if isinstance(item, str) else str(item)
-            buff = create_unicode_buffer(sitem)
-            cIndex = api.SendMessage(self._hwnd, con.CB_FINDSTRING, -1, addressof(buff))
+            self._smBuffer.fillBuffer(sitem)
+            cIndex = api.SendMessage(self._hwnd, con.CB_FINDSTRING, -1, self._smBuffer.addr)
             if cIndex > -1 :
                 api.SendMessage(self._hwnd, con.CB_DELETESTRING, cIndex, 0)
                 self._items.remove(item)
@@ -243,8 +243,8 @@ class ComboBox(Control):
         if(all(x in self._items for x in args)):
             for item in args:
                 sitem = item if isinstance(item, str) else str(item)
-                buff = create_unicode_buffer(sitem)
-                cIndex = api.SendMessage(self._hwnd, con.CB_FINDSTRING, -1, addressof(buff))
+                self._smBuffer.fillBuffer(sitem)
+                cIndex = api.SendMessage(self._hwnd, con.CB_FINDSTRING, -1, self._smBuffer.addr)
                 if cIndex > -1 :
                     api.SendMessage(self._hwnd, con.CB_DELETESTRING, cIndex, 0)
                     self._items.remove(item)

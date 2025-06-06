@@ -29,14 +29,14 @@ class NumberPicker(Control):
                     "_buddyStyle", "_buddyExStyle", "_buddyHwnd", "_buddyCID", "_buddySubclsID", "_linex", "_destroyCount",
                     "_buddySubclsProc", "_txtPos", "onValueChanged", "_myRect", "_udRect", "_keyPressed" )
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 70, height: int = 24, auto = False ) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
+                 width: int = 70, height: int = 24 ) -> None:
         super().__init__()
         self._clsName = "msctls_updown32"
         self.name = f"NumberPicker_{NumberPicker._count}"
         self._ctlType = ControlType.NUM_PICKER
         self._parent = parent
         self._bgColor = Color(0xFFFFFF)
-        # self._font = parent._font
         self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
@@ -73,7 +73,7 @@ class NumberPicker(Control):
         self.onValueChanged = None
 
         NumberPicker._count += 1
-        if auto: self.createHandle()
+        if parent.createChilds: self.createHandle()
 
 
     # -region Public funcs

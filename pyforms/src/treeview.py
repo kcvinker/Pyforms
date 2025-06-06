@@ -26,15 +26,14 @@ class TreeView(Control):
     			 "_showSel", "_hotTrack", "_lineColor", "_selNode", "_nodes", "_nodeCount",
                  "_nxtNodeHwnd", "_uniqNodeID", "_nodeDict")
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 80, height: int = 24, auto = False ) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
+                 width: int = 80, height: int = 24 ) -> None:
         super().__init__()
         self._clsName = "SysTreeView32"
         self.name = f"TreeView_{TreeView._count}"
-        # self._text = self.name if txt == "" else txt
         self._ctlType = ControlType.TREE_VIEW
         self._parent = parent
         self._bgColor = Color(0xFFFFFF)
-        # self._font = parent._font
         self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
@@ -61,7 +60,7 @@ class TreeView(Control):
         #Events
 
         TreeView._count += 1
-        if auto: self.createHandle()
+        if parent.createChilds: self.createHandle()
 
 
     # -region Public funcs
@@ -197,9 +196,10 @@ class TreeView(Control):
 
     def _makeTVItem(self, node) -> api.TVITEMEXW:
         # Initialize a TVITEMEX struct with necessary values from given TreeNode class.
+        self._smBuffer.fillBuffer(node._text)
         tvi = api.TVITEMEXW()
         tvi.mask = con.TVIF_TEXT | con.TVIF_PARAM
-        tvi.pszText = cast(create_unicode_buffer(node._text), c_wchar_p)
+        tvi.pszText = cast(self._smBuffer.addr, c_wchar_p)
         tvi.cchTextMax = len(node._text)
         tvi.iImage = node._imgIndex
         tvi.iSelectedImage = node._selImgIndex

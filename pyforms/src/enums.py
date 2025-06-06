@@ -1,7 +1,7 @@
 # Created on 09-Nov-2022 12:15:29
-from enum import Enum
+from enum import IntEnum
 
-class FormPosition(Enum):
+class FormPosition(IntEnum):
     CENTER = 0
     TOP_LEFT = 1
     TOP_MID = 2
@@ -13,7 +13,7 @@ class FormPosition(Enum):
     BOTTOM_RIGHT = 8
     MANUAL = 9
 
-class ControlType(Enum):
+class ControlType(IntEnum):
     NONE = 0
     BUTTON = 1
     CALENDAR_BOX = 2
@@ -33,7 +33,7 @@ class ControlType(Enum):
     TREE_VIEW = 16
 
 
-class FormStyle(Enum):
+class FormStyle(IntEnum):
     NONE = 0
     FIXED_SINGLE = 1
     FIXED_3D = 2
@@ -44,12 +44,12 @@ class FormStyle(Enum):
     HIDDEN = 7
 
 
-class FormState(Enum):
+class FormState(IntEnum):
     NORMAL = 0
     MAXIMIZED = 1
     MINIMIZED = 2
 
-class FontWeight(Enum):
+class FontWeight(IntEnum):
     THIN = 100
     EXTRA_LIGHT = 200
     LIGHT = 300
@@ -60,20 +60,20 @@ class FontWeight(Enum):
     EXTRA_BOLD = 800
     THICK = 900
 
-class GroupBoxStyle(Enum):
+class GroupBoxStyle(IntEnum):
     SYSTEM = 0
     CLASSIC = 1
     OVERRIDEN = 2
 
-class HeaderItemState(Enum):
+class HeaderItemState(IntEnum):
     NONE = 0
     USE_DEF_ITEMS = 1
 
-class HeaderStyle(Enum):
+class HeaderStyle(IntEnum):
     FLAT = 0
     CURVED = 1
 
-class MouseButton(Enum):
+class MouseButton(IntEnum):
     NONE = 0
     RIGHT = 20_97_152
     MIDDLE = 41_94_304
@@ -81,11 +81,11 @@ class MouseButton(Enum):
     XBUTTON1 = 83_88_608
     XBUTTON2 = 167_77_216
 
-class MouseButtonState(Enum):
+class MouseButtonState(IntEnum):
     RELEASED = 0
-    PRESSED = 0
+    PRESSED = 1
 
-class SizedPositions(Enum):
+class SizedPositions(IntEnum):
     LEFT_EDGE = 1
     RIGHT_EDGE = 2
     TOP_EDGE = 3
@@ -95,12 +95,12 @@ class SizedPositions(Enum):
     BOTTOM_LEFT_CORNER = 7
     BOTTOM_RIGHT_CORNER = 8
 
-class FormDrawMode(Enum):
+class FormDrawMode(IntEnum):
     NORMAL = 0
     COLORED = 1
     GRADIENT = 2
 
-class ButtonDrawMode(Enum):
+class ButtonDrawMode(IntEnum):
     NORMAL = 0
     TEXT_ONLY = 1
     BKG_ONLY = 2
@@ -108,35 +108,35 @@ class ButtonDrawMode(Enum):
     GRADIENT = 4
     GRADIENT_TEXT = 5
 
-class TextCase(Enum):
+class TextCase(IntEnum):
     NORMAL = 0
     LOWER = 1
     UPPER = 2
 
-class TextType(Enum):
+class TextType(IntEnum):
     NORMAL = 0
     NUM_ONLY = 1
     PASSWORD = 2
 
-class TextAlignment(Enum): # For TextBox
+class TextAlignment(IntEnum): # For TextBox
     LEFT = 0
     CENTER = 1
     RIGHT = 2
 
-class ControlDrawMode(Enum):
+class ControlDrawMode(IntEnum):
     NO_DRAW = 0
     FG_DRAW = 1
     BG_DRAW = 2
     BOTH_DRAW = 3
 
 
-class LabelBorder(Enum):
+class LabelBorder(IntEnum):
     NONE = 0
     SINGLE = 1
     SUNKEN = 2
 
 
-class LabelAlignment(Enum):
+class LabelAlignment(IntEnum):
     TOPLEFT = 0
     TOPCENTER = 1
     TOPRIGHT = 2
@@ -147,31 +147,31 @@ class LabelAlignment(Enum):
     BOTTOMCENTER = 7
     BOTTOMRIGHT = 8
 
-class ViewMode(Enum): # For CalendarBox
+class ViewMode(IntEnum): # For CalendarBox
     MONTH_VIEW = 0
     YEAR_VIEW = 1
     DECADE_VIEW = 2
     CENTUARY_VIEW = 3
 
-class DateFormat(Enum): # For DateTimePicker
+class DateFormat(IntEnum): # For DateTimePicker
     LONG_DATE = 1
     SHORT_DATE = 2
     TIME_ONLY = 4
     CUSTOM_DATE = 8
 
-class TickPosition(Enum): # For TrackBar
+class TickPosition(IntEnum): # For TrackBar
     DOWN = 1
     UP = 2
     LEFT = 3
     RIGHT = 4
     BOTH = 5
 
-class ChannelStyle(Enum):
+class ChannelStyle(IntEnum):
     DEFAULT = 0
     CLASSIC = 1
     OUTLINE = 2
 
-class TrackChange(Enum):
+class TrackChange(IntEnum):
     NONE = 0
     ARROW_LOW = 1
     ARROW_HIGH = 2
@@ -180,30 +180,50 @@ class TrackChange(Enum):
     MOUSE_CLICK = 5
     MOUSE_DRAG = 6
 
-class ListViewStyle(Enum):
+class TrayMenuTrigger(IntEnum):
+    NONE = 0
+    LEFT_CLICK = 1
+    LEFT_DBLCLICK = 2
+    RIGHT_CLICK = 4
+    ANY_CLICK = 7
+
+class BalloonIcon(IntEnum):
+    NONE = 0
+    INFO = 1
+    WARNING = 2
+    ERROR = 3
+    CUSTOM = 4
+
+class ListViewStyle(IntEnum):
     LARGE_ICON = 0
     REPORT_VIEW = 1
     SMALL_ICON = 2
     LIST_VIEW = 3
     TILE_VIEW = 4
 
-class NodeOp(Enum): # Used in TreeView
+class NodeOp(IntEnum): # Used in TreeView
     ADD_NODE = 0
     INSERT_NODE = 1
     ADD_CHILD = 2
     INSERT_CHILD = 3
 
-class ProgressBarStyle(Enum):
+class ProgressBarStyle(IntEnum):
     BLOCK_STYLE = 0
     MARQUEE_STYLE = 1
 
-class ProgressBarState(Enum):
+class ProgressBarState(IntEnum):
     NORMAL = 1
     ERROR = 2
     PAUSED = 3
 
+class MenuStyle(IntEnum):
+    SYSTEM = 0
+    CUSTOM = 1
+    
 
-class MessageButtons(Enum):
+
+
+class MessageButtons(IntEnum):
 	OKAY = 0x00000000
 	OKAY_CANCEL = 0x00000001
 	ABORT_RETRY_IGNORE = 0x00000002
@@ -212,14 +232,14 @@ class MessageButtons(Enum):
 	RETRY_CANCEL = 0x00000005
 	CANCEL_TRY_CONTINUE = 0x00000006
 
-class MessageIcons(Enum):
+class MessageIcons(IntEnum):
 	NONE = 0x0
 	ERROR = 0x00000010
 	QUESTION = 0x00000020
 	WARNING = 0x00000030
 	INFORMATION = 0x00000040
 
-class MessageResult(Enum):
+class MessageResult(IntEnum):
 	OKAY = 1
 	CANCEL = 2
 	ABORT = 3
@@ -232,8 +252,7 @@ class MessageResult(Enum):
 
 
 
-
-class Keys(Enum):
+class Keys(IntEnum):
     MODIFIER = -65_536
     NONE = 0
     LBUTTON = 1

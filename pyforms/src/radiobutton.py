@@ -20,14 +20,14 @@ class RadioButton(Control):
     _count = 1
     __slots__ = ( "_rightAlign", "_txtStyle", "_isChecked", "onCheckedChanged", "_checkOnClick", "_value")
 
-    def __init__(self, parent, txt: str, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 23, auto = False, check=False) -> None:
+    def __init__(self, parent, txt: str, xpos: int = 10, ypos: int = 10, 
+                 width: int = 120, height: int = 23, check=False) -> None:
         super().__init__()
         self._clsName = "Button"
         self.name = f"RadioButton_{RadioButton._count}"
         self._ctlType = ControlType.RADIO_BUTTON
         self._text = self.name if txt == "" else txt
         self._parent = parent
-        # self._font = parent._font
         self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
@@ -47,7 +47,7 @@ class RadioButton(Control):
         self._value = check
         parent._controls.append(self)
         RadioButton._count += 1
-        if auto: self.createHandle()
+        if parent.createChilds: self.createHandle()
 
 
     def createHandle(self):

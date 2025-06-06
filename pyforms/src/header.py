@@ -79,7 +79,8 @@ class Header(Control):
     _count = 1
     __slots__ = ("_noSizing", "_flatHdr", "_hotTrack", "_hasCB", "_txtAlign", "_items", "_hotIndex", "_hotBrush", "_txtFlag", "cnt",
                 "_hdrStyle", "_cdSet", "_itemIndex", "onDrag", "_drawFunc")
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 0, height: int = 25 ) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
+                 width: int = 0, height: int = 25 ) -> None:
         super().__init__()
         self._clsName = "SysHeader32"
         self.name = f"Header_{Header._count}"
@@ -115,7 +116,7 @@ class Header(Control):
         self._hwnd = None
         parent._controls.append(self)
         Header._count += 1
-
+        if parent.createChilds: self.createHandle()
 
     # -region Public funcs
     def createHandle(self):

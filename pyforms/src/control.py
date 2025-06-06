@@ -2,7 +2,7 @@
 
 
 from ctypes.wintypes import UINT, HWND
-from ctypes import create_unicode_buffer, byref, sizeof, cast
+from ctypes import create_unicode_buffer, byref, sizeof, cast, addressof
 from pyforms.src.enums import ControlType
 from pyforms.src.commons import Font, MyMessages
 from pyforms.src.apis import MapWindowPoints, LPPOINT, INITCOMMONCONTROLSEX, DWORD
@@ -55,6 +55,34 @@ class InitComCtls:
             self.icc_ex.dwSize = sizeof(INITCOMMONCONTROLSEX)
             res = api.InitCommonControlsEx(byref(self.icc_ex))
 
+class CommonBuffer:
+    # This class is to speed up things a little bit.
+    # Often, we need a unicode buffer to pass in SendMessage function.
+    # This class will work as a common buffer for all that purpose.
+
+    __slots__ = ("length", "buffer")
+    def __init__(self, size = 64):
+        self.length = size
+        self.buffer = create_unicode_buffer(self.length)
+
+    def fillBuffer(self, txt):
+        # slen = api.MbtWc(65001, 0, txt.encode('utf-8'), len(txt), None, 0)
+        slen = len(txt)
+        if self.length <=slen:
+            self.length = slen + 1
+            self.buffer = create_unicode_buffer(self.length)
+        self.buffer.value = txt
+
+    def ensureSize(self, size):
+        """Ensure that the buffer can hold 'size' characters"""
+        if self.length <=size:
+            self.length = size + 1
+            self.buffer = create_unicode_buffer(self.length)
+    
+    @property
+    def addr(self):
+        """Return the unicode buffer address"""
+        return addressof(self.buffer)
 
 
 class Control:
@@ -64,6 +92,8 @@ class Control:
     """
     _ctl_id = 101
     _subclass_id = 1001
+    # _bufSize = 64
+    _smBuffer = CommonBuffer(64)
     icc = InitComCtls()
     __slots__ = ("tvar", "name", "_hwnd", "_text", "_width", "_height", 
                  "_style", "_exStyle", "_hInst", "_visible",
@@ -71,7 +101,7 @@ class Control:
                  "_isCreated", "_isTextable", "_lBtnDown",
                  "_rBtnDown", "_isMouseEntered", "_ctlType", 
                  "_font", "_fgColor", "_bgColor", "_drawFlag",
-                 "_hasBrush", "_bkgBrush", "_contextMenu", 
+                 "_hasBrush", "_bkgBrush", "_contextMenu", "_cmenuUsed", 
                  "_keyMod", "_disable", "_onMouseEnter", "onMouseDown", 
                  "onMouseUp", "onRightMouseDown", "onRightMouseUp",
                   "onRightClick", "_onMouseLeave", "onDoubleClick", 
@@ -94,6 +124,7 @@ class Control:
         self._ypos = 0
         self._parent = 0
         self._isCreated = False
+        self._cmenuUsed = False
         self._isTextable = False
         self._lBtnDown = False
         self._rBtnDown = False
@@ -137,6 +168,9 @@ class Control:
             # print("Font handle deleted")
         if self._bkgBrush:
             api.DeleteObject(self._bkgBrush)
+
+        if self._contextMenu:
+            self._contextMenu.finalize()
 
     # -region Public funcs
 
@@ -197,6 +231,11 @@ class Control:
     #-----------------------------------------------------------------------------------END
 
     # Internal function to set the control IDs
+    def _sendMsg(self, m, w, l ):
+        api.SendMessage(self._hwnd, m, w, l)
+
+        
+
     def _setCtlID(self):
         """Before creating control, we need to set the control ID."""
         self._cid = Control._ctl_id
@@ -300,6 +339,8 @@ class Control:
         """Set the context menu for this Control"""
         self._contextMenu = value
         self._contextMenu._font = self._font
+        self._contextMenu._formHwnd = self._hwnd
+        self._cmenuUsed = True
 
 
 
@@ -508,15 +549,11 @@ class Control:
 
 
     def _rightMouseDownHandler(self, msg, wpm, lpm):
-        # if self._contextMenu:
-        #     self._contextMenu.showContextMenu(self._hwnd, lpm)
         if self.onRightMouseDown: self.onRightMouseDown(self, MouseEventArgs(msg, wpm, lpm))
         return 0
 
 
     def _rightMouseUpHandler(self, msg, wpm, lpm):
-        # print("control right down")
-        # if self._contextMenu: self._contextMenu.showContextMenu(self._hwnd, lpm)
         if self.onRightMouseUp: self.onRightMouseUp(self, MouseEventArgs(msg, wpm, lpm))
         if self.onRightClick: self.onRightClick(self, EventArgs())
 

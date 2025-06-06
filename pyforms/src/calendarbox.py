@@ -30,7 +30,7 @@ class CalendarBox(Control):
                     "_fgColor", "_bgColor", "onSelectionCommitted", "onListClosed", "_value", "_viewMode", "_oldView",
                      "onViewChanged", "onSelectionChanged", "onValueChanged"  )
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, auto = False) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10) -> None:
         super().__init__()
 
         self._clsName = "SysMonthCal32"
@@ -62,7 +62,7 @@ class CalendarBox(Control):
         parent._controls.append(self)
 
         CalendarBox._count += 1
-        if auto: self.createHandle()
+        if parent.createChilds: self.createHandle()
 
 
     # Create's combo box handle

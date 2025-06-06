@@ -1,6 +1,6 @@
 # Created on 21-Jan-2023 00:41:20
 
-from ctypes import byref, create_unicode_buffer
+from ctypes import byref
 from pyforms.src.control import Control
 import pyforms.src.constants as con
 from pyforms.src.commons import MyMessages
@@ -21,14 +21,13 @@ class ProgressBar(Control):
                  "_percentage", "_state", "_speed", "_deciPrec", "_strPrec")
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10,
-                 width: int = 180, height: int = 25, perc = False, auto = False ) -> None:
+                 width: int = 180, height: int = 25, perc = False ) -> None:
         super().__init__()
         self._clsName = "msctls_progress32"
         self.name = f"ProgressBar_{ProgressBar._count}"
         self._ctlType = ControlType.PROGRESS_BAR
         self._parent = parent
         # self._fgColor = Color(0x000000) # Control class is taking care of this
-        # self._font = parent._font
         self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
@@ -52,7 +51,7 @@ class ProgressBar(Control):
         self._hwnd = None
         parent._controls.append(self)
         ProgressBar._count += 1
-        if auto: self.createHandle()
+        if parent.createChilds: self.createHandle()
 
 
     # -region Public funcs
@@ -103,7 +102,7 @@ class ProgressBar(Control):
         else:
             formatStr = "{:.%df}" % self._deciPrec
             formattedPerc = formatStr.format(perc)
-        txt = create_unicode_buffer(f"{formattedPerc}%")
+        txt = f"{formattedPerc}%"
         hdc = api.GetDC(self._hwnd)
         api.SelectObject(hdc, self._font._handle)
         api.GetTextExtentPoint32(hdc, txt, len(txt), byref(ss))
@@ -133,6 +132,7 @@ class ProgressBar(Control):
 
     @property
     def maxValue(self):
+        """Get the maximum value of progress bar"""
         return self._maxValue
 
     @maxValue.setter
@@ -192,18 +192,22 @@ class ProgressBar(Control):
 
     @property
     def drawPercentage(self):
+        """Get the bool value of drawing percentage is set or not"""
         return self._percentage
 
     @drawPercentage.setter
     def drawPercentage(self, value: bool):
+        """Set the bool value of drawing percentage"""
         self._percentage = value
 
     @property
     def decimalPrecision(self):
+        """When drawing percentage, get the decimal precision"""
         return self._deciPrec
 
     @decimalPrecision.setter
     def decimalPrecision(self, value: int):
+        """When drawing percentage, set the decimal precision"""
         self._deciPrec = value
         # self._strPrec = for
 

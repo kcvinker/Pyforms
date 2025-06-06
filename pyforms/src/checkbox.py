@@ -20,7 +20,8 @@ class CheckBox(Control):
     _count = 1
     __slots__ = ( "_rightAlign", "_autosize", "_txtStyle", "_isChecked", "onCheckedChanged")
 
-    def __init__(self, parent, txt: str, xpos: int = 10, ypos: int = 10, width: int = 0, height: int = 0, auto: bool = False) -> None:
+    def __init__(self, parent, txt: str, xpos: int = 10, 
+                 ypos: int = 10, width: int = 0, height: int = 0) -> None:
         super().__init__()
         self._clsName = "Button"
         self.name = f"CheckBox_{CheckBox._count}"
@@ -46,7 +47,7 @@ class CheckBox(Control):
         self._hwnd = None
         parent._controls.append(self)
         CheckBox._count += 1
-        if auto: self.createHandle()
+        if parent.createChilds: self.createHandle()
 
     def _setAutoSize(self):
         ss = api.SIZE()

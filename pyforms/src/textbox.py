@@ -8,7 +8,7 @@ import pyforms.src.apis as api
 from pyforms.src.colors import Color
 import pyforms.src.constants as con
 from pyforms.src.events import EventArgs
-from ctypes import create_unicode_buffer, addressof
+from ctypes import addressof
 # from . import winmsgs
 
 tbDict = {}
@@ -21,13 +21,13 @@ class TextBox(Control):
     _count = 1
     __slots__ = ( "_multiLine", "_hideSel", "_readOnly", "_textCase", "_textType", "_textAlign", "_cueBanner", "onTextChanged")
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 120, height: int = 23, txt="", auto = False, multi=False) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
+                 width: int = 120, height: int = 23, txt="", multiLine=False) -> None:
         super().__init__()
         self._clsName = "EDIT"
         self.name = f"TextBox_{TextBox._count}"
         self._ctlType = ControlType.TEXT_BOX
         self._parent = parent
-        # self._font = parent._font
         self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
@@ -38,7 +38,7 @@ class TextBox(Control):
         self._exStyle = 0x00000204
         self._bgColor = Color(0xFFFFFF)
         self._drawFlag = 0
-        self._multiLine = multi
+        self._multiLine = multiLine
         self._hideSel = False
         self._readOnly = False
         self._textCase = TextCase.NORMAL
@@ -50,7 +50,7 @@ class TextBox(Control):
         self._hwnd = None
         parent._controls.append(self)
         TextBox._count += 1
-        if auto: self.createHandle()
+        if parent.createChilds: self.createHandle()
 
 
     def createHandle(self):
@@ -62,8 +62,8 @@ class TextBox(Control):
             self._setSubclass(tbWndProc)
             self._setFontInternal()
             if len(self._cueBanner):
-                cueStr = create_unicode_buffer(self._cueBanner)
-                api.SendMessage(self._hwnd, con.EM_SETCUEBANNER, 1, addressof(cueStr))
+                self._smBuffer.fillBuffer(self._cueBanner)
+                api.SendMessage(self._hwnd, con.EM_SETCUEBANNER, 1, self._smBuffer.addr)
 
             # Without this line, textbox looks ugly style. It won't receive WM_NCPAINT message.
             # So we just redraw the non client area and it will receive WM_NCPAINT
@@ -100,8 +100,8 @@ class TextBox(Control):
 
     def addLine(self, linetext):
         if self._isCreated:
-            txtptr = create_unicode_buffer(linetext)
-            api.SendMessage(self._hwnd, con.EM_REPLACESEL, 0, addressof(txtptr))
+            self._smBuffer.fillBuffer(linetext)
+            api.SendMessage(self._hwnd, con.EM_REPLACESEL, 0, self._smBuffer.addr)
 
     @Control.text.getter
     def text(self):
@@ -138,8 +138,8 @@ class TextBox(Control):
     def cueBanner(self, value:str) :
         self._cueBanner = value
         if self._isCreated:
-            cueStr = create_unicode_buffer(self._cueBanner)
-            api.SendMessage(self._hwnd, con.EM_SETCUEBANNER, 1, addressof(cueStr))
+            self._smBuffer.fillBuffer(self._cueBanner)
+            api.SendMessage(self._hwnd, con.EM_SETCUEBANNER, 1, self._smBuffer.addr)
 
     @property
     def multiLine(self): return self._multiLine

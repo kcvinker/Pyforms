@@ -33,7 +33,8 @@ class TrackBar(Control):
                     "_thumbHalf", "_range", "_selColor", "_selBrush", "onValueChanged", "onDragging",
                     "onDragged", "_trackChange", "_lbDown", "_ticList", "_point1", "_point2" )
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 150, height: int = 25, auto = False) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
+                 width: int = 150, height: int = 25) -> None:
         super().__init__()
 
         self._clsName = "msctls_trackbar32"
@@ -85,6 +86,8 @@ class TrackBar(Control):
         self._ticColor = Color(0x3385ff)
         self._bgColor = Color(parent._bgColor)
         self._selBrush = None
+        self._ticPen = None
+        self._chanPen = None
         self._hasBrush = True
         self._hwnd = None
         parent._controls.append(self)
@@ -94,7 +97,7 @@ class TrackBar(Control):
         self.onDragging = None
         self.onDragged = None
         TrackBar._count += 1
-        if auto: self.createHandle()
+        if parent.createChilds: self.createHandle()
 
 # -region Public functions
 

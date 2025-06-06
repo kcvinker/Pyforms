@@ -1,10 +1,10 @@
 # Created on 20-Jan-2023 07:49:20
 
-from ctypes import byref, create_unicode_buffer
+from ctypes import byref
 from pyforms.src.control import Control
 import pyforms.src.constants as con
-from pyforms.src.commons import MyMessages
-from pyforms.src.enums import ControlType, GroupBoxStyle
+from pyforms.src.commons import MyMessages, Font
+from pyforms.src.enums import ControlType, GroupBoxStyle, FontWeight
 from pyforms.src.apis import SUBCLASSPROC
 import pyforms.src.apis as api
 from pyforms.src.colors import Color, COLOR_BLACK
@@ -22,7 +22,8 @@ class GroupBox(Control):
     _count = 1
     __slots__ = ("_pen", "_tmpTxt", "_rect", "_txtWidth", "_gstyle", "_dbFill", 
                  "_getWidth", "_themeOff", "_hdc", "_hbmp" )
-    def __init__(self, parent, txt: str = "", xpos: int = 10, ypos: int = 10, width: int = 300, height: int = 300, auto = False ) -> None:
+    def __init__(self, parent, txt: str = "", xpos: int = 10, 
+                 ypos: int = 10, width: int = 300, height: int = 300 ) -> None:
         super().__init__()
         self._clsName = "Button"
         self.name = f"GroupBox_{GroupBox._count}"
@@ -50,7 +51,7 @@ class GroupBox(Control):
         self._hwnd = None
         parent._controls.append(self)
         GroupBox._count += 1
-        if auto: self.createHandle()
+        if parent.createChilds: self.createHandle()
 
 
     # -region Public funcs
@@ -73,12 +74,16 @@ class GroupBox(Control):
 
     @Control.backColor.setter
     def backColor(self, value):
+        """Set the back color of group box"""
         self._bgColor = Color(value) if isinstance(value, int) else value
         self.resetGdiObjects(True)
         self._manageRedraw()
 
     @Control.foreColor.setter
     def foreColor(self, value):
+        # If drawing style is system, it will change to classic.
+        # Because, system style doesn't support changing fore color.
+        """Set the fore color of froup box"""
         self._fgColor = Color(value) if isinstance(value, int) else value
         if self._gstyle == GroupBoxStyle.SYSTEM:
             self._gstyle = GroupBoxStyle.CLASSIC
@@ -93,7 +98,11 @@ class GroupBox(Control):
                 self._pen = api.CreatePen(con.PS_SOLID, penWidth, self._bgColor.ref)
         self._manageRedraw()
 
+    # An extra function to set fore color. It gives the opprtunity to...
+    # set the drawing style of GroupBox. Default is classic. But you...
+    # can choose overriden too. System style doesn't support fore color.
     def setForeColor(self, clr, style = GroupBoxStyle.CLASSIC):
+        """Set fore color with drawing style"""
         self._fgColor = Color(clr) if isinstance(clr, int) else clr
         self._gstyle = style
         if self._gstyle == GroupBoxStyle.CLASSIC:
@@ -106,14 +115,28 @@ class GroupBox(Control):
                 self._pen = self._bgColor.createHPen(pWidth=penWidth)
         self._manageRedraw()
 
+    # An extra function to set Font. This function provides...
+    # some another font options. 
+    def changeFont(self, fname, fsize, fweight = FontWeight.NORMAL):  
+        """Change font and font related info"""      
+        self._font = Font(fname, fsize, fweight)
+        self._font.createHandle()
+        self.sndMsg(con.WM_SETFONT, self._font._handle, 1)
+        self._getWidth = True
+        self._manageRedraw()
+    
+
     @Control.text.setter
     def text(self, value):
+        """Set text for group box"""
         self._text = value
         self._getWidth = True
+        api.SetWindowText(self._hwnd, value)
         self._manageRedraw()
 
     @Control.width.setter
     def width(self, value):
+        """Set group box width"""
         self._width = value
         self.resetGdiObjects(False)
         if self._isCreated:
@@ -121,6 +144,7 @@ class GroupBox(Control):
 
     @Control.height.setter
     def height(self, value):
+        """Set group box height"""
         self._height = value
         self.resetGdiObjects(False)
         if self._isCreated:
@@ -128,6 +152,7 @@ class GroupBox(Control):
 
     @Control.font.setter
     def font(self, value):
+        """Set group box font"""
         self._font.colneFrom(value)
         if value._handle == None:
             self._font.createHandle()
@@ -135,7 +160,8 @@ class GroupBox(Control):
         self._getWidth = True
         self._manageRedraw()
 
-    def style(self, value):
+    def style(self, value: GroupBoxStyle):
+        """Set group box drawing style, options-(system, classic, overriden)"""
         self._gstyle = value
         if value == GroupBoxStyle.CLASSIC:
             if not self._themeOff:
@@ -171,27 +197,17 @@ class GroupBox(Control):
         self._dbFill = True
 
 
-    # def _getTextSize(self):
-    #     # with Timing("Time for normal hdc  : "):
-    #     hdc = api.GetDC(self._hwnd)
-    #     size = api.SIZE()
-    #     api.SelectObject(hdc, self._font._handle)
-    #     api.GetTextExtentPoint32(hdc, self._text, len(self._text), byref(size))
-    #     api.ReleaseDC(self._hwnd, hdc)
-    #     self._txtWidth = size.cx + 10
-
     def _draw_text(self):
-        # By drawing text on our own, we can control the look of...
-        # goup box very effectively. Now, upper half of the text...
-        # back ground looks transparent. If user doesn't change...
-        # back color, text will remain fully transparent bkg.
-        # If anyone complaints about flickering, consider double buffering.
-        yp = 10
+        # To change the fore color, we need to draw the...
+        # text on our own. Before drawing text, we need to hide...
+        # the outline of group box. So we are drawing a line...
+        # with back color over the existing line.
         hdc = api.GetDC(self._hwnd)
         api.SelectObject(hdc, self._pen)
-        api.MoveToEx(hdc, 10, yp, None)
-        api.LineTo(hdc, self._txtWidth, yp)
+        api.MoveToEx(hdc, 10, 10, None)
+        api.LineTo(hdc, self._txtWidth, 10)
 
+        # Now, we can draw the text with our color & font.
         api.SetBkMode(hdc, con.TRANSPARENT)
         api.SelectObject(hdc, self._font._handle)
         api.SetTextColor(hdc, self._fgColor.ref)
@@ -206,6 +222,7 @@ class GroupBox(Control):
 
     def handleWmEraseBKG(self, wp):
         if self._getWidth:
+            # We need to get the text width.
             size = api.SIZE()
             api.SelectObject(wp, self._font._handle)
             api.GetTextExtentPoint32(wp, self._text, len(self._text), byref(size))
@@ -213,6 +230,7 @@ class GroupBox(Control):
             self._getWidth = False  
         #------------------------------
         if self._dbFill:
+            # DC changed, we need to draw new background.
             self._hdc = api.CreateCompatibleDC(wp)
             self._hbmp = api.CreateCompatibleBitmap(wp, self._width, self._height)
             api.SelectObject(self._hdc, self._hbmp)
@@ -232,14 +250,6 @@ class GroupBox(Control):
     # -endregion Private funcs
 
     # -region Properties
-
-    # @Control.text.setter
-    # def text(self, value: str):
-    #     """Set the text for group box"""
-    #     self._text = value
-    #     if self._isCreated:
-    #         self._getTextSize()
-    #         self._manageRedraw()
 
 
     # @property

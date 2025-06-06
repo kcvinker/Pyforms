@@ -2,12 +2,12 @@
 from ctypes import c_int, cast, windll, byref, sizeof, py_object
 from pyforms.src.enums import FontWeight
 import pyforms.src.apis as api
+from pyforms.src.colors import Color
 from pyforms.src.apis import RECT, LOGFONT, POINT
 import pyforms.src.constants as con
-from enum import Enum
+from enum import Enum, IntEnum
 # from pyforms.src.forms import globalScaleFactor, globalSysDPI
 import datetime
-
 
 INT_MIN   =  -2147483647 - 1
 INT_MAX  =     2147483647
@@ -17,6 +17,34 @@ menuTxtFlag = con.DT_LEFT | con.DT_SINGLELINE | con.DT_VCENTER
 
 globalScaleFactor = 0.0
 globalSysDPI = 0
+
+class StaticData: # A singleton object which used to hold essential data for a form to start
+    hInstance = 0
+    className = "PyForms_Window"
+    loopStarted = False
+    screenWidth = api.GetSystemMetrics(0) # Need to calculate the form position
+    screenHeight = api.GetSystemMetrics(1)
+    defWinColor = Color(0xf0f0f0)# Color.from_RGB(230, 230, 230)
+    currForm = None
+    trayHandles = [] # A list to hold any TrayIcon hidden window handles.
+
+    @staticmethod
+    def registerMsgWinClass(clsname, wndproc):
+        wc = api.WNDCLASSEX()
+        wc.cbSize = sizeof(api.WNDCLASSEX)
+        wc.lpfnWndProc = wndproc
+        wc.hInstance = StaticData.hInstance
+        wc.lpszClassName = clsname
+        api.RegisterClassEx(byref(wc))
+        
+
+    @staticmethod
+    def finalize():
+        if len(StaticData.trayHandles):
+            for hw in StaticData.trayHandles:
+                if hw != None: api.DestroyWindow(hw)
+        print("Pyforms closed...")
+
 
 def getSystemDPI():
     global globalScaleFactor
@@ -79,6 +107,10 @@ class Font:
                 self._handle = api.CreateFontIndirect(byref(lf))
             else:
                 print("Font handle error, line 77, commons.py")
+
+    
+
+
 
     @property
     def name(self): return self._name
@@ -152,24 +184,30 @@ def printWinMsg(ms):
     msgCounter += 1
 
 
-class MyMessages:
-    MOUSE_CLICK = 9000
-    RIGHT_CLICK = 9001
-    CTRL_NOTIFY = 9002
-    CTRL_COLOR = 9003
-    EDIT_COLOR = 9004
-    LABEL_COLOR = 9005
-    COMBO_LB_COLOR = 9006
-    COMBO_TB_COLOR = 9007
-    LIST_COLOR = 9008
-    CTL_COMMAND = 9009
-    HORI_SCROLL = 9010
-    VERT_SCROLL = 9011
-    TREENODE_NOTIFY = 9012 # A tree node notify it's tree view control about changes
-    BUDDY_RESET = 9013
-    MENU_ADDED = 9014
-    NOTIFY_GPBOX = 9015
-    THREAD_MSG = con.WM_USER + 5
+
+WM_APP = 0x8000
+
+class MyMessages(IntEnum):
+    MOUSE_CLICK       = WM_APP + 1
+    RIGHT_CLICK       = WM_APP + 2
+    CTRL_NOTIFY       = WM_APP + 3
+    CTRL_COLOR        = WM_APP + 4
+    EDIT_COLOR        = WM_APP + 5
+    LABEL_COLOR       = WM_APP + 6
+    COMBO_LB_COLOR    = WM_APP + 7
+    COMBO_TB_COLOR    = WM_APP + 8
+    LIST_COLOR        = WM_APP + 9
+    CTL_COMMAND       = WM_APP + 10
+    HORI_SCROLL       = WM_APP + 11
+    VERT_SCROLL       = WM_APP + 12
+    TREENODE_NOTIFY   = WM_APP + 13
+    BUDDY_RESET       = WM_APP + 14
+    MENU_ADDED        = WM_APP + 15
+    NOTIFY_GPBOX      = WM_APP + 16
+    MM_TRAY_MSG       = WM_APP + 17
+    THREAD_MSG        = WM_APP + 18
+    MM_MENUITEM_NOTIFY  = WM_APP + 19
+
 
 
 

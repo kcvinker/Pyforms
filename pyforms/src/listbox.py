@@ -1,6 +1,6 @@
 # listbox module - Created on 11-Dec-2022 11:23:20
 
-from ctypes import addressof, create_unicode_buffer, c_int
+from ctypes import addressof, c_int
 from pyforms.src.control import Control
 import pyforms.src.constants as con
 from pyforms.src.commons import MyMessages
@@ -21,7 +21,8 @@ class ListBox(Control):
     __slots__ = ( "_hasSort", "_noSel", "_multiCol", "_keyPreview", "_useVScroll", "_useHScroll", "_multiSel", "_selIndices",
                     "_items",  "_dummyIndex", "_selIndex", "onSelectionChanged", "onDoubleClick"  )
 
-    def __init__(self, parent, xpos: int = 10, ypos: int = 10, width: int = 150, height: int = 200, auto = False) -> None:
+    def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
+                 width: int = 150, height: int = 200) -> None:
         super().__init__()
 
         self._clsName = "LISTBOX"
@@ -29,7 +30,6 @@ class ListBox(Control):
         self._ctlType = ControlType.LIST_BOX
         self._parent = parent
         self._bgColor = COLOR_WHITE
-        # self._font = parent._font
         self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
@@ -49,15 +49,13 @@ class ListBox(Control):
         self._items = []
         self._dummyIndex = -1
         self._selIndex = -1
-        # print("listbox inited")
         # Events
         self.onSelectionChanged = None
         self.onDoubleClick = None
         self._hwnd = None
         parent._controls.append(self)
-
         ListBox._count += 1
-        if auto: self.createHandle()
+        if parent.createChilds: self.createHandle()
 
 # -region Public functions
 
@@ -76,15 +74,17 @@ class ListBox(Control):
 
             if self._items:
                 for item in self._items:
-                    buff = create_unicode_buffer(item) if type(item) == str else create_unicode_buffer(str(item))
-                    api.SendMessage(self._hwnd, con.LB_ADDSTRING, 0, addressof(buff))
+                    sitem = item if isinstance(item, str) else str(item)
+                    self._smBuffer.fillBuffer(sitem)
+                    api.SendMessage(self._hwnd, con.LB_ADDSTRING, 0, self._smBuffer.addr)
                     if self._dummyIndex > -1: api.SendMessage(self._hwnd, con.LB_SETCURSEL, self._dummyIndex, 0)
 
     def addItem(self, item):
         """Add an item to list box """
         if self._isCreated:
-            buff = create_unicode_buffer(str(item))
-            api.SendMessage(self._hwnd, con.LB_ADDSTRING, 0, addressof(buff))
+            sitem = item if isinstance(item, str) else str(item)
+            self._smBuffer.fillBuffer(sitem)
+            api.SendMessage(self._hwnd, con.LB_ADDSTRING, 0, self._smBuffer.addr)
         self._items.append(item)
 
     def addItems(self, *items):
@@ -93,11 +93,11 @@ class ListBox(Control):
         if self._isCreated:
             for item in items:
                 sitem = item if isinstance(item, str) else str(item)
-                buff = create_unicode_buffer(sitem)
-                api.SendMessage(self._hwnd, con.LB_ADDSTRING, 0, addressof(buff))
+                self._smBuffer.fillBuffer(sitem)
+                api.SendMessage(self._hwnd, con.LB_ADDSTRING, 0, self._smBuffer.addr)
         else:
             for item in items:
-                sitem = item if isinstance(item, str) else str(item)
+                # sitem = item if isinstance(item, str) else str(item)
                 self._items.append(item)
 
 
@@ -120,8 +120,8 @@ class ListBox(Control):
     def insertItem(self, item, index):
         """Insert an item to list box """
         if self._isCreated:
-            buff = create_unicode_buffer(str(item))
-            api.SendMessage(self._hwnd, con.LB_INSERTSTRING, index, addressof(buff))
+            self._smBuffer.fillBuffer(item)
+            api.SendMessage(self._hwnd, con.LB_INSERTSTRING, index, self._smBuffer.addr)
 
         if index == -1:
             self._items.append(item)
@@ -164,9 +164,9 @@ class ListBox(Control):
         # print("161")
         item_len = api.SendMessage(self._hwnd, con.LB_GETTEXTLEN, index, 0)
         if item_len != con.LB_ERR:
-            buff = create_unicode_buffer(item_len)
-            api.SendMessage(self._hwnd, con.LB_GETTEXT, index, addressof(buff))
-            return buff.value
+            self._smBuffer.ensureSize(item_len)
+            api.SendMessage(self._hwnd, con.LB_GETTEXT, index, self._smBuffer.addr)
+            return self._smBuffer.value
         else:
             return ""
 

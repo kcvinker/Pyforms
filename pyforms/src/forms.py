@@ -1,35 +1,32 @@
 # Created on 08-Nov-2022 00:05:26
 
-from ctypes import cast, byref, sizeof, POINTER, py_object, create_unicode_buffer, WINFUNCTYPE, c_void_p
+from ctypes import (cast, byref, sizeof, POINTER, 
+                    py_object, create_unicode_buffer, 
+                    WINFUNCTYPE, c_void_p)
 from ctypes.wintypes import LPCWSTR, HBRUSH, LPWSTR
 import pyforms.src.constants as con
 import pyforms.src.apis as api
-from pyforms.src.apis import WNDPROC, RECT, WNDCLASSEX, LPNMHDR, LRESULT, LPMEASUREITEMSTRUCT, GetDC, MessageBox
-import pyforms.src.apis as api
+from pyforms.src.apis import (WNDPROC, RECT, WNDCLASSEX, 
+                              LPNMHDR, LRESULT, LPMEASUREITEMSTRUCT, 
+                              GetDC, MessageBox)
 from pyforms.src.control import Control
-from pyforms.src.enums import FormPosition, FormStyle, FormState, FormDrawMode, MessageButtons, MessageIcons, ControlType
-from pyforms.src.commons import Font, MyMessages, getMouseXpoint, getMouseYpoint, MyMessages, menuTxtFlag, getMousePoints, getSystemDPI
-from pyforms.src.events import EventArgs, MouseEventArgs, SizeEventArgs
-from pyforms.src.colors import _createGradientBrush, RgbColor, Color, COLOR_BLACK
-from pyforms.src.menubar import MenuType
+from pyforms.src.enums import (FormPosition, FormStyle, 
+                               FormState, FormDrawMode, 
+                               MessageButtons, MessageIcons, 
+                               ControlType)
+from pyforms.src.commons import (
+            Font, MyMessages, getMouseXpoint, getMouseYpoint, 
+            MyMessages, menuTxtFlag, getMousePoints, getSystemDPI,
+            StaticData)
+from pyforms.src.events import (
+    EventArgs, MouseEventArgs, SizeEventArgs, GEA)
+from pyforms.src.colors import (_createGradientBrush, RgbColor, 
+                                Color, COLOR_BLACK)
+from pyforms.src.menubar import MenuType, MenuState
 # from . import messagebox
 import pyforms.src.winmsgs
 from horology import Timing
 import os
-
-
-    
-
-
-class StaticData: # A singleton object which used to hold essential data for a form to start
-    hInstance = 0
-    className = "PyForms_Window"
-    loopStarted = False
-    screenWidth = api.GetSystemMetrics(0) # Need to calculate the form position
-    screenHeight = api.GetSystemMetrics(1)
-    defWinColor = Color(0xf0f0f0)# Color.from_RGB(230, 230, 230)
-    currForm = None
-    
 
 
 formDict = {} # This dictionary contains all the form class. We can get them in wndProcMain function
@@ -53,59 +50,102 @@ def printPoint2(frm, mea):
 @WNDPROC
 def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
     # winmsgs.log_msg(message, "Form")
-    this = formDict.get(hw, StaticData.currForm)
+    
 
     match message:
         case con.WM_NCDESTROY:
-            this.cleanTimers()
+            this = formDict.get(hw, StaticData.currForm)
+            this.finalize()
             if this._isMainWindow :
                 api.PostQuitMessage(0)
                 return 1
         case MyMessages.THREAD_MSG:
+            this = formDict.get(hw, StaticData.currForm)
             if this.onThreadMsg:
                 this.onThreadMsg(wParam, lParam)
 
-        case con.WM_TIMER: this.handle_wmtimer(wParam)
-
+        case con.WM_TIMER: 
+            this = formDict.get(hw, StaticData.currForm)
+            this.handle_wmtimer(wParam)
 
     # -region No problem messages
         # case con.WM_SHOWWINDOW: this._formShownHandler() # NOT NEEDED
-        case con.WM_ACTIVATEAPP: this._formActivateHandler(wParam)
-        case con.WM_KEYDOWN | con.WM_SYSKEYDOWN: this._keyDownHandler(wParam)
-        case con.WM_KEYUP | con.WM_SYSKEYUP: this._keyUpHandler(wParam)
-        case con.WM_CHAR: this._keyPressHandler(wParam)
-        case con.WM_LBUTTONDOWN: this._leftMouseDownHandler(message, wParam, lParam)
-        case con.WM_LBUTTONUP: this._leftMouseUpHandler(message, wParam, lParam)
-        case con.WM_RBUTTONDOWN: this._rightMouseDownHandler(message, wParam, lParam)
-        case con.WM_RBUTTONUP: this._rightMouseUpHandler(message, wParam, lParam)
-        case con.WM_MOUSEWHEEL: this._mouseWheenHandler(message, wParam, lParam)
-        case con.WM_MOUSEMOVE: this._formMouseMoveHandler(hw, message, wParam, lParam)
-        case con.WM_MOUSELEAVE: this._formMouseLeaveHandler()
-        case con.WM_MOUSEHOVER: this._formMouseHoverHandler(message, wParam, lParam)
+        case con.WM_ACTIVATEAPP: 
+            this = formDict.get(hw, StaticData.currForm)
+            this._formActivateHandler(wParam)
+        case con.WM_KEYDOWN | con.WM_SYSKEYDOWN: 
+            this = formDict.get(hw, StaticData.currForm)
+            this._keyDownHandler(wParam)
+        case con.WM_KEYUP | con.WM_SYSKEYUP: 
+            this = formDict.get(hw, StaticData.currForm)
+            this._keyUpHandler(wParam)
+        case con.WM_CHAR: 
+            this = formDict.get(hw, StaticData.currForm)
+            this._keyPressHandler(wParam)
+        case con.WM_LBUTTONDOWN: 
+            this = formDict.get(hw, StaticData.currForm)
+            this._leftMouseDownHandler(message, wParam, lParam)
+        case con.WM_LBUTTONUP: 
+            this = formDict.get(hw, StaticData.currForm)
+            this._leftMouseUpHandler(message, wParam, lParam)
+        case con.WM_RBUTTONDOWN: 
+            this = formDict.get(hw, StaticData.currForm)
+            this._rightMouseDownHandler(message, wParam, lParam)
+        case con.WM_RBUTTONUP: 
+            this = formDict.get(hw, StaticData.currForm)
+            this._rightMouseUpHandler(message, wParam, lParam)
+        case con.WM_MOUSEWHEEL: 
+            this = formDict.get(hw, StaticData.currForm)
+            this._mouseWheenHandler(message, wParam, lParam)
+        case con.WM_MOUSEMOVE: 
+            this = formDict.get(hw, StaticData.currForm)
+            this._formMouseMoveHandler(hw, message, wParam, lParam)
+        case con.WM_MOUSELEAVE: 
+            this = formDict.get(hw, StaticData.currForm)
+            this._formMouseLeaveHandler()
+        case con.WM_MOUSEHOVER: 
+            this = formDict.get(hw, StaticData.currForm)
+            this._formMouseHoverHandler(message, wParam, lParam)
         case con.WM_SIZING:
+            this = formDict.get(hw, StaticData.currForm)
             return this._formSizingHandler(message, wParam, lParam)
         case con.WM_SIZE:
+            this = formDict.get(hw, StaticData.currForm)
             return this._formSizedHandler(message, wParam, lParam)
-        case con.WM_MOVING: return this._formMovingHandler(lParam)
-        case con.WM_MOVE: return this._formMovedHandler(lParam)
+        case con.WM_MOVING: 
+            this = formDict.get(hw, StaticData.currForm)
+            return this._formMovingHandler(lParam)
+        case con.WM_MOVE: 
+            this = formDict.get(hw, StaticData.currForm)
+            return this._formMovedHandler(lParam)
         case con.WM_ERASEBKGND:
+            this = formDict.get(hw, StaticData.currForm)
             if this._drawMode != FormDrawMode.NORMAL:
                 this._formEraseBkgHandler(hw, wParam)
                 return 1
 
-        case con.WM_SYSCOMMAND: this._frmSysCommandHandler(wParam, lParam)
-        case con.WM_CLOSE: this._formClosingHandler()
-        case con.WM_DESTROY: this._formClosedHandler()
+        case con.WM_SYSCOMMAND: 
+            this = formDict.get(hw, StaticData.currForm)
+            this._frmSysCommandHandler(wParam, lParam)
+        case con.WM_CLOSE: 
+            this = formDict.get(hw, StaticData.currForm)
+            this._formClosingHandler()
+        case con.WM_DESTROY: 
+            this = formDict.get(hw, StaticData.currForm)
+            this._formClosedHandler()
     #   -endregion No problem messages
 
     # -region Diverted messages
         case con.WM_CTLCOLOREDIT:
+            this = formDict.get(hw, StaticData.currForm)
             return api.SendMessage(lParam, MyMessages.EDIT_COLOR, wParam, lParam)
 
         case con.WM_CTLCOLORSTATIC:
+            this = formDict.get(hw, StaticData.currForm)
             return api.SendMessage(lParam, MyMessages.LABEL_COLOR, wParam, lParam)
 
         case con.WM_CTLCOLORLISTBOX:
+            this = formDict.get(hw, StaticData.currForm)
             from_combo = this._comboDict.get(lParam, lParam)
             # print("setting text color")
             # if from_combo:
@@ -114,6 +154,7 @@ def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
                 # return api.SendMessage(lParam, MyMessages.LIST_COLOR, wParam, lParam)
 
         case con.WM_COMMAND:
+            this = formDict.get(hw, StaticData.currForm)
             # print(f"wm command : {api.HIWORD(wParam) = }, {api.LOWORD(wParam) = }, {lParam = }")
             match lParam:
                 case 0:
@@ -146,49 +187,42 @@ def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
         case con.WM_MEASUREITEM:
             pmi = cast(lParam, LPMEASUREITEMSTRUCT).contents
             mi = cast(pmi.itemData, py_object).value
-            if mi._type == MenuType.BASE_MENU:
-                hdc = GetDC(hw)
-                size = api.SIZE()
-                api.GetTextExtentPoint32(hdc, mi._wTxt, len(mi._text), byref(size))
-                api.ReleaseDC(hw, hdc)
-                pmi.itemWidth = size.cx #+ 10
-                pmi.itemHeight = size.cy
-            else:
-
-                pmi.itemWidth = 100 #size.cx #+ 10
-                pmi.itemHeight = 25
-            return True
+            pmi.itemWidth = mi._txtSize.cx + 10
+            pmi.itemHeight = mi._txtSize.cy + 10
+            return 1
 
         case con.WM_DRAWITEM:
+            this = formDict.get(hw, StaticData.currForm)
             dis = cast(lParam, api.LPDRAWITEMSTRUCT).contents
             mi = cast(dis.itemData, py_object).value
             txtClrRef = mi._fgColor.ref
             if dis.itemState == 320 or dis.itemState == 257:
-                if mi._isEnabled:
+                if not mi._state == MenuState.DISABLED:
                     rc = api.RECT(dis.rcItem.left + 4, dis.rcItem.top + 2, dis.rcItem.right, dis.rcItem.bottom - 2)
-                    api.FillRect(dis.hDC, byref(rc), this._menuHotBgBrush)
-                    api.FrameRect(dis.hDC, byref(rc), this._menuFrameBrush)
+                    api.FillRect(dis.hDC, byref(rc), this._menubar._hotBgBrush)
+                    api.FrameRect(dis.hDC, byref(rc), this._menubar._frameBrush)
                     txtClrRef = 0x00000000
                 else:
-                    api.FillRect(dis.hDC, byref(rc), this._menuGrayBrush)
-                    txtClrRef = this._menuGrayCref
+                    api.FillRect(dis.hDC, byref(rc), this._menubar._grayBrush)
+                    txtClrRef = this._menubar._grayCref
             else:
-                api.FillRect(dis.hDC, byref(dis.rcItem), this._menuDefBgBrush)
-                if not mi._isEnabled: txtClrRef = this._menuGrayCref
+                api.FillRect(dis.hDC, byref(dis.rcItem), this._menubar._defBgBrush)
+                if mi._state == MenuState.DISABLED: txtClrRef = this._menubar._grayCref
 
             api.SetBkMode(dis.hDC, con.TRANSPARENT)
             if mi._type == MenuType.BASE_MENU:
                 dis.rcItem.left += 10
             else:
                 dis.rcItem.left += 25
-            api.SelectObject(dis.hDC, this._menuFont.handle)
+            api.SelectObject(dis.hDC, this._menubar._font.handle)
             api.SetTextColor(dis.hDC, txtClrRef)
-            api.DrawText(dis.hDC, mi._wideText, -1, byref(dis.rcItem), menuTxtFlag)
+            api.DrawText(dis.hDC, mi._text, len(mi._text), byref(dis.rcItem), menuTxtFlag)
             return 0
 
         case MyMessages.MENU_ADDED:
             # When user adds a menu item to another menu item, the parent menu will inform us.
-            this._menuItemDict[wParam] = cast(lParam, py_object).value
+            this = formDict.get(hw, StaticData.currForm)
+            this._menuDict[wParam] = cast(lParam, py_object).value            
             return 0
 
 
@@ -199,6 +233,7 @@ def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
         #     print("case con.WM_EXITMENULOOP:")
 
         case con.WM_MENUSELECT:
+            this = formDict.get(hw, StaticData.currForm)
             pmenu = this._getMenuFromHmenu(lParam)
             mid = api.LOWORD(wParam) # Could be an id of a child menu or index of a child menu
             hwwpm = api.HIWORD(wParam)
@@ -206,20 +241,22 @@ def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
                 menu = None
                 match hwwpm:
                     case 33152: # A normal child menu. We can use mid ad menu id.
-                        menu = this._menuItemDict.get(mid, 0)
+                        menu = this._menuDict.get(mid, 0)
                     case 33168: # A popup child menu. We can use mid as index.
                         menu = pmenu.getChildFromIndex(mid)
-                if menu and menu.onFocus: menu.onFocus(menu, EventArgs())
+                if menu and menu.onFocus: menu.onFocus(menu, GEA)
 
         case con.WM_INITMENUPOPUP:
+            this = formDict.get(hw, StaticData.currForm)
             menu = this._getMenuFromHmenu(wParam)
             if menu and menu.onPopup:
-                menu.onPopup(menu, EventArgs())
+                menu.onPopup(menu, GEA)
 
         case con.WM_UNINITMENUPOPUP:
+            this = formDict.get(hw, StaticData.currForm)
             menu = this._getMenuFromHmenu(wParam)
             if menu and menu.onCloseup:
-                menu.onCloseup(menu, EventArgs())
+                menu.onCloseup(menu, GEA)
     # -endregion Menu section
 
 
@@ -248,6 +285,7 @@ def make_window_class(proc):
     wc.hbrBackground = api.CreateSolidBrush(StaticData.defWinColor.ref)
     wc.hIcon = getPyformsIcon()
     wc.lpszClassName = StaticData.className
+    StaticData.hInstance = hins
     # print(f"{StaticData.scaleFactor = }")
     return wc
 
@@ -285,15 +323,20 @@ class Form(Control):
     wnd_class = make_window_class(wndProcMain)
     atom = api.RegisterClassEx(byref(wnd_class))
     _count = 1
-    __slots__ = (   "_classStr", "_formPos", "_formStyle", "_formState", "_topMost", "_maximizeBox", "_minimizeBox",
-                    "_mainWinHwnd", "_isMainWindow", "_isMouseTracking", "_drawMode", "_isNormalDraw", "_updRect",
-                    "_formID", "_comboDict", "onLoad", "onMinimized", "onMaximized", "onRestored", "onClosing",
-                    "onClosed", "onActivate", "onDeActivate", "onMoving", "onMoved", "onSizing", "onSized",
-                    "onThreadMsg", "_menuGrayBrush", "_menuGrayCref", "_menuEventDict", "_menuItemDict", "_controls",
-                    "_menuDefBgBrush", "_menuHotBgBrush", "_menuFont", "_menuFrameBrush", "_mGClr1", "_mGClr2",
-                    "_mGt2b", "_timerDic", "_dummyEA" )
+    __slots__ = (  "_classStr", "_formPos", "_formStyle", "_formState", 
+                    "_topMost", "_maximizeBox", "_minimizeBox",
+                    "_mainWinHwnd", "_isMainWindow", "_isMouseTracking", 
+                    "_drawMode", "_isNormalDraw", "_updRect", "_formID", 
+                    "_comboDict", "onLoad", "onMinimized", "onMaximized", 
+                    "onRestored", "onClosing", "onClosed", "onActivate", 
+                    "onDeActivate", "onMoving", "onMoved", "onSizing", 
+                    "onSized", "onThreadMsg", "_menuGrayBrush", 
+                    "_menuGrayCref", "_menuEventDict", "_menubar", "_menuDict",
+                    "_controls", "_menuDefBgBrush", "_menuHotBgBrush", 
+                    "_menuFont", "_menuFrameBrush", "_mGClr1", "_mGClr2",
+                    "_mGt2b", "_timerDic", "createChilds", "_dummyEA" )
 
-    def __init__(self, txt = "", width = 500, height = 400, auto = False) -> None:
+    def __init__(self, txt = "", width = 500, height = 400, autoCreate = False) -> None:
         super().__init__()
         self._classStr = ""
         self.name = f"Form_{Form._count}"
@@ -316,11 +359,13 @@ class Form(Control):
         self._isMouseTracking = False # A flag to control mouse tracking in oreder to get the mouse move msg
         self._drawMode = FormDrawMode.NORMAL # Other options are flat color & gradient
         self._isNormalDraw = True
+        self.createChilds = False
         self._formID = Form._count + 1000 # A unique ID for all forms.
         self._comboDict = {} # Combo boxes demands to keep their listbox handle
+        self._menuDict = {}
         self._updRect = None
         self._menuEventDict = {}
-        self._menuItemDict = {}
+        self._menubar = None
         self._menuFrameBrush = None
         self._menuGrayBrush = None
         self._menuGrayCref = None
@@ -347,12 +392,19 @@ class Form(Control):
         self.onSizing = None
         self.onSized = None
         self.onThreadMsg = None
-
         Form._count += 1
-        if auto: self.createHandle()
-        # print(f"ws overlapped {con.WS_OVERLAPPEDWINDOW}")
+        if autoCreate: self.createHandle()
+        
+        
+
     #------------------------------
 
+    def finalize(self):
+        if self._menubar:
+            self._menubar.finalize()
+            
+        if len(self._timerDic) > 0:
+            self.cleanTimers()
 
 
     # -region Public functions
@@ -397,15 +449,19 @@ class Form(Control):
 
     def display(self):
         """Display a window. If it's the first window, then it will start the main loop"""
-        # with Timing("Time for creating control hwnd: "):
-        self._createChildHandles() # Create child control hwnds
+    
+        # self._createChildHandles() # Create child control hwnds
+        if self._menubar and not self._menubar._isCreated:
+            self._menubar.create()
+
         api.ShowWindow(self._hwnd, con.SW_SHOW)
         if self.formState == FormState.MINIMIZED :
             api.CloseWindow(self._hwnd)
         else:
             api.UpdateWindow(self._hwnd)
 
-        if self.onLoad: self._formShownHandler() # We moved onLoad event to here. WM_SHOWWINDOW is not working.
+        # We moved onLoad event to here. WM_SHOWWINDOW is not working.
+        if self.onLoad: self._formShownHandler() 
         if not StaticData.loopStarted:
             self._isMainWindow = True
             StaticData.loopStarted = True
@@ -414,12 +470,13 @@ class Form(Control):
                 api.TranslateMessage(byref(tMsg))
                 api.DispatchMessage(byref(tMsg))
 
+            StaticData.finalize()
+
+
     def msgbox(self, msg: str, title: str = "PyForms Message",
-			btns: MessageButtons = MessageButtons.OKAY,
-			icon: MessageIcons = MessageIcons.NONE ):
-            wMsg = create_unicode_buffer(msg)
-            wCap = create_unicode_buffer(title)
-            return MessageBox(0, wMsg, wCap, btns.value | icon.value)
+			        btns: MessageButtons = MessageButtons.OKAY,
+			        icon: MessageIcons = MessageIcons.NONE ):
+        return MessageBox(0, msg, title, btns.value | icon.value)
 
     def addTimer(self, tickInterval = 100, tickHandler = None):
         timer = Timer(self._hwnd, tickInterval, tickHandler)
@@ -514,14 +571,14 @@ class Form(Control):
             # print("edge ", res)
 
     def _menuClickHandler(self, menu_id):
-        menu = self._menuItemDict.get(menu_id, 0)
+        menu = self._menuDict.get(menu_id, 0)
         if menu:
             if menu.onClick: menu.onClick(menu, EventArgs())
         return 0
 
     def _getMenuFromHmenu(self, menuHandle):
-        for menu in self._menuItemDict.values():
-            if menu._hmenu == menuHandle: return menu
+        for menu in self._menuDict.values():
+            if menu._handle == menuHandle: return menu
         return None
 
     def _createChildHandles(self):
@@ -537,10 +594,9 @@ class Form(Control):
         if not timer is None and timer.onTick:
             timer.onTick(self, self._dummyEA)
 
-    def cleanTimers(self):
-        if len(self._timerDic) > 0:
-            for timer in self._timerDic.values():
-                timer._destructor()
+    def cleanTimers(self):        
+        for timer in self._timerDic.values():
+            timer._destructor()
     # -endregion private functions
 
     # -region Event handlers

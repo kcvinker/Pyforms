@@ -432,7 +432,7 @@ class MENUITEMINFO(Structure):
         ("cbSize", UINT),
         ("fMask", UINT),
         ("fType", UINT),
-        ("fSTate", UINT),
+        ("fState", UINT),
         ("wID", UINT),
         ("hSubMenu", HMENU),
         ("hbmpChecked", HBITMAP),
@@ -524,6 +524,24 @@ class BROWSEINFOW(Structure):
         ("iImage", INT),
     ]
 LPBROWSEINFOW = POINTER(BROWSEINFOW)
+
+class NOTIFYICONDATA(Structure):
+    _fields_ = [
+        ("cbSize", DWORD),            # Size of this structure, in bytes.
+        ("hWnd", HWND),               # Win Handle that receives notifications from the taskbar icon.
+        ("uID", UINT),                # Application-defined identifier of the taskbar icon.
+        ("uFlags", UINT),             # Flags indicating which members are valid.
+        ("uCallbackMessage", UINT),   # App-defined message ID for icon notifications.
+        ("hIcon", HICON),             # Handle to the icon to display.
+        ("szTip", WCHAR * 128),       # WCHAR string for the tooltip text (max 127 chars + null).
+        ("dwState", DWORD),           # Current state of the icon (e.g., hidden).
+        ("dwStateMask", DWORD),       # Mask for dwState.
+        ("szInfo", WCHAR * 256),      # WCHAR string for the balloon tooltip text (max 255 + null).
+        ("uVersion", UINT),           # Version of the NOTIFYICONDATA structure.
+        ("szInfoTitle", WCHAR * 64),  # WCHAR string for the title of the balloon tooltip (max 63 + null).
+        ("dwInfoFlags", DWORD),       # Flags for the balloon tooltip icon.
+    ]
+LPNOTIFYICONDATA = POINTER(NOTIFYICONDATA)
 # -endregion Structures
 
 
@@ -866,6 +884,11 @@ InsertMenuW = windll.user32.InsertMenuW
 InsertMenuW.argtypes = [HMENU, UINT, UINT, UINT_PTR, LPCWSTR]
 InsertMenuW.restype = BOOL
 
+ModifyMenu = windll.user32.ModifyMenuW
+""" [HMENU, UINT, UINT, UINT_PTR, LPCWSTR] -> BOOL"""
+ModifyMenu.argtypes = [HMENU, UINT, UINT, UINT_PTR, LPCWSTR]
+ModifyMenu.restype = BOOL
+
 DrawMenuBar = windll.user32.DrawMenuBar
 """ [HWND] -> BOOL"""
 DrawMenuBar.argtypes = [HWND]
@@ -895,6 +918,16 @@ KillTimer = windll.user32.KillTimer
 """ [HWND, UINT_PTR, UINT, TIMERPROC] -> BOOL"""
 KillTimer.argtypes = [HWND, UINT_PTR]
 KillTimer.restype = BOOL
+
+DestroyIcon = windll.user32.DestroyIcon
+DestroyIcon.argtypes = [HICON]
+DestroyIcon.restype = BOOL
+
+LoadIcon = windll.user32.LoadIconW
+LoadIcon.argtypes = [HINSTANCE, LPCWSTR]
+LoadIcon.restype = HICON
+
+
 
 
 
@@ -1137,6 +1170,10 @@ SHGetPathFromIDList = windll.Shell32.SHGetPathFromIDListW
 """[PCIDLIST_ABSOLUTE, LPWSTR] -> BOOL"""
 SHGetPathFromIDList.argtypes = [PCIDLIST_ABSOLUTE, LPWSTR]
 SHGetPathFromIDList.restype = BOOL
+
+Shell_NotifyIcon = windll.Shell32.Shell_NotifyIconW
+Shell_NotifyIcon.argtypes = [DWORD, LPNOTIFYICONDATA]
+Shell_NotifyIcon.restype = BOOL
 
 CoTaskMemFree = windll.Ole32.CoTaskMemFree
 """[c_void_p] -> BOOL"""

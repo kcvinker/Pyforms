@@ -25,7 +25,8 @@ class Button(Control):
     _count = 1
     __slots__ = ("_fdraw", "_gdraw")
 
-    def __init__(self, parent, txt: str = "", xpos = 20, ypos = 20, width = 120, height = 33, auto = False, onclick = None ) -> None:
+    def __init__(self, parent, txt: str = "", xpos = 20, ypos = 20, 
+                 width = 120, height = 33, onclick = None ) -> None:
         super().__init__()
         self.name = f"Button_{Button._count}"
         self._parent = parent
@@ -47,7 +48,7 @@ class Button(Control):
         parent._controls.append(self)
         if onclick: self.onClick = onclick
         Button._count += 1
-        if auto: self.createHandle()
+        if parent.createChilds: self.createHandle()
         # print(f"btn style {self._style}")
 
     def createHandle(self):

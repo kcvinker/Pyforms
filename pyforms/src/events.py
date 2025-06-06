@@ -16,6 +16,7 @@ class EventArgs:
         self.data = None
         self.testvar = 100
 
+GEA = EventArgs()
 
 class MouseEventArgs(EventArgs):
     def __init__(self, msg, wp, lp) -> None:
