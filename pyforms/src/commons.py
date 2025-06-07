@@ -226,6 +226,13 @@ def getMouseXpoint(lpm) : return api.LOWORD(lpm)
 def getMouseYpoint(lpm) : return api.HIWORD(lpm)
 def getMousePoints(lpm): return POINT(api.LOWORD(lpm), api.HIWORD(lpm))
 
+def getMousePos(pt, lpm):
+    if lpm == 0:
+        api.GetCursorPos(byref(pt))
+    else:
+        pt.x = api.LOWORD(lpm)
+        pt.y = api.HIWORD(lpm)
+
 def inflateRect(rct, value) -> RECT:
     left = rct.left - value
     right = rct.right + value

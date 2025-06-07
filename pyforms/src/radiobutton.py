@@ -84,7 +84,7 @@ class RadioButton(Control):
     def text(self):
         """Set text of radio button."""
         if self._isCreated:
-            return self._getCtrlText()
+            return Control._smBuffer.getTextFromAPI(self._hwnd)
         else:
             return self._text
 

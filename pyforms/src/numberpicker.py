@@ -2,7 +2,7 @@
 
 from ctypes.wintypes import HWND, UINT
 from ctypes import WINFUNCTYPE, byref, cast
-from pyforms.src.control import Control
+from pyforms.src.control import Control, CommonBuffer
 import pyforms.src.constants as con
 from pyforms.src.commons import MyMessages
 from pyforms.src.enums import ControlType, TextAlignment
@@ -24,9 +24,10 @@ class NumberPicker(Control):
     """
     Control.icc.initCommCtls(con.ICC_UPDOWN_CLASS)
     _count = 1
+    _buffer = CommonBuffer(16)
     __slots__ = ( "_hideCaret", "_trackMouseLeave", "_btnOnLeft", "_hasSep", "_topEdgeFlag", "_botEdgeFlag",
                     "_autoRotate", "_minRange", "_maxRange", "_value", "_step", "_deciPrecis", "_buddyRect",
-                    "_buddyStyle", "_buddyExStyle", "_buddyHwnd", "_buddyCID", "_buddySubclsID", "_linex", "_destroyCount",
+                    "_buddyStyle", "_buddyExStyle", "_buddyHwnd", "_buddyCID", "_buddySubclsID", "_linex", "_destroyCount", 
                     "_buddySubclsProc", "_txtPos", "onValueChanged", "_myRect", "_udRect", "_keyPressed" )
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
@@ -147,7 +148,7 @@ class NumberPicker(Control):
             self._text = f"{self._value:,.{self._deciPrecis}f}"
         else:
             self._text = f"{self._value:.{self._deciPrecis}f}"
-            # print(f"{self._text = }")
+            # print(f"np txt {self._text = }, {self._deciPrecis = }")
         api.SetWindowText(self._buddyHwnd, self._text )
 
     # Internal function to calculate value
@@ -214,6 +215,7 @@ class NumberPicker(Control):
     def decimalPlaces(self, value: int):
         """Set the decimal points of NumberPicker"""
         self._deciPrecis = value
+        if self._isCreated: self._displayValue()
     #-----------------------------------------------------------------------[1]
 
     @property
@@ -352,7 +354,7 @@ def npWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         case MyMessages.CTRL_NOTIFY:
             nm = cast(lp, api.LPNMUPDOWN).contents
             if nm.hdr.code == con.UDN_DELTAPOS:
-                np._value = float(np._getCtrlTextEx(np._buddyHwnd))
+                np._value = float(NumberPicker._buffer.getTextFromAPI(np._buddyHwnd))
                 np._setNpkValue(nm.iDelta)
                 np._displayValue()
                 if np.onValueChanged: np.onValueChanged(np, GEA)

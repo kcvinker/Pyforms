@@ -81,12 +81,26 @@ class CommonBuffer:
         if self.length <=size:
             self.length = size + 1
             self.buffer = create_unicode_buffer(self.length)
+
+    def getTextFromAPI(self, hwnd):
+        size = api.GetWindowTextLength(hwnd) + 1
+        if self.length <=size:
+            self.length = size + 1
+            self.buffer = create_unicode_buffer(self.length)
+
+        api.GetWindowText(hwnd, self.buffer, size)
+        return self.buffer.value
     
     @property
     def addr(self):
         """Return the unicode buffer address"""
         return addressof(self.buffer)
 
+    @property
+    def toStr(self):
+        """Return the string in the buffer"""
+        return self.buffer.value
+    
 
 class Control:
     """
@@ -605,7 +619,7 @@ class Control:
 
     def _wmContextMenuHandler(self, lpm):
         if self._contextMenu:
-            self._contextMenu.showContextMenu(lpm)
+            self._contextMenu.showMenu(lpm)
 
     # -endregion Event handlers
 

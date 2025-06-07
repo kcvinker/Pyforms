@@ -7,9 +7,10 @@ from pyforms.src.apis import (
     DefWindowProc, RegisterClassEx, CreateWindowEx, Shell_NotifyIcon,
     LoadIcon, LoadImage, Shell_NotifyIcon, LPCWSTR, DestroyWindow)
 from pyforms.src.commons import MyMessages, StaticData
+from pyforms.src.menubar import ContextMenu
 from pyforms.src.events import GEA
 import pyforms.src.constants as con
-from ctypes import sizeof, addressof, byref, create_unicode_buffer
+from ctypes import sizeof, addressof, byref
 from ctypes.wintypes import HWND
 
 TIMW_CLS = "PyFormsTrayMsgWin" # Tray Icon Message Window Class
@@ -50,13 +51,13 @@ def trayIconWndProc(hw, message, wParam, lParam) -> LRESULT:
                     this = trayDict[hw]
                     if this.onLeftMouseUp: this.onLeftMouseUp(this, GEA)
                     if this.onLeftClick: this.onLeftClick(this, GEA)
-                    if this._cmenuUsed and (this._trig and 1) == 1: 
+                    if this._cmenu and (this._menuTrigger & TrayMenuTrigger.LEFT_CLICK): 
                         this._cmenu.showMenu(0)
 
                 case con.WM_LBUTTONDBLCLK:
                     this = trayDict[hw]
                     if this.onLeftDoubleClick: this.onLeftDoubleClick(this, GEA)
-                    if this._cmenuUsed and (this._trig and 2) == 2:
+                    if this._cmenu and (this._menuTrigger & TrayMenuTrigger.LEFT_DBLCLICK):
                         this._cmenu.showMenu(0)
 
                 case con.WM_RBUTTONDOWN:
@@ -67,7 +68,7 @@ def trayIconWndProc(hw, message, wParam, lParam) -> LRESULT:
                     this = trayDict[hw]
                     if this.onRightMouseUp: this.onRightMouseUp(this, GEA)
                     if this.onRightClick: this.onRightClick(this, GEA)
-                    if this._cmenuUsed and (this._trig and 4) == 4:
+                    if this._cmenu and (this._menuTrigger & TrayMenuTrigger.RIGHT_CLICK):
                         this._cmenu.showMenu(0)
 
                 case con.WM_MOUSEMOVE:
@@ -179,6 +180,9 @@ class TrayIcon:
         self._nid.dwInfoFlags = 0
         self._nid.uFlags = 0
 
+    def addContextMenu(self, *menuItems, trigger = TrayMenuTrigger.RIGHT_CLICK):
+        self._cmenu = ContextMenu(*menuItems)
+        self._menuTrigger = trigger
 
     def _createMsgWindow(self):
         if not TrayIcon._isWinClassReg:
@@ -207,6 +211,45 @@ class TrayIcon:
         Shell_NotifyIcon(con.NIM_MODIFY, byref(self._nid))
         self._resetIcon = False # Revert to the default state
         # print("reset work")
+
+    @property
+    def menuTrigger(self): return self._menuTrigger
+
+    @menuTrigger.setter
+    def menuTrigger(self, value):
+        self._menuTrigger = value
+
+    @property
+    def tooltip(self): return self._tooltip
+
+    @tooltip.setter
+    def tooltip(self, value):
+        self._tooltip = value
+        self._nid.uFlags = con.NIF_ICON|con.NIF_MESSAGE|con.NIF_TIP
+        self._nid.szTip = value
+        Shell_NotifyIcon(con.NIM_MODIFY, byref(self._nid))
+
+    @property
+    def icon(self): return self._iconpath
+
+    @icon.setter
+    def icon(self, value):
+        self._iconpath = value
+        self._hTrayIcon =  (LoadImage(None, value, con.IMAGE_ICON, 
+                                      0, 0, con.LIMG_FLAG) or         
+                            LoadIcon(None, LPCWSTR(con.IDI_INFO)))        
+        self._nid.uFlags = con.NIF_ICON|con.NIF_MESSAGE|con.NIF_TIP
+        self._nid.hIcon = self._hTrayIcon
+        Shell_NotifyIcon(con.NIM_MODIFY, byref(self._nid))
+
+    @property
+    def contextMenu(self): return self._cmenu
+
+    @contextMenu.setter
+    def contextMenu(self, value):
+        self._cmenu = value
+        self._cmenu._formHwnd = self._msgHwnd
+        self._menuTrigger = TrayMenuTrigger.RIGHT_CLICK
 
 
     def finalize(self):

@@ -1,6 +1,6 @@
 # textbox module - Created on 22-Nov-2022 00:54:20
 
-from pyforms.src.control import Control
+from pyforms.src.control import Control, CommonBuffer
 from pyforms.src.commons import MyMessages
 from pyforms.src.enums import ControlType, TextCase, TextType, TextAlignment
 from pyforms.src.apis import SUBCLASSPROC
@@ -19,6 +19,7 @@ tbExStyle = con.WS_EX_LEFT | con.WS_EX_LTRREADING | con.WS_EX_CLIENTEDGE
 class TextBox(Control):
 
     _count = 1
+    _buffer = CommonBuffer() # start with 64 chars
     __slots__ = ( "_multiLine", "_hideSel", "_readOnly", "_textCase", "_textType", "_textAlign", "_cueBanner", "onTextChanged")
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
@@ -107,7 +108,7 @@ class TextBox(Control):
     def text(self):
         """Returns the text property of text box"""
         if self._isCreated:
-            return self._getCtrlText()
+            return TextBox._buffer.getTextFromAPI(self._hwnd)
         else:
             return self._text
 

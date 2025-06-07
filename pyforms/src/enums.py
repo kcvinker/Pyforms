@@ -1,5 +1,5 @@
 # Created on 09-Nov-2022 12:15:29
-from enum import IntEnum
+from enum import IntEnum, IntFlag
 
 class FormPosition(IntEnum):
     CENTER = 0
@@ -180,12 +180,12 @@ class TrackChange(IntEnum):
     MOUSE_CLICK = 5
     MOUSE_DRAG = 6
 
-class TrayMenuTrigger(IntEnum):
+class TrayMenuTrigger(IntFlag):
     NONE = 0
     LEFT_CLICK = 1
     LEFT_DBLCLICK = 2
     RIGHT_CLICK = 4
-    ANY_CLICK = 7
+    ANY_CLICK = LEFT_CLICK | LEFT_DBLCLICK | RIGHT_CLICK
 
 class BalloonIcon(IntEnum):
     NONE = 0

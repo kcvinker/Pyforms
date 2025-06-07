@@ -1,7 +1,7 @@
 
 # CheckBox module - Created on 08-Dec-2022 18:49:20
 
-from ctypes import WINFUNCTYPE, byref, cast, addressof, create_unicode_buffer
+from ctypes import WINFUNCTYPE, byref, cast, addressof
 from pyforms.src.control import Control
 from pyforms.src.commons import MyMessages
 from pyforms.src.enums import ControlType
@@ -99,7 +99,6 @@ class CheckBox(Control):
     def text(self, value: str):
         self._text = value
         if self._isCreated:
-            # wbuffer = create_unicode_buffer(value)
             api.SetWindowText(self._hwnd, value)
             if self._autosize: self._setAutoSize()
 

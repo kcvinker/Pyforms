@@ -1,7 +1,7 @@
 # datetimepicker module - Created on 10-Dec-2022 17:45:20
 
 from ctypes.wintypes import HWND, UINT
-from ctypes import WINFUNCTYPE, addressof, create_unicode_buffer, cast, create_string_buffer
+from ctypes import WINFUNCTYPE, addressof, cast, create_string_buffer
 from pyforms.src.control import Control
 import pyforms.src.constants as con
 from pyforms.src.commons import MyMessages

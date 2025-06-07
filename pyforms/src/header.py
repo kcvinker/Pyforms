@@ -1,6 +1,6 @@
 #Header module - Created on 17-Apr-2023 18:17:00
 
-from ctypes import byref, create_unicode_buffer, cast, c_wchar_p, addressof
+from ctypes import byref, cast, c_wchar_p, addressof
 from pyforms.src.control import Control
 import pyforms.src.constants as con
 from pyforms.src.commons import MyMessages, Font
