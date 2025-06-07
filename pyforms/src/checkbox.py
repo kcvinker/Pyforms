@@ -9,7 +9,7 @@ from pyforms.src.apis import LRESULT, LPNMCUSTOMDRAW, SUBCLASSPROC
 import pyforms.src.apis as api
 from pyforms.src.colors import Color
 import pyforms.src.constants as con
-from pyforms.src.events import EventArgs
+from pyforms.src.events import GEA
 
 cb_dict = {}
 cb_style = con.WS_CHILD | con.WS_VISIBLE | con.WS_TABSTOP | con.BS_AUTOCHECKBOX
@@ -150,7 +150,7 @@ def cbWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
 
         case MyMessages.CTL_COMMAND:
             cb._isChecked = bool(api.SendMessage(hw, con.BM_GETCHECK, 0, 0))
-            if cb.onCheckedChanged: cb.onCheckedChanged(cb, EventArgs() )
+            if cb.onCheckedChanged: cb.onCheckedChanged(cb, GEA )
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 

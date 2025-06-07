@@ -573,7 +573,7 @@ class Form(Control):
     def _menuClickHandler(self, menu_id):
         menu = self._menuDict.get(menu_id, 0)
         if menu:
-            if menu.onClick: menu.onClick(menu, EventArgs())
+            if menu.onClick: menu.onClick(menu, GEA)
         return 0
 
     def _getMenuFromHmenu(self, menuHandle):
@@ -602,18 +602,18 @@ class Form(Control):
     # -region Event handlers
     def _formActivateHandler(self, wp):
         if self.onActivate or self.onDeActivate:
-            ea = EventArgs()
+            # ea = EventArgs()
             activate = bool(wp)
             if not activate:
-                if self.onDeActivate: self.onDeActivate(self, ea)
+                if self.onDeActivate: self.onDeActivate(self, GEA)
             else:
-                if self.onActivate: self.onActivate(self, ea)
+                if self.onActivate: self.onActivate(self, GEA)
         return 0
 
     def _formShownHandler(self):
         # if self.onLoad:
-        ea = EventArgs()
-        self.onLoad(self, ea)
+        # ea = EventArgs()
+        self.onLoad(self, GEA)
         return 0
 
     def _formMouseMoveHandler(self,hw, msg, wp, lp):
@@ -623,8 +623,8 @@ class Form(Control):
             if not self._isMouseEntered:
                 if self._onMouseEnter:
                     self._isMouseEntered = True
-                    ea = EventArgs()
-                    self._onMouseEnter(self, ea)
+                    # ea = EventArgs()
+                    self._onMouseEnter(self, GEA)
         if self.onMouseMove:
             ea = MouseEventArgs(msg, wp, lp)
             self.onMouseMove(self, ea)
@@ -636,8 +636,8 @@ class Form(Control):
             self._isMouseEntered = False
 
         if self._onMouseLeave:
-            ea = EventArgs()
-            self._onMouseLeave(self, ea)
+            # ea = EventArgs()
+            self._onMouseLeave(self, GEA)
         return 0
 
     def _formMouseHoverHandler(self, msg, wp, lp):
@@ -674,8 +674,8 @@ class Form(Control):
         self._xpos = rct.left
         self._ypos = rct.top
         if self.onMoving:
-            ea = EventArgs()
-            self.onMoving(self, ea)
+            # ea = EventArgs()
+            self.onMoving(self, GEA)
             # return 0
         return 0
 
@@ -683,8 +683,8 @@ class Form(Control):
         self._xpos = getMouseXpoint(lp)
         self._ypos = getMouseYpoint(lp)
         if self.onMoved:
-            ea = EventArgs()
-            self.onMoved(self, ea)
+            # ea = EventArgs()
+            self.onMoved(self, GEA)
         return 0
 
     def _frmSysCommandHandler(self, wp, lp):
@@ -692,18 +692,18 @@ class Form(Control):
         match uMsg:
             case con.SC_MINIMIZE:
                 if self.onMinimized:
-                    ea = EventArgs()
-                    self.onMinimized(self, ea)
+                    # ea = EventArgs()
+                    self.onMinimized(self, GEA)
 
             case con.SC_RESTORE:
                 if self.onRestored:
-                    ea = EventArgs()
-                    self.onRestored(self, ea)
+                    # ea = EventArgs()
+                    self.onRestored(self, GEA)
 
             case con.SC_MAXIMIZE:
                 if self.onMaximized:
-                    ea = EventArgs()
-                    self.onMaximized(self, ea)
+                    # ea = EventArgs()
+                    self.onMaximized(self, GEA)
 
             # case 0xF090 | 0xF100:
             #     self._selMenuPt = getMousePoints(lp)

@@ -9,7 +9,7 @@ from pyforms.src.control import Control
 import pyforms.src.constants as con
 from pyforms.src.commons import MyMessages
 from pyforms.src.enums import ControlType, ViewMode
-from pyforms.src.events import EventArgs
+from pyforms.src.events import GEA
 from pyforms.src.apis import RECT, LPNMHDR, LPNMSELCHANGE, LPNMVIEWCHANGE, SUBCLASSPROC
 import pyforms.src.apis as api
 from pyforms.src.colors import Color
@@ -186,17 +186,17 @@ def calWndProc(hw, msg, wp, lp, scID, refData):
                 case con.MCN_SELECT: # 4294966550
                     nms = cast(lp, LPNMSELCHANGE).contents
                     cal._setValue(nms.stSelStart)
-                    if cal.onValueChanged: cal.onValueChanged(cal, EventArgs())
+                    if cal.onValueChanged: cal.onValueChanged(cal, GEA)
                 case con.MCN_SELCHANGE:
                     nms = cast(lp, LPNMSELCHANGE).contents
                     cal._setValue(nms.stSelStart)
-                    if cal.onSelectionChanged: cal.onSelectionChanged(cal, EventArgs())
+                    if cal.onSelectionChanged: cal.onSelectionChanged(cal, GEA)
 
                 case con.MCN_VIEWCHANGE:
                     nmv = cast(lp, LPNMVIEWCHANGE).contents
                     cal._viewMode = ViewMode(nmv.dwNewView)
                     cal._oldView = ViewMode(nmv.dwOldView)
-                    if cal.onViewChanged: cal.onViewChanged(cal, EventArgs())
+                    if cal.onViewChanged: cal.onViewChanged(cal, GEA)
 
         case con.WM_SETFOCUS: cal._gotFocusHandler()
         case con.WM_KILLFOCUS: cal._lostFocusHandler()

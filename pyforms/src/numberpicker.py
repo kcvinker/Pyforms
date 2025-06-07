@@ -6,7 +6,7 @@ from pyforms.src.control import Control
 import pyforms.src.constants as con
 from pyforms.src.commons import MyMessages
 from pyforms.src.enums import ControlType, TextAlignment
-from pyforms.src.events import EventArgs
+from pyforms.src.events import GEA
 import pyforms.src.apis as api
 from pyforms.src.apis import LRESULT, UINT_PTR, DWORD_PTR, WPARAM, LPARAM, SUBCLASSPROC
 from pyforms.src.colors import Color, clamp
@@ -355,7 +355,7 @@ def npWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                 np._value = float(np._getCtrlTextEx(np._buddyHwnd))
                 np._setNpkValue(nm.iDelta)
                 np._displayValue()
-                if np.onValueChanged: np.onValueChanged(np, EventArgs())
+                if np.onValueChanged: np.onValueChanged(np, GEA)
 
         case con.WM_SETFOCUS: np._gotFocusHandler()
         case con.WM_KILLFOCUS: np._lostFocusHandler()
@@ -371,7 +371,7 @@ def npWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             if np._trackMouseLeave:
                 if not np._isMouseUponMe():
                     np._isMouseEntered = False
-                    if np.on_mouse_leave: np.on_mouse_leave(np, EventArgs())
+                    if np.on_mouse_leave: np.on_mouse_leave(np, GEA)
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 
@@ -400,7 +400,7 @@ def buddyWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             if np._trackMouseLeave:
                 if not np._isMouseUponMe():
                     np._isMouseEntered = False
-                    if np.on_mouse_leave: np.on_mouse_leave(np, EventArgs())
+                    if np.on_mouse_leave: np.on_mouse_leave(np, GEA)
 
         case con.WM_MOUSEMOVE: np._mouseMoveHandler(msg, wp, lp)
 

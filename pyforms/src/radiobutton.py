@@ -8,7 +8,7 @@ from pyforms.src.apis import LRESULT, LPNMCUSTOMDRAW, SUBCLASSPROC
 import pyforms.src.apis as api
 from pyforms.src.colors import Color
 import pyforms.src.constants as con
-from pyforms.src.events import EventArgs
+from pyforms.src.events import GEA
 
 rbDict = {}
 rbStyle = con.WS_CHILD | con.WS_VISIBLE | con.WS_TABSTOP | con.BS_AUTORADIOBUTTON
@@ -142,7 +142,7 @@ def rbWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
 
         case MyMessages.CTL_COMMAND:
             # print(f"Radio {rb.text = }, {rb._isChecked = }")
-            if rb.onCheckedChanged: rb.onCheckedChanged(rb, EventArgs() )
+            if rb.onCheckedChanged: rb.onCheckedChanged(rb, GEA )
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 

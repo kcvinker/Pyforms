@@ -424,7 +424,7 @@ def tvWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         #         tv._value = float(tv._getCtrlTextEx(tv._buddy_hwnd))
         #         tv._set_numpick_value(nm.iDelta)
         #         tv._display_value()
-        #         if tv.on_value_changed: tv.on_value_changed(np, EventArgs())
+        #         if tv.on_value_changed: tv.on_value_changed(np, GEA)
 
         case con.WM_SETFOCUS: tv._gotFocusHandler()
         case con.WM_KILLFOCUS: tv._lostFocusHandler()
@@ -438,7 +438,7 @@ def tvWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         #     if tv._track_mouse_leave:
         #         if not tv._is_mouse_upon_me():
         #             tv._isMouseEntered = False
-        #             if tv.on_mouse_leave: tv.on_mouse_leave(np, EventArgs())
+        #             if tv.on_mouse_leave: tv.on_mouse_leave(np, GEA)
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 

@@ -42,7 +42,9 @@ class StaticData: # A singleton object which used to hold essential data for a f
     def finalize():
         if len(StaticData.trayHandles):
             for hw in StaticData.trayHandles:
-                if hw != None: api.DestroyWindow(hw)
+                if hw != None: 
+                    api.DestroyWindow(hw)
+                    # print("destroy tray icon")
         print("Pyforms closed...")
 
 

@@ -6,7 +6,7 @@ from pyforms.src.control import Control
 import pyforms.src.constants as con
 from pyforms.src.commons import MyMessages
 from pyforms.src.enums import ControlType, TickPosition, ChannelStyle, TrackChange
-from pyforms.src.events import EventArgs
+from pyforms.src.events import GEA
 from pyforms.src.apis import LRESULT, RECT, LPNMCUSTOMDRAW, SUBCLASSPROC
 import pyforms.src.apis as api
 from pyforms.src.colors import Color
@@ -688,22 +688,22 @@ def trkWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                     api.InvalidateRect(hw, byref(trk._chanRc), False)
 
                     trk._trackChange = TrackChange.MOUSE_DRAG
-                    if trk.onDragged: trk.onDragged(trk, EventArgs())
-                    if trk.onValueChanged: trk.onValueChanged(trk, EventArgs())
+                    if trk.onDragged: trk.onDragged(trk, GEA)
+                    if trk.onValueChanged: trk.onValueChanged(trk, GEA)
 
                 case  con.THUMB_LINE_HIGH:
                     trk._setValueInternal(api.SendMessage(hw, con.TBM_GETPOS, 0, 0))
                     trk._trackChange = TrackChange.ARROW_HIGH
                     # print(trk._trackChange)
                     if trk.onValueChanged:
-                        trk.onValueChanged(trk, EventArgs())
+                        trk.onValueChanged(trk, GEA)
 
                 case con.THUMB_LINE_LOW:
                     trk._setValueInternal(api.SendMessage(hw, con.TBM_GETPOS, 0, 0))
                     trk._trackChange = TrackChange.ARROW_LOW
                     # print(trk._trackChange)
                     if trk.onValueChanged:
-                        trk.onValueChanged(trk, EventArgs())
+                        trk.onValueChanged(trk, GEA)
 
                 case con.THUMB_PAGE_HIGH:
                     trk._setValueInternal(api.SendMessage(hw, con.TBM_GETPOS, 0, 0))
@@ -713,19 +713,19 @@ def trkWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                         # print(trk._trackChange, " 458 ")
 
                     if trk.onValueChanged:
-                        trk.onValueChanged(trk, EventArgs())
+                        trk.onValueChanged(trk, GEA)
 
                 case con.THUMB_PAGE_LOW:
                     trk._setValueInternal(api.SendMessage(hw, con.TBM_GETPOS, 0, 0))
                     trk._trackChange = TrackChange.PAGE_LOW
                     # print(trk._trackChange)
                     if trk.onValueChanged:
-                        trk.onValueChanged(trk, EventArgs())
+                        trk.onValueChanged(trk, GEA)
 
                 case con.TB_THUMBTRACK: # User dragging thumb.
                     trk._setValueInternal(api.HIWORD(wp))
                     # api.InvalidateRect(hw, byref(trk._chanRc), False)
-                    if trk.onDragging: trk.onDragging(trk, EventArgs())
+                    if trk.onDragging: trk.onDragging(trk, GEA)
 
         case MyMessages.LABEL_COLOR:
             # api.SetBkColor(wp, trk._bgColor.ref)

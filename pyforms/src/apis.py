@@ -525,6 +525,12 @@ class BROWSEINFOW(Structure):
     ]
 LPBROWSEINFOW = POINTER(BROWSEINFOW)
 
+class NIDUN(ct.Union):
+    _fields_ = [
+        ("uTimeout", UINT),
+        ("uVersion", UINT)
+    ]
+
 class NOTIFYICONDATA(Structure):
     _fields_ = [
         ("cbSize", DWORD),            # Size of this structure, in bytes.
@@ -537,7 +543,7 @@ class NOTIFYICONDATA(Structure):
         ("dwState", DWORD),           # Current state of the icon (e.g., hidden).
         ("dwStateMask", DWORD),       # Mask for dwState.
         ("szInfo", WCHAR * 256),      # WCHAR string for the balloon tooltip text (max 255 + null).
-        ("uVersion", UINT),           # Version of the NOTIFYICONDATA structure.
+        ("uVerOrTime", NIDUN),           # Version of the NOTIFYICONDATA structure.
         ("szInfoTitle", WCHAR * 64),  # WCHAR string for the title of the balloon tooltip (max 63 + null).
         ("dwInfoFlags", DWORD),       # Flags for the balloon tooltip icon.
     ]

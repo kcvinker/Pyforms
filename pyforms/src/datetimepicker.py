@@ -6,7 +6,7 @@ from pyforms.src.control import Control
 import pyforms.src.constants as con
 from pyforms.src.commons import MyMessages
 from pyforms.src.enums import ControlType, DateFormat
-from pyforms.src.events import EventArgs, DateTimeEventArgs
+from pyforms.src.events import GEA, DateTimeEventArgs
 from pyforms.src.apis import LPNMHDR, LPNMDATETIMECHANGE, SUBCLASSPROC
 import pyforms.src.apis as api
 from pyforms.src.colors import Color
@@ -288,12 +288,12 @@ def dtpWndProc(hw, msg, wp, lp, scID, refData):
 
                 case con.DTN_DROPDOWN:
                     if dtp.onCalendarOpened:
-                        dtp.onCalendarOpened(dtp, EventArgs())
+                        dtp.onCalendarOpened(dtp, GEA)
                         return 0
 
                 case con.DTN_CLOSEUP:
                     if dtp.onCalendarClosed:
-                        dtp.onCalendarClosed(dtp, EventArgs())
+                        dtp.onCalendarClosed(dtp, GEA)
                         return 0
 
                 case con.DTN_DATETIMECHANGE:
@@ -307,7 +307,7 @@ def dtpWndProc(hw, msg, wp, lp, scID, refData):
                         dic = cast(lp, LPNMDATETIMECHANGE).contents
                         dtp._value = dtp._makeDateTime(dic.st)
                         if dtp.onValueChanged:
-                            dtp.onValueChanged(dtp, EventArgs())
+                            dtp.onValueChanged(dtp, GEA)
                             return 0
 
         case con.WM_SETFOCUS: dtp._gotFocusHandler()

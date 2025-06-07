@@ -141,6 +141,16 @@ IDC_HAND = 32649
 IDC_APPSTARTING = 32650
 IDC_HELP = 32651
 IDI_SHIELD = 32518
+
+IDI_APPLICATION	= 32512	#Default application icon
+IDI_HAND	= 32513	#Error icon (red circle with white X)
+IDI_ERROR	= 32513	#Same as IDI_HAND
+IDI_QUESTION	= 32514	#Question mark icon
+IDI_EXCLAMATION	= 32515	#Yellow warning triangle
+IDI_WARNING	= 32515	#Same as IDI_EXCLAMATION
+IDI_ASTERISK	= 32516	#Info icon (blue circle with "i")
+IDI_INFO	= 32516	#Same as IDI_ASTERISK
+IDI_WINLOGO	= 32517
 # -endregion
 
 # -LoadImage function constants

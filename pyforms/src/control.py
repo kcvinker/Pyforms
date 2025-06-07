@@ -5,10 +5,13 @@ from ctypes.wintypes import UINT, HWND
 from ctypes import create_unicode_buffer, byref, sizeof, cast, addressof
 from pyforms.src.enums import ControlType
 from pyforms.src.commons import Font, MyMessages
-from pyforms.src.apis import MapWindowPoints, LPPOINT, INITCOMMONCONTROLSEX, DWORD
+from pyforms.src.apis import (
+    MapWindowPoints, LPPOINT, INITCOMMONCONTROLSEX, DWORD)
 import pyforms.src.apis as api
 import pyforms.src.constants as con
-from pyforms.src.events import EventArgs, MouseEventArgs, KeyEventArgs, KeyPressEventArgs
+from pyforms.src.events import (
+    MouseEventArgs, KeyEventArgs, 
+    KeyPressEventArgs, GEA)
 from pyforms.src.colors import Color, COLOR_BLACK
 import datetime
 # from horology import Timing
@@ -545,7 +548,7 @@ class Control:
 
     def _leftMouseUpHandler(self, msg, wpm, lpm):
         if self.onMouseUp: self.onMouseUp(self, MouseEventArgs(msg, wpm, lpm))
-        if self.onClick: self.onClick(self, EventArgs())
+        if self.onClick: self.onClick(self, GEA)
 
 
     def _rightMouseDownHandler(self, msg, wpm, lpm):
@@ -555,7 +558,7 @@ class Control:
 
     def _rightMouseUpHandler(self, msg, wpm, lpm):
         if self.onRightMouseUp: self.onRightMouseUp(self, MouseEventArgs(msg, wpm, lpm))
-        if self.onRightClick: self.onRightClick(self, EventArgs())
+        if self.onRightClick: self.onRightClick(self, GEA)
 
 
 
@@ -569,13 +572,13 @@ class Control:
             if self.onMouseMove: self.onMouseMove(self, MouseEventArgs(msg, wpm, lpm))
         if not self._isMouseEntered:
             self._isMouseEntered = True
-            if self._onMouseEnter: self._onMouseEnter(self, EventArgs())
+            if self._onMouseEnter: self._onMouseEnter(self, GEA)
 
 
 
     def _mouseLeaveHandler(self):
         self._isMouseEntered = False
-        if self._onMouseLeave: self._onMouseLeave(self, EventArgs())
+        if self._onMouseLeave: self._onMouseLeave(self, GEA)
 
 
 
@@ -592,12 +595,12 @@ class Control:
         return 0
 
     def _gotFocusHandler(self):
-        if self.onGotFocus: self.onGotFocus(self, EventArgs())
+        if self.onGotFocus: self.onGotFocus(self, GEA)
         return 0
 
 
     def _lostFocusHandler(self):
-        if self.onLostFocus: self.onLostFocus(self, EventArgs())
+        if self.onLostFocus: self.onLostFocus(self, GEA)
         return 0
 
     def _wmContextMenuHandler(self, lpm):

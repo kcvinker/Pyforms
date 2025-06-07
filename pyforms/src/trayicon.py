@@ -2,15 +2,14 @@
 # Created on 03-Jun-2025 19:21
 
 from pyforms.src.enums import TrayMenuTrigger, BalloonIcon
-from pyforms.src.apis import NOTIFYICONDATA, WNDCLASSEX, LRESULT, WNDPROC, DestroyIcon
-from pyforms.src.apis import DefWindowProc, RegisterClassEx, CreateWindowEx, Shell_NotifyIcon
-from pyforms.src.apis import LoadIcon, LoadImage, Shell_NotifyIcon, LPCWSTR
+from pyforms.src.apis import (
+    NOTIFYICONDATA, WNDCLASSEX, LRESULT, WNDPROC, DestroyIcon,
+    DefWindowProc, RegisterClassEx, CreateWindowEx, Shell_NotifyIcon,
+    LoadIcon, LoadImage, Shell_NotifyIcon, LPCWSTR, DestroyWindow)
 from pyforms.src.commons import MyMessages, StaticData
-from pyforms.src.events import EventArgs
-
+from pyforms.src.events import GEA
 import pyforms.src.constants as con
-
-from ctypes import sizeof, addressof, byref
+from ctypes import sizeof, addressof, byref, create_unicode_buffer
 from ctypes.wintypes import HWND
 
 TIMW_CLS = "PyFormsTrayMsgWin" # Tray Icon Message Window Class
@@ -25,55 +24,55 @@ def trayIconWndProc(hw, message, wParam, lParam) -> LRESULT:
             this = trayDict[hw]
             this.finalize()
             del trayDict[hw]
-            print("PyForms Tray is closing...")
+            print("PyForms TrayIcon is closing...")
 
         case MyMessages.MM_TRAY_MSG:
             match lParam:
                 case con.NIN_BALLOONSHOW:
                     this = trayDict[hw]
-                    if this.onBalloonShow: this.onBalloonShow(this, EventArgs())
+                    if this.onBalloonShow: this.onBalloonShow(this, GEA)
 
                 case con.NIN_BALLOONTIMEOUT:
                     this = trayDict[hw]
-                    if this.onBalloonClose: this.onBalloonClose(this, EventArgs())
-                    if this.mResetIcon: this._resetIconInternal()
+                    if this.onBalloonClose: this.onBalloonClose(this, GEA)
+                    if this._resetIcon: this._resetIconInternal()
 
                 case con.NIN_BALLOONUSERCLICK:
                     this = trayDict[hw]
-                    if this.onBalloonClick: this.onBalloonClick(this, EventArgs())
-                    if this.mResetIcon: this._resetIconInternal()
+                    if this.onBalloonClick: this.onBalloonClick(this, GEA)
+                    if this._resetIcon: this._resetIconInternal()
 
                 case con.WM_LBUTTONDOWN:
                     this = trayDict[hw]
-                    if this.onLeftMouseDown: this.onLeftMouseDown(this, EventArgs())
+                    if this.onLeftMouseDown: this.onLeftMouseDown(this, GEA)
 
                 case con.WM_LBUTTONUP:
                     this = trayDict[hw]
-                    if this.onLeftMouseUp: this.onLeftMouseUp(this, EventArgs())
-                    if this.onLeftClick: this.onLeftClick(this, EventArgs())
+                    if this.onLeftMouseUp: this.onLeftMouseUp(this, GEA)
+                    if this.onLeftClick: this.onLeftClick(this, GEA)
                     if this._cmenuUsed and (this._trig and 1) == 1: 
                         this._cmenu.showMenu(0)
 
                 case con.WM_LBUTTONDBLCLK:
                     this = trayDict[hw]
-                    if this.onLeftDoubleClick: this.onLeftDoubleClick(this, EventArgs())
+                    if this.onLeftDoubleClick: this.onLeftDoubleClick(this, GEA)
                     if this._cmenuUsed and (this._trig and 2) == 2:
                         this._cmenu.showMenu(0)
 
                 case con.WM_RBUTTONDOWN:
                     this = trayDict[hw]
-                    if this.onRightMouseDown: this.onRightMouseDown(this, EventArgs())
+                    if this.onRightMouseDown: this.onRightMouseDown(this, GEA)
 
                 case con.WM_RBUTTONUP:
                     this = trayDict[hw]
-                    if this.onRightMouseUp: this.onRightMouseUp(this, EventArgs())
-                    if this.onRightClick: this.onRightClick(this, EventArgs())
+                    if this.onRightMouseUp: this.onRightMouseUp(this, GEA)
+                    if this.onRightClick: this.onRightClick(this, GEA)
                     if this._cmenuUsed and (this._trig and 4) == 4:
                         this._cmenu.showMenu(0)
 
                 case con.WM_MOUSEMOVE:
                     this = trayDict[hw]
-                    if this.onMouseMove: this.onMouseMove(this, EventArgs())
+                    if this.onMouseMove: this.onMouseMove(this, GEA)
 
     return DefWindowProc(hw, message, wParam, lParam)
 
@@ -90,6 +89,13 @@ class TrayIcon:
                  "onRightClick", "onLeftDoubleClick")
     
     def __init__(self, tooltip, iconpath = ""):
+        """
+        Creates TrayIcon class.
+        Parameters
+            tooltip(str) : Text to be displayed as a tool tip when mouse 
+                            hover over the tray icon.
+            iconpath(str): A file path to an icon.
+        """
         self._resetIcon = False
         self._cmenuUsed = False
         self._retainIcon = False
@@ -98,7 +104,6 @@ class TrayIcon:
         self._msgHwnd = None
         self._cmenu = None
         self.userData = None
-        self._nid = NOTIFYICONDATA()
 
         self.onBalloonShow = None
         self.onBalloonClose = None
@@ -115,23 +120,64 @@ class TrayIcon:
         self._iconpath = iconpath
         self._createMsgWindow()
         if iconpath == "":
-            self._hTrayIcon = LoadIcon(None, LPCWSTR(con.IDI_SHIELD))
+            self._hTrayIcon = LoadIcon(None, LPCWSTR(con.IDI_INFO))
         else:
-            self._hTrayIcon = LoadImage(None, iconpath, con.IMAGE_ICON, 0, 0, con.LIMG_FLAG)
-            if not self._hTrayIcon:
-                self._hTrayIcon = LoadIcon(None, LPCWSTR(con.IDI_SHIELD))
-                print("Can't create the icon")
+            self._hTrayIcon = (LoadImage(None, iconpath, con.IMAGE_ICON, 0, 0, con.LIMG_FLAG)  
+                                or LoadIcon(None, LPCWSTR(con.IDI_INFO)))
         #------------------------------------------
+        self._nid = NOTIFYICONDATA()
         self._nid.cbSize = sizeof(NOTIFYICONDATA)
         self._nid.hWnd = self._msgHwnd
-        self._nid.uID = TrayIcon._trayID
-        self._nid.uVersionOrTimeout = 4
+        self._nid.uID = TrayIcon._trayID            
         self._nid.uFlags = con.NIF_ICON | con.NIF_MESSAGE | con.NIF_TIP
         self._nid.uCallbackMessage = MyMessages.MM_TRAY_MSG
         self._nid.hIcon = self._hTrayIcon  
-        self._nid.toolTipText = self._tooltip
+        self._nid.szTip = self._tooltip
+        self._nid.uVerOrTime.uVersion = 4         
         Shell_NotifyIcon(con.NIM_ADD, byref(self._nid))
         TrayIcon._trayID += 1
+        
+
+
+    def showBalloon(self, title, message, timeout, noSound=False, 
+                    icon = BalloonIcon.INFO, iconpath=""):
+        """
+        Shows a balloon notification on system tray.
+        Parameters:
+            title(str)   : Title of the balloon.
+            message(str) : Message to be shown in balloon.
+            timeout(int) : The time in milliseconds to display the balloon notification.
+            noSound(bool): If True, the system default notification sound will be **suppressed**.
+                            If False, the system will play its default sound when the balloon appears.
+            icon(BalloonIcon enum): The icon to be shown in balloon. Possible
+                                    values are, NONE, INFO, WARNING, ERROR, CUSTOM.
+                                    Default is **INFO**. If you choose **CUSTOM**, 
+                                    you must provide a valid icon file path in 'iconpath'.
+            iconpath(str): File path to an icon, this works only if user choose
+                            BalloonIcon.CUSTOM for parameter 'icon'. 
+        """
+        
+        self._nid.uFlags = con.NIF_ICON|con.NIF_MESSAGE|con.NIF_TIP|con.NIF_INFO
+        self._nid.szInfoTitle = title
+        self._nid.szInfo = message
+        if icon == BalloonIcon.CUSTOM and iconpath != "":
+            self._nid.hIcon =  LoadImage(None, iconpath, con.IMAGE_ICON, 0, 0, con.LIMG_FLAG)
+            if self._nid.hIcon == None : 
+                self._nid.hIcon = self.mhTrayIcon
+            else:
+                # We successfully created an icon handle from 'iconpath' parameter.
+                # So, for this balloon, we will show this icon. But We need to... 
+                # ...reset the old icon after this balloon vanished. 
+                # Otherwise, from now on we need to use this icon in Balloons and tray.
+                self._resetIcon = True
+            #------------------------
+        #----------------------------
+        self._nid.dwInfoFlags = icon
+        self._nid.uVerOrTime.uTimeout = timeout
+        if noSound: self._nid.dwInfoFlags = self._nid.dwInfoFlags|con.NIIF_NOSOUND
+        Shell_NotifyIcon(con.NIM_MODIFY, byref(self._nid))
+        self._nid.dwInfoFlags = 0
+        self._nid.uFlags = 0
 
 
     def _createMsgWindow(self):
@@ -145,20 +191,47 @@ class TrayIcon:
             # Storing the handle in global list so that we can destroy the window later.
             trayDict[self._msgHwnd] = self
             StaticData.trayHandles.append(self._msgHwnd)
-        print(f"{self._msgHwnd = }")
+        # print(f"{self._msgHwnd = }")
 
-    
 
-    
+    def _destroyMsgWindow(self):
+        x = DestroyWindow(self._msgHwnd)
+        if x:
+            StaticData.trayHandles.remove(self._msgHwnd)
+            # print("_destroyMsgWindow worked")
 
+       
     def _resetIconInternal(self):
-        self._nid.uFlags = con.NIF_ICON | con.NIF_MESSAGE | con.NIF_TIP
+        self._nid.uFlags = con.NIF_ICON|con.NIF_MESSAGE|con.NIF_TIP
         self._nid.hIcon = self._hTrayIcon
         Shell_NotifyIcon(con.NIM_MODIFY, byref(self._nid))
         self._resetIcon = False # Revert to the default state
+        # print("reset work")
 
 
     def finalize(self):
         Shell_NotifyIcon(con.NIM_DELETE, byref(self._nid))
         if self._hTrayIcon: DestroyIcon(self._hTrayIcon)
 
+
+def trayBalloon(title, message, timeout, noSound=False, 
+                    icon = BalloonIcon.INFO, iconpath=""):
+    """
+    Shows a balloon notification on system tray.
+    Parameters:
+        title(str)   : Title of the balloon.
+        message(str) : Message to be shown in balloon.
+        timeout(int) : The time in milliseconds to display the balloon notification.
+        noSound(bool): If True, the system default notification sound will be **suppressed**.
+                        If False, the system will play its default sound when the balloon appears.
+        icon(BalloonIcon enum): The icon to be shown in balloon. Possible
+                                values are, NONE, INFO, WARNING, ERROR, CUSTOM.
+                                Default is **INFO**. If you choose **CUSTOM**, 
+                                you must provide a valid icon file path in 'iconpath'.
+        iconpath(str): File path to an icon, this works only if user choose
+                        BalloonIcon.CUSTOM for parameter 'icon'. 
+    """
+    ti = TrayIcon("PyForms Tray Balloon", iconpath)
+    ti.onBalloonClose = lambda x, y: x._destroyMsgWindow()
+    ti.showBalloon(title, message, timeout, noSound, icon, iconpath)
+    

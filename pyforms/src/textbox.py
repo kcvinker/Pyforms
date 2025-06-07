@@ -7,7 +7,7 @@ from pyforms.src.apis import SUBCLASSPROC
 import pyforms.src.apis as api
 from pyforms.src.colors import Color
 import pyforms.src.constants as con
-from pyforms.src.events import EventArgs
+from pyforms.src.events import GEA
 from ctypes import addressof
 # from . import winmsgs
 
@@ -185,7 +185,7 @@ def tbWndProc(hw, msg, wp, lp, scID, refData):
             ncode = api.HIWORD(wp)
             # print(f"{ncode = }")
             if ncode == con.EN_CHANGE:
-                if tb.onTextChanged: tb.onTextChanged(tb, EventArgs())
+                if tb.onTextChanged: tb.onTextChanged(tb, GEA)
 
         case MyMessages.LABEL_COLOR:
             return tb._bkgBrush

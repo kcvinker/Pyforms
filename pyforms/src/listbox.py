@@ -5,7 +5,7 @@ from pyforms.src.control import Control
 import pyforms.src.constants as con
 from pyforms.src.commons import MyMessages
 from pyforms.src.enums import ControlType
-from pyforms.src.events import EventArgs
+from pyforms.src.events import GEA
 from pyforms.src.apis import LRESULT, SUBCLASSPROC
 import pyforms.src.apis as api
 from pyforms.src.colors import COLOR_WHITE
@@ -319,10 +319,10 @@ def lbxWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             ncode = api.HIWORD(wp)
             match ncode:
                 case con.LBN_DBLCLK:
-                    if lbx.onDoubleClick: lbx.onDoubleClick(lbx, EventArgs())
+                    if lbx.onDoubleClick: lbx.onDoubleClick(lbx, GEA)
                 case con.LBN_SELCHANGE:
 
-                    if lbx.onSelectionChanged: lbx.onSelectionChanged(lbx, EventArgs())
+                    if lbx.onSelectionChanged: lbx.onSelectionChanged(lbx, GEA)
 
         case con.WM_SETFOCUS: lbx._gotFocusHandler()
         case con.WM_KILLFOCUS: lbx._lostFocusHandler()

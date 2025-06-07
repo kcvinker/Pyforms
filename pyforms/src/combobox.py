@@ -6,7 +6,7 @@ from pyforms.src.control import Control
 import pyforms.src.constants as con
 from pyforms.src.commons import MyMessages, getMousePosOnMsg, pointInRect
 from pyforms.src.enums import ControlType
-from pyforms.src.events import EventArgs
+from pyforms.src.events import GEA
 from pyforms.src.apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, COMBOBOXINFO, WPARAM, LPARAM, SUBCLASSPROC
 import pyforms.src.apis as api
 from pyforms.src.colors import COLOR_WHITE
@@ -286,19 +286,19 @@ def cmbWndProc(hw, msg, wp, lp, scID, refData):
             ncode = api.HIWORD(wp)
             match ncode:
                 case con.CBN_SELCHANGE:
-                    if cmb.onSelectionChanged: cmb.onSelectionChanged(cmb, EventArgs())
+                    if cmb.onSelectionChanged: cmb.onSelectionChanged(cmb, GEA)
                 case con.CBN_EDITCHANGE:
-                    if cmb.onTextChanged: cmb.onTextChanged(cmb, EventArgs())
+                    if cmb.onTextChanged: cmb.onTextChanged(cmb, GEA)
                 case con.CBN_EDITUPDATE:
-                    if cmb.onTextUpdated: cmb.onTextUpdated(cmb, EventArgs())
+                    if cmb.onTextUpdated: cmb.onTextUpdated(cmb, GEA)
                 case con.CBN_DROPDOWN:
-                    if cmb.onListOpened: cmb.onListOpened(cmb, EventArgs())
+                    if cmb.onListOpened: cmb.onListOpened(cmb, GEA)
                 case con.CBN_CLOSEUP:
-                    if cmb.onListClosed: cmb.onListClosed(cmb, EventArgs())
+                    if cmb.onListClosed: cmb.onListClosed(cmb, GEA)
                 case con.CBN_SELENDOK:
-                    if cmb.onSelectionCommitted: cmb.onSelectionCommitted(cmb, EventArgs())
+                    if cmb.onSelectionCommitted: cmb.onSelectionCommitted(cmb, GEA)
                 case con.CBN_SELENDCANCEL:
-                    if cmb.onSelectionCancelled: cmb.onSelectionCancelled(cmb, EventArgs())
+                    if cmb.onSelectionCancelled: cmb.onSelectionCancelled(cmb, GEA)
 
         case con.WM_SETFOCUS: cmb._gotFocusHandler()
         case con.WM_KILLFOCUS: cmb._lostFocusHandler()
