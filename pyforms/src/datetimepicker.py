@@ -37,8 +37,6 @@ class DateTimePicker(Control):
         self._ctlType = ControlType.DATE_TIME_PICKER
         self._parent = parent
         self._bgColor = Color(0xFFFFFF)
-        # self._fgColor = Color(0x000000) # Not needed, since Control's init function is doing this.
-        # self._font = parent._font
         self._font.colneFrom(parent._font)
         self._width = 0
         self._height = 0
@@ -270,13 +268,13 @@ class DateTimePicker(Control):
 @SUBCLASSPROC
 def dtpWndProc(hw, msg, wp, lp, scID, refData):
     # printWinMsg(msg)
-    dtp = dtpDict[hw]
     match msg:
         case con.WM_DESTROY:
             api.RemoveWindowSubclass(hw, dtpWndProc, scID)
             del dtpDict[hw]
 
         case MyMessages.CTRL_NOTIFY:
+            dtp = dtpDict[hw]
             nm = cast(lp, LPNMHDR).contents
             match nm.code:
                 case con.DTN_USERSTRINGW:
@@ -310,14 +308,32 @@ def dtpWndProc(hw, msg, wp, lp, scID, refData):
                             dtp.onValueChanged(dtp, GEA)
                             return 0
 
-        case con.WM_SETFOCUS: dtp._gotFocusHandler()
-        case con.WM_KILLFOCUS: dtp._lostFocusHandler()
-        case con.WM_LBUTTONDOWN: dtp._leftMouseDownHandler(msg, wp, lp)
-        case con.WM_LBUTTONUP: dtp._leftMouseUpHandler(msg, wp, lp)
-        case con.WM_RBUTTONDOWN: dtp._rightMouseDownHandler(msg, wp, lp)
-        case con.WM_RBUTTONUP: dtp._rightMouseUpHandler(msg, wp, lp)
-        case con.WM_MOUSEWHEEL: dtp._mouseWheenHandler(msg, wp, lp)
-        case con.WM_MOUSEMOVE: dtp._mouseMoveHandler(msg, wp, lp)
-        case con.WM_MOUSELEAVE: dtp._mouseLeaveHandler()
+        case con.WM_SETFOCUS: 
+            dtp = dtpDict[hw]
+            dtp._gotFocusHandler()
+        case con.WM_KILLFOCUS: 
+            dtp = dtpDict[hw]
+            dtp._lostFocusHandler()
+        case con.WM_LBUTTONDOWN: 
+            dtp = dtpDict[hw]
+            dtp._leftMouseDownHandler(msg, wp, lp)
+        case con.WM_LBUTTONUP: 
+            dtp = dtpDict[hw]
+            dtp._leftMouseUpHandler(msg, wp, lp)
+        case con.WM_RBUTTONDOWN: 
+            dtp = dtpDict[hw]
+            dtp._rightMouseDownHandler(msg, wp, lp)
+        case con.WM_RBUTTONUP: 
+            dtp = dtpDict[hw]
+            dtp._rightMouseUpHandler(msg, wp, lp)
+        case con.WM_MOUSEWHEEL: 
+            dtp = dtpDict[hw]
+            dtp._mouseWheenHandler(msg, wp, lp)
+        case con.WM_MOUSEMOVE: 
+            dtp = dtpDict[hw]
+            dtp._mouseMoveHandler(msg, wp, lp)
+        case con.WM_MOUSELEAVE: 
+            dtp = dtpDict[hw]
+            dtp._mouseLeaveHandler()
 
     return api.DefSubclassProc(hw, msg, wp, lp)

@@ -27,7 +27,6 @@ class ProgressBar(Control):
         self.name = f"ProgressBar_{ProgressBar._count}"
         self._ctlType = ControlType.PROGRESS_BAR
         self._parent = parent
-        # self._fgColor = Color(0x000000) # Control class is taking care of this
         self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
@@ -98,20 +97,23 @@ class ProgressBar(Control):
         ss = api.SIZE()
         perc = (self._value / self._maxValue) * 100
         if self._deciPrec == 0:
-            formattedPerc = int(perc)
+            formattedPerc = str(int(perc))
         else:
-            formatStr = "{:.%df}" % self._deciPrec
+            formatStr = f"{{:.{self._deciPrec}f}}"
             formattedPerc = formatStr.format(perc)
+
         txt = f"{formattedPerc}%"
         hdc = api.GetDC(self._hwnd)
-        api.SelectObject(hdc, self._font._handle)
-        api.GetTextExtentPoint32(hdc, txt, len(txt), byref(ss))
-        x = (self._width - ss.cx) // 2
-        y = (self._height - ss.cy) // 2
-        api.SetBkMode(hdc, con.TRANSPARENT)
-        api.SetTextColor(hdc, self._fgColor.ref)
-        api.TextOut(hdc, x, y, txt, len(txt) )
-        api.ReleaseDC(self._hwnd, hdc)
+        try:
+            api.SelectObject(hdc, self._font._handle)
+            api.GetTextExtentPoint32(hdc, txt, len(txt), byref(ss))
+            x = (self._width - ss.cx) // 2
+            y = (self._height - ss.cy) // 2
+            api.SetBkMode(hdc, con.TRANSPARENT)
+            api.SetTextColor(hdc, self._fgColor.ref)
+            api.TextOut(hdc, x, y, txt, len(txt) )
+        finally:
+            api.ReleaseDC(self._hwnd, hdc)
 
 
     # -endregion Private funcs
@@ -218,22 +220,40 @@ class ProgressBar(Control):
 @SUBCLASSPROC
 def pgbWndProc(hw, msg, wp, lp, scID, refData):
     # log_msg(msg)
-    pgb = pgbDict[hw]
     match msg:
         case con.WM_DESTROY:
             api.RemoveWindowSubclass(hw, pgbWndProc, scID)
             del pgbDict[hw]
 
-        case con.WM_SETFOCUS: pgb._gotFocusHandler()
-        case con.WM_KILLFOCUS: pgb._lostFocusHandler()
-        case con.WM_LBUTTONDOWN: pgb._leftMouseDownHandler(msg, wp, lp)
-        case con.WM_LBUTTONUP: pgb._leftMouseUpHandler(msg, wp, lp)
-        case con.WM_RBUTTONDOWN: pgb._rightMouseDownHandler(msg, wp, lp)
-        case con.WM_RBUTTONUP: pgb._rightMouseUpHandler(msg, wp, lp)
-        case con.WM_MOUSEWHEEL: pgb._mouseWheenHandler(msg, wp, lp)
-        case con.WM_MOUSEMOVE: pgb._mouseMoveHandler(msg, wp, lp)
-        case con.WM_MOUSELEAVE: pgb._mouseLeaveHandler()
+        case con.WM_SETFOCUS: 
+            pgb = pgbDict[hw]
+            pgb._gotFocusHandler()
+        case con.WM_KILLFOCUS: 
+            pgb = pgbDict[hw]
+            pgb._lostFocusHandler()
+        case con.WM_LBUTTONDOWN: 
+            pgb = pgbDict[hw]
+            pgb._leftMouseDownHandler(msg, wp, lp)
+        case con.WM_LBUTTONUP: 
+            pgb = pgbDict[hw]
+            pgb._leftMouseUpHandler(msg, wp, lp)
+        case con.WM_RBUTTONDOWN: 
+            pgb = pgbDict[hw]
+            pgb._rightMouseDownHandler(msg, wp, lp)
+        case con.WM_RBUTTONUP: 
+            pgb = pgbDict[hw]
+            pgb._rightMouseUpHandler(msg, wp, lp)
+        case con.WM_MOUSEWHEEL: 
+            pgb = pgbDict[hw]
+            pgb._mouseWheenHandler(msg, wp, lp)
+        case con.WM_MOUSEMOVE: 
+            pgb = pgbDict[hw]
+            pgb._mouseMoveHandler(msg, wp, lp)
+        case con.WM_MOUSELEAVE: 
+            pgb = pgbDict[hw]
+            pgb._mouseLeaveHandler()
         case con.WM_PAINT:
+            pgb = pgbDict[hw]
             ret = api.DefSubclassProc(hw, msg, wp, lp)
             if pgb._percentage and pgb._barStyle != ProgressBarStyle.MARQUEE_STYLE:
                 pgb._drawPercentage()

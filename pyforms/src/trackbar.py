@@ -654,8 +654,6 @@ class TicData:
 @SUBCLASSPROC # This decorator is essential.
 def trkWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     # log_msg(msg)
-    trk = trkDict[hw]
-
     match msg:
         case con.WM_DESTROY:
             api.RemoveWindowSubclass(hw, trkWndProc, scID)
@@ -663,6 +661,7 @@ def trkWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
 
         case MyMessages.HORI_SCROLL | MyMessages.VERT_SCROLL:
             lwp = api.LOWORD(wp)
+            trk = trkDict[hw]
             match lwp:
                 case con.TB_THUMBPOSITION:
                     # Thumb dragging finished. Let's collect the value
@@ -729,10 +728,12 @@ def trkWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
 
         case MyMessages.LABEL_COLOR:
             # api.SetBkColor(wp, trk._bgColor.ref)
+            trk = trkDict[hw]
             return trk._bkgBrush
 
         case MyMessages.CTRL_NOTIFY:
             nmh = cast(lp, api.LPNMHDR)[0]
+            trk = trkDict[hw]
             match nmh.code:
                 case con.NM_CUSTOMDRAW:
                     if trk._custDraw:
@@ -770,19 +771,35 @@ def trkWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                     return con.CDRF_DODEFAULT
             return 0 #api.DefSubclassProc(hw, msg, wp, lp)
 
-        case con.WM_SETFOCUS: trk._gotFocusHandler()
-        case con.WM_KILLFOCUS: trk._lostFocusHandler()
+        case con.WM_SETFOCUS: 
+            trk = trkDict[hw]
+            trk._gotFocusHandler()
+        case con.WM_KILLFOCUS: 
+            trk = trkDict[hw]
+            trk._lostFocusHandler()
         case con.WM_LBUTTONDOWN:
+            trk = trkDict[hw]
             trk._lbDown = True
             trk._leftMouseDownHandler(msg, wp, lp)
         case con.WM_LBUTTONUP:
+            trk = trkDict[hw]
             trk._lbDown = False
             trk._leftMouseUpHandler(msg, wp, lp)
-        case con.WM_RBUTTONDOWN: trk._rightMouseDownHandler(msg, wp, lp)
-        case con.WM_RBUTTONUP: trk._rightMouseUpHandler(msg, wp, lp)
-        case con.WM_MOUSEWHEEL: trk._mouseWheenHandler(msg, wp, lp)
-        case con.WM_MOUSEMOVE: trk._mouseMoveHandler(msg, wp, lp)
-        case con.WM_MOUSELEAVE: trk._mouseLeaveHandler()
+        case con.WM_RBUTTONDOWN: 
+            trk = trkDict[hw]
+            trk._rightMouseDownHandler(msg, wp, lp)
+        case con.WM_RBUTTONUP: 
+            trk = trkDict[hw]
+            trk._rightMouseUpHandler(msg, wp, lp)
+        case con.WM_MOUSEWHEEL: 
+            trk = trkDict[hw]
+            trk._mouseWheenHandler(msg, wp, lp)
+        case con.WM_MOUSEMOVE: 
+            trk = trkDict[hw]
+            trk._mouseMoveHandler(msg, wp, lp)
+        case con.WM_MOUSELEAVE: 
+            trk = trkDict[hw]
+            trk._mouseLeaveHandler()
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 

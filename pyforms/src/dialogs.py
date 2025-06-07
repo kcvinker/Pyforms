@@ -72,7 +72,11 @@ class DialogBase:
 # 2. isOpen - bool
 # 3. hwnd - HWND (A window handle)
 def _showDialogHelper(obj, isOpen, hwnd):
-    maxArrSize = 32768 + 256 * 100 + 1
+    if isOpen and obj._multiSel:
+        maxArrSize = 32768 + 256 * 100 + 1
+    else:
+        maxArrSize = MAX_PATH + 1
+    
     ofn = OPENFILENAMEW()
     ofn.hwndOwner = hwnd
     buffer = create_unicode_buffer(maxArrSize)

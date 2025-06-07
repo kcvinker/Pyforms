@@ -582,7 +582,7 @@ class ContextMenu(MenuBase):
         api.DeleteObject(self._borderBrush)
         api.DeleteObject(self._grayBrush)
 
-        print("Destroying context menu")
+        # print("Destroying context menu")
         DestroyMenu(self._handle)
 
 

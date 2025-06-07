@@ -53,6 +53,7 @@ class ListBox(Control):
         self.onSelectionChanged = None
         self.onDoubleClick = None
         self._hwnd = None
+        self._bkgBrush = api.CreateSolidBrush(self._bgColor.ref)
         parent._controls.append(self)
         ListBox._count += 1
         if parent.createChilds: self.createHandle()
@@ -300,22 +301,24 @@ class ListBox(Control):
 @SUBCLASSPROC
 def lbxWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     # printWinMsg(msg)
-    lbx = lbxDict[hw]
     match msg:
         case con.WM_DESTROY:
             api.RemoveWindowSubclass(hw, lbxWndProc, scID)
             del lbxDict[hw]
 
         case MyMessages.LIST_COLOR:
+            lbx = lbxDict[hw]
             if lbx._drawFlag:
                 api.SetBkMode(wp, 1) # Transparent mode
                 # api.SetBkColor(wp, lbx._bgColor.ref)
                 if lbx._drawFlag & 1: api.SetTextColor(wp, lbx._fgColor.ref)
-                return LRESULT(api.CreateSolidBrush(lbx._bgColor.ref))
-            else:
-                return api.GetStockObject(con.WHITE_BRUSH)
-
+                # return lbx._bkgBrush # LRESULT(api.CreateSolidBrush(lbx._bgColor.ref))
+            # else:
+                # return api.GetStockObject(con.WHITE_BRUSH)
+            return lbx._bkgBrush
+        
         case MyMessages.CTL_COMMAND:
+            lbx = lbxDict[hw]
             ncode = api.HIWORD(wp)
             match ncode:
                 case con.LBN_DBLCLK:
@@ -324,14 +327,32 @@ def lbxWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
 
                     if lbx.onSelectionChanged: lbx.onSelectionChanged(lbx, GEA)
 
-        case con.WM_SETFOCUS: lbx._gotFocusHandler()
-        case con.WM_KILLFOCUS: lbx._lostFocusHandler()
-        case con.WM_LBUTTONDOWN: lbx._leftMouseDownHandler(msg, wp, lp)
-        case con.WM_LBUTTONUP: lbx._leftMouseUpHandler(msg, wp, lp)
-        case con.WM_RBUTTONDOWN: lbx._rightMouseDownHandler(msg, wp, lp)
-        case con.WM_RBUTTONUP: lbx._rightMouseUpHandler(msg, wp, lp)
-        case con.WM_MOUSEWHEEL: lbx._mouseWheenHandler(msg, wp, lp)
-        case con.WM_MOUSEMOVE: lbx._mouseMoveHandler(msg, wp, lp)
-        case con.WM_MOUSELEAVE: lbx._mouseLeaveHandler()
+        case con.WM_SETFOCUS: 
+            lbx = lbxDict[hw]
+            lbx._gotFocusHandler()
+        case con.WM_KILLFOCUS: 
+            lbx = lbxDict[hw]
+            lbx._lostFocusHandler()
+        case con.WM_LBUTTONDOWN: 
+            lbx = lbxDict[hw]
+            lbx._leftMouseDownHandler(msg, wp, lp)
+        case con.WM_LBUTTONUP: 
+            lbx = lbxDict[hw]
+            lbx._leftMouseUpHandler(msg, wp, lp)
+        case con.WM_RBUTTONDOWN: 
+            lbx = lbxDict[hw]
+            lbx._rightMouseDownHandler(msg, wp, lp)
+        case con.WM_RBUTTONUP: 
+            lbx = lbxDict[hw]
+            lbx._rightMouseUpHandler(msg, wp, lp)
+        case con.WM_MOUSEWHEEL: 
+            lbx = lbxDict[hw]
+            lbx._mouseWheenHandler(msg, wp, lp)
+        case con.WM_MOUSEMOVE: 
+            lbx = lbxDict[hw]
+            lbx._mouseMoveHandler(msg, wp, lp)
+        case con.WM_MOUSELEAVE: 
+            lbx = lbxDict[hw]
+            lbx._mouseLeaveHandler()
 
     return api.DefSubclassProc(hw, msg, wp, lp)

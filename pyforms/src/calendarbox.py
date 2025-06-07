@@ -38,7 +38,6 @@ class CalendarBox(Control):
         self._ctlType = ControlType.CALENDAR_BOX
         self._parent = parent
         self._bgColor = Color(parent._bgColor)
-        # self._font = parent._font
         self._width = 0
         self._height = 0
         self._xpos = xpos
@@ -81,7 +80,8 @@ class CalendarBox(Control):
             api.SendMessage(self._hwnd, con.MCM_GETMINREQRECT, 0, addressof(rc))
             self._width = rc.right
             self._height = rc.bottom
-            api.SetWindowPos(self._hwnd, None, self._xpos, self._ypos, rc.right, rc.bottom, con.SWP_NOZORDER)
+            api.SetWindowPos(self._hwnd, None, self._xpos, self._ypos, 
+                             rc.right, rc.bottom, con.SWP_NOZORDER)
 
             # Get current selection from Calendar
             st = api.SYSTEMTIME()
@@ -99,7 +99,8 @@ class CalendarBox(Control):
         if self._shortDateNames: self._styles |= con.MCS_SHORTDAYSOFWEEK
 
     def _setValue(self, st):
-        self._value = datetime(st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds)
+        self._value = datetime(st.wYear, st.wMonth, st.wDay, st.wHour, 
+                               st.wMinute, st.wSecond, st.wMilliseconds)
 
     # -endregion Private funcs
 
@@ -112,7 +113,8 @@ class CalendarBox(Control):
     def value(self, value: datetime):
         self._value = value
         st = self._makeSysTime(value)
-        if self._isCreated: api.SendMessage(self._hwnd, con.MCM_SETCURSEL, 0, addressof(st))
+        if self._isCreated: api.SendMessage(self._hwnd, con.MCM_SETCURSEL, 
+                                            0, addressof(st))
     #----------------------------------------------------1
 
     @property
@@ -121,7 +123,9 @@ class CalendarBox(Control):
     @viewMode.setter
     def viewMode(self, value: ViewMode):
         self._viewMode = value
-        if self._isCreated: api.SendMessage(self._hwnd, con.MCM_SETCURRENTVIEW, 0, self._viewMode.value)
+        if self._isCreated: api.SendMessage(self._hwnd, 
+                                            con.MCM_SETCURRENTVIEW, 0, 
+                                            self._viewMode.value)
     #----------------------------------------------------2
 
     @property
@@ -174,13 +178,14 @@ class CalendarBox(Control):
 @SUBCLASSPROC
 def calWndProc(hw, msg, wp, lp, scID, refData):
     # printWinMsg(msg)
-    cal = calDict[hw]
     match msg:
         case con.WM_DESTROY:
+            cal = calDict[hw]
             api.RemoveWindowSubclass(hw, calWndProc, scID)
             del calDict[hw]
 
         case MyMessages.CTRL_NOTIFY:
+            cal = calDict[hw]
             nm = cast(lp, LPNMHDR).contents
             match nm.code:
                 case con.MCN_SELECT: # 4294966550
@@ -198,14 +203,32 @@ def calWndProc(hw, msg, wp, lp, scID, refData):
                     cal._oldView = ViewMode(nmv.dwOldView)
                     if cal.onViewChanged: cal.onViewChanged(cal, GEA)
 
-        case con.WM_SETFOCUS: cal._gotFocusHandler()
-        case con.WM_KILLFOCUS: cal._lostFocusHandler()
-        case con.WM_LBUTTONDOWN: cal._leftMouseDownHandler(msg, wp, lp)
-        case con.WM_LBUTTONUP: cal._leftMouseUpHandler(msg, wp, lp)
-        case con.WM_RBUTTONDOWN: cal._rightMouseDownHandler(msg, wp, lp)
-        case con.WM_RBUTTONUP: cal._rightMouseUpHandler(msg, wp, lp)
-        case con.WM_MOUSEWHEEL: cal._mouseWheenHandler(msg, wp, lp)
-        case con.WM_MOUSEMOVE: cal._mouseMoveHandler(msg, wp, lp)
-        case con.WM_MOUSELEAVE: cal._mouseLeaveHandler()
+        case con.WM_SETFOCUS: 
+            cal = calDict[hw]
+            cal._gotFocusHandler()
+        case con.WM_KILLFOCUS: 
+            cal = calDict[hw]
+            cal._lostFocusHandler()
+        case con.WM_LBUTTONDOWN: 
+            cal = calDict[hw]
+            cal._leftMouseDownHandler(msg, wp, lp)
+        case con.WM_LBUTTONUP: 
+            cal = calDict[hw]
+            cal._leftMouseUpHandler(msg, wp, lp)
+        case con.WM_RBUTTONDOWN: 
+            cal = calDict[hw]
+            cal._rightMouseDownHandler(msg, wp, lp)
+        case con.WM_RBUTTONUP: 
+            cal = calDict[hw]
+            cal._rightMouseUpHandler(msg, wp, lp)
+        case con.WM_MOUSEWHEEL: 
+            cal = calDict[hw]
+            cal._mouseWheenHandler(msg, wp, lp)
+        case con.WM_MOUSEMOVE: 
+            cal = calDict[hw]
+            cal._mouseMoveHandler(msg, wp, lp)
+        case con.WM_MOUSELEAVE: 
+            cal = calDict[hw]
+            cal._mouseLeaveHandler()
 
     return api.DefSubclassProc(hw, msg, wp, lp)

@@ -180,27 +180,44 @@ class Label(Control):
 @SUBCLASSPROC
 def lbWndProc(hw, msg, wp, lp, scID, refData):
     # printWinMsg(msg)
-    lb = lbDict[hw]
     match msg:
         case con.WM_DESTROY:
-            api.RemoveWindowSubclass(hw, lbWndProc, scID)
-            
+            api.RemoveWindowSubclass(hw, lbWndProc, scID)            
             del lbDict[hw]
 
         case MyMessages.LABEL_COLOR:
+            lb = lbDict[hw]
             if lb._drawFlag & 1: api.SetTextColor(wp, lb._fgColor.ref)
             api.SetBkColor(wp, lb._bgColor.ref)
             return lb._bkgBrush
 
-        case con.WM_SETFOCUS: lb._gotFocusHandler()
-        case con.WM_KILLFOCUS: lb._lostFocusHandler()
-        case con.WM_LBUTTONDOWN: lb._leftMouseDownHandler(msg, wp, lp)
-        case con.WM_LBUTTONUP: lb._leftMouseUpHandler(msg, wp, lp)
-        case con.WM_RBUTTONDOWN: lb._rightMouseDownHandler(msg, wp, lp)
-        case con.WM_RBUTTONUP: lb._rightMouseUpHandler(msg, wp, lp)
-        case con.WM_MOUSEWHEEL: lb._mouseWheenHandler(msg, wp, lp)
-        case con.WM_MOUSEMOVE: lb._mouseMoveHandler(msg, wp, lp)
-        case con.WM_MOUSELEAVE: lb._mouseLeaveHandler()
+        case con.WM_SETFOCUS: 
+            lb = lbDict[hw]
+            lb._gotFocusHandler()
+        case con.WM_KILLFOCUS: 
+            lb = lbDict[hw]
+            lb._lostFocusHandler()
+        case con.WM_LBUTTONDOWN: 
+            lb = lbDict[hw]
+            lb._leftMouseDownHandler(msg, wp, lp)
+        case con.WM_LBUTTONUP: 
+            lb = lbDict[hw]
+            lb._leftMouseUpHandler(msg, wp, lp)
+        case con.WM_RBUTTONDOWN: 
+            lb = lbDict[hw]
+            lb._rightMouseDownHandler(msg, wp, lp)
+        case con.WM_RBUTTONUP: 
+            lb = lbDict[hw]
+            lb._rightMouseUpHandler(msg, wp, lp)
+        case con.WM_MOUSEWHEEL: 
+            lb = lbDict[hw]
+            lb._mouseWheenHandler(msg, wp, lp)
+        case con.WM_MOUSEMOVE: 
+            lb = lbDict[hw]
+            lb._mouseMoveHandler(msg, wp, lp)
+        case con.WM_MOUSELEAVE: 
+            lb = lbDict[hw]
+            lb._mouseLeaveHandler()
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 

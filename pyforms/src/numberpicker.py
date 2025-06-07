@@ -68,6 +68,7 @@ class NumberPicker(Control):
         self._linex = 0
         self._destroyCount = 0
         self._hwnd = None
+        self._bkgBrush = api.CreateSolidBrush(self._bgColor.ref)
         parent._controls.append(self)
 
         #Events
@@ -228,7 +229,8 @@ class NumberPicker(Control):
         """Set minimum value of NumberPicker's range"""
         self._minRange = value
         if self._isCreated:
-            api.SendMessage(self._hwnd, con.UDM_SETRANGE32, int(self._minRange), int(self._maxRange))
+            api.SendMessage(self._hwnd, con.UDM_SETRANGE32, 
+                            int(self._minRange), int(self._maxRange))
         else:
             self._value = value
     #----------------------------------------------------------------------------------------[2]
@@ -242,28 +244,33 @@ class NumberPicker(Control):
     def maxRange(self, value: int | float):
         """Set maximum value of NumberPicker's range"""
         self._maxRange = value
-        api.SendMessage(self._hwnd, con.UDM_SETRANGE32, int(self._minRange), int(self._maxRange))
+        api.SendMessage(self._hwnd, con.UDM_SETRANGE32, 
+                        int(self._minRange), int(self._maxRange))
     #-----------------------------------------------------------------------------------[3]
 
     @property
     def autoRotate(self):
-        """Returns true if auto rotate is enabled. This means, it jumped from min value to max and vice versa."""
+        """Returns true if auto rotate is enabled. This means, 
+        it jumped from min value to max and vice versa."""
         return self._autoRotate
 
     @autoRotate.setter
     def autoRotate(self, value: bool):
-        """Set true if auto rotate is enabled. This means, it jumped from min value to max and vice versa."""
+        """Set true if auto rotate is enabled. This means, 
+        it jumped from min value to max and vice versa."""
         self._autoRotate = value
     #-----------------------------------------------------------------------[4]
 
     @property
     def step(self):
-        """Get the step value of NumberPicker. Step is the amount of value jumped at one click."""
+        """Get the step value of NumberPicker. Step is the 
+        amount of value jumped at one click."""
         return self._step
 
     @step.setter
     def step(self, value: int):
-        """Set the step value of NumberPicker. Step is the amount of value jumped at one click."""
+        """Set the step value of NumberPicker. Step is the 
+        amount of value jumped at one click."""
         self._step = value
         stepStr = str(value)
         if "." in stepStr:
@@ -281,7 +288,8 @@ class NumberPicker(Control):
         """Set the NumberPicker's value"""
         self._value = value
         if self._isCreated:
-            api.SetWindowText(self._buddyHwnd, f"{self._value:.{self._deciPrecis}f}")
+            api.SetWindowText(self._buddyHwnd, 
+                              f"{self._value:.{self._deciPrecis}f}")
     #----------------------------------------------------------------------------------[6]
 
 
@@ -294,7 +302,7 @@ class NumberPicker(Control):
     def buttonOnLeft(self, value: bool):
         """Set true if button is set on left side"""
         self._btnOnLeft = value
-        if self._isCreated: pass # api.SendMessage(self._buddyHwnd, con.EM_SETSEL, -1, 0)
+        if self._isCreated: pass 
         # TODO : Change window style constants here to update the control.
     #-------------------------------------------------------------------[8]
 
@@ -381,12 +389,11 @@ def npWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
 
 @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
 def buddyWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
-
-    np = numpDict[refData]
     # log_msg(msg, np.name)
     match msg:
         case con.WM_DESTROY:
             api.RemoveWindowSubclass(hw, buddyWndProc, scID)
+            np = numpDict[refData]
             np._destroyCount += 1
             if np._destroyCount == 2: del numpDict[refData]
 
@@ -394,17 +401,21 @@ def buddyWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             # Whether user selects a back color or not, we must set the back color.
             # Otherwise, NumberPicker will be drawn in default control back color by DefWndProc
             # hdc = HDC(wp)
+            np = numpDict[refData]
             if np._drawFlag & 1: api.SetTextColor(wp, np._fgColor.ref)
             api.SetBkColor(wp, np._bgColor.ref)
-            return api.CreateSolidBrush(np._bgColor.ref)
+            return np._bkgBrush 
 
         case con.WM_MOUSELEAVE:
+            np = numpDict[refData]
             if np._trackMouseLeave:
                 if not np._isMouseUponMe():
                     np._isMouseEntered = False
                     if np.on_mouse_leave: np.on_mouse_leave(np, GEA)
 
-        case con.WM_MOUSEMOVE: np._mouseMoveHandler(msg, wp, lp)
+        case con.WM_MOUSEMOVE: 
+            np = numpDict[refData]
+            np._mouseMoveHandler(msg, wp, lp)
 
         case con.EM_SETSEL:
             # Edit control in NumberPicker is not support auto selection.
@@ -416,16 +427,25 @@ def buddyWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             match code:
                 case con.EN_CHANGE:pass
                 case con.EN_UPDATE:
+                    np = numpDict[refData]
                     if np._hideCaret: api.HideCaret(hw)
 
         case con.WM_KEYDOWN:
+            np = numpDict[refData]
             np._keyPressed = True
             np._keyDownHandler(wp)
 
-        case con.WM_KEYUP: np._keyUpHandler(wp)
-        case con.WM_CHAR: np._keyPressHandler(wp)
-        case con.WM_SETFOCUS: np._gotFocusHandler()
-        case con.WM_KILLFOCUS:
+        case con.WM_KEYUP: 
+            np = numpDict[refData]
+            np._keyUpHandler(wp)
+        case con.WM_CHAR: 
+            np = numpDict[refData]
+            np._keyPressHandler(wp)
+        case con.WM_SETFOCUS: 
+            np = numpDict[refData]
+            np._gotFocusHandler()
+        case con.WM_KILLFOCUS:  
+            np = numpDict[refData]
             # When user manually enter numbers, we need to check that value
             # And displays it in as per our current value protocol.
             if np._keyPressed:
@@ -441,13 +461,23 @@ def buddyWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             # So, when a click is received in an edit control, we need an immediate redraw.
             # Otherwise, we will lost our beautiful top edge.
             # api.RedrawWindow(hw, None, None, con.RDW_INTERNALPAINT)
+            np = numpDict[refData]
             np._leftMouseDownHandler(msg, wp, lp)
-        case con.WM_LBUTTONUP: np._leftMouseUpHandler(msg, wp, lp)
-        case con.WM_RBUTTONDOWN: np._rightMouseDownHandler(msg, wp, lp)
-        case con.WM_RBUTTONUP: np._rightMouseUpHandler(msg, wp, lp)
-        case con.WM_MOUSEWHEEL: np._mouseWheenHandler(msg, wp, lp)
+        case con.WM_LBUTTONUP: 
+            np = numpDict[refData]
+            np._leftMouseUpHandler(msg, wp, lp)
+        case con.WM_RBUTTONDOWN: 
+            np = numpDict[refData]
+            np._rightMouseDownHandler(msg, wp, lp)
+        case con.WM_RBUTTONUP: 
+            np = numpDict[refData]
+            np._rightMouseUpHandler(msg, wp, lp)
+        case con.WM_MOUSEWHEEL: 
+            np = numpDict[refData]
+            np._mouseWheenHandler(msg, wp, lp)
 
         case con.WM_PAINT:
+            np = numpDict[refData]
             # Edit control needs to be painted by DefSubclassProc function.
             # Otherwise, cursor and text will not be visible, So we need to call it.
             api.DefSubclassProc(hw, msg, wp, lp)
@@ -467,6 +497,7 @@ def buddyWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             api.DeleteObject(fpen)
             return 1
         case MyMessages.BUDDY_RESET:
+            np = numpDict[refData]
             np._resizeBuddy()
 
     return api.DefSubclassProc(hw, msg, wp, lp)

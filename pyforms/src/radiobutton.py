@@ -104,23 +104,41 @@ class RadioButton(Control):
 @SUBCLASSPROC
 def rbWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     # printWinMsg(msg)
-    rb = rbDict[hw]
     match msg:
         case con.WM_DESTROY:
             api.RemoveWindowSubclass(hw, rbWndProc, scID)
             del rbDict[hw]
 
-        case con.WM_SETFOCUS: rb._gotFocusHandler()
-        case con.WM_KILLFOCUS: rb._lostFocusHandler()
-        case con.WM_LBUTTONDOWN: rb._leftMouseDownHandler(msg, wp, lp)
-        case con.WM_LBUTTONUP: rb._leftMouseUpHandler(msg, wp, lp)
-        case con.WM_RBUTTONDOWN: rb._rightMouseDownHandler(msg, wp, lp)
-        case con.WM_RBUTTONUP: rb._rightMouseUpHandler(msg, wp, lp)
-        case con.WM_MOUSEWHEEL: rb._mouseWheenHandler(msg, wp, lp)
-        case con.WM_MOUSEMOVE: rb._mouseMoveHandler(msg, wp, lp)
-        case con.WM_MOUSELEAVE: rb._mouseLeaveHandler()
+        case con.WM_SETFOCUS: 
+            rb = rbDict[hw]
+            rb._gotFocusHandler()
+        case con.WM_KILLFOCUS: 
+            rb = rbDict[hw]
+            rb._lostFocusHandler()
+        case con.WM_LBUTTONDOWN: 
+            rb = rbDict[hw]
+            rb._leftMouseDownHandler(msg, wp, lp)
+        case con.WM_LBUTTONUP: 
+            rb = rbDict[hw]
+            rb._leftMouseUpHandler(msg, wp, lp)
+        case con.WM_RBUTTONDOWN: 
+            rb = rbDict[hw]
+            rb._rightMouseDownHandler(msg, wp, lp)
+        case con.WM_RBUTTONUP: 
+            rb = rbDict[hw]
+            rb._rightMouseUpHandler(msg, wp, lp)
+        case con.WM_MOUSEWHEEL: 
+            rb = rbDict[hw]
+            rb._mouseWheenHandler(msg, wp, lp)
+        case con.WM_MOUSEMOVE: 
+            rb = rbDict[hw]
+            rb._mouseMoveHandler(msg, wp, lp)
+        case con.WM_MOUSELEAVE: 
+            rb = rbDict[hw]
+            rb._mouseLeaveHandler()
 
         case MyMessages.LABEL_COLOR:
+            rb = rbDict[hw]
             # if rb._drawFlag & 1: api.SetTextColor(wp, rb._fgColor.ref)
             if rb._drawFlag & 2: api.SetBkColor(wp, rb._bgColor.ref)
             return rb._bkgBrush
@@ -130,6 +148,7 @@ def rbWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             match nmc.dwDrawStage:
                 case con.CDDS_PREERASE: return con.CDRF_NOTIFYPOSTERASE
                 case con.CDDS_PREPAINT:
+                    rb = rbDict[hw]
                     rct = nmc.rc
                     if not rb._rightAlign:
                         rct.left += 17 # Adjusting rect,otherwise text will be drawn upon the check area
@@ -141,6 +160,7 @@ def rbWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                     return con.CDRF_SKIPDEFAULT
 
         case MyMessages.CTL_COMMAND:
+            rb = rbDict[hw]
             # print(f"Radio {rb.text = }, {rb._isChecked = }")
             if rb.onCheckedChanged: rb.onCheckedChanged(rb, GEA )
 

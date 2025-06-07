@@ -28,7 +28,6 @@ class CheckBox(Control):
         self._ctlType = ControlType.CHECK_BOX
         self._text = self.name if txt == "" else txt
         self._parent = parent
-        # self._font = parent._font
         self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
@@ -42,6 +41,7 @@ class CheckBox(Control):
         self._rightAlign = False
         self._isChecked = False
         self._autosize = True
+        self._bkgBrush = self._bgColor.createHBrush()
         # Events
         self.onCheckedChanged = None
         self._hwnd = None
@@ -63,8 +63,6 @@ class CheckBox(Control):
             self._txtStyle |= con.BS_RIGHTBUTTON
 
         if self._width > 0 or self.height > 0: self._autosize = False
-
-        self._bkgBrush = self._bgColor.createHBrush()
         self._createControl()
         if self._hwnd:
             cb_dict[self._hwnd] = self
@@ -110,28 +108,47 @@ class CheckBox(Control):
 @SUBCLASSPROC
 def cbWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     # printWinMsg(msg)
-    cb = cb_dict[hw]
     match msg:
         case con.WM_DESTROY:
             api.RemoveWindowSubclass(hw, cbWndProc, scID)
             del cb_dict[hw]
 
-        case con.WM_SETFOCUS: cb._gotFocusHandler()
-        case con.WM_KILLFOCUS: cb._lostFocusHandler()
-        case con.WM_LBUTTONDOWN: cb._leftMouseDownHandler(msg, wp, lp)
-        case con.WM_LBUTTONUP: cb._leftMouseUpHandler(msg, wp, lp)
-        case con.WM_RBUTTONDOWN: cb._rightMouseDownHandler(msg, wp, lp)
-        case con.WM_RBUTTONUP: cb._rightMouseUpHandler(msg, wp, lp)
-        case con.WM_MOUSEWHEEL: cb._mouseWheenHandler(msg, wp, lp)
-        case con.WM_MOUSEMOVE: cb._mouseMoveHandler(msg, wp, lp)
-        case con.WM_MOUSELEAVE: cb._mouseLeaveHandler()
+        case con.WM_SETFOCUS: 
+            cb = cb_dict[hw]
+            cb._gotFocusHandler()
+        case con.WM_KILLFOCUS: 
+            cb = cb_dict[hw]
+            cb._lostFocusHandler()
+        case con.WM_LBUTTONDOWN: 
+            cb = cb_dict[hw]
+            cb._leftMouseDownHandler(msg, wp, lp)
+        case con.WM_LBUTTONUP: 
+            cb = cb_dict[hw]
+            cb._leftMouseUpHandler(msg, wp, lp)
+        case con.WM_RBUTTONDOWN: 
+            cb = cb_dict[hw]
+            cb._rightMouseDownHandler(msg, wp, lp)
+        case con.WM_RBUTTONUP: 
+            cb = cb_dict[hw]
+            cb._rightMouseUpHandler(msg, wp, lp)
+        case con.WM_MOUSEWHEEL: 
+            cb = cb_dict[hw]
+            cb._mouseWheenHandler(msg, wp, lp)
+        case con.WM_MOUSEMOVE: 
+            cb = cb_dict[hw]
+            cb._mouseMoveHandler(msg, wp, lp)
+        case con.WM_MOUSELEAVE: 
+            cb = cb_dict[hw]
+            cb._mouseLeaveHandler()
 
         case MyMessages.LABEL_COLOR:
+            cb = cb_dict[hw]
             # Unfortunately changing fore color here won't work.
             if cb._drawFlag & 2: api.SetBkColor(wp, cb._bgColor.ref)
             return cb._bkgBrush
 
         case MyMessages.CTRL_NOTIFY:
+            cb = cb_dict[hw]
             nmc = cast(lp, LPNMCUSTOMDRAW).contents
             match nmc.dwDrawStage:
                 case con.CDDS_PREERASE: return con.CDRF_NOTIFYPOSTERASE
@@ -148,6 +165,7 @@ def cbWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                     return con.CDRF_SKIPDEFAULT
 
         case MyMessages.CTL_COMMAND:
+            cb = cb_dict[hw]
             cb._isChecked = bool(api.SendMessage(hw, con.BM_GETCHECK, 0, 0))
             if cb.onCheckedChanged: cb.onCheckedChanged(cb, GEA )
 

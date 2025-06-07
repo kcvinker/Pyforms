@@ -49,6 +49,7 @@ class TextBox(Control):
         self._cueBanner = ""
         self.onTextChanged = None
         self._hwnd = None
+        self._bkgBrush = self._bgColor.createHBrush()
         parent._controls.append(self)
         TextBox._count += 1
         if parent.createChilds: self.createHandle()
@@ -97,7 +98,7 @@ class TextBox(Control):
         elif self._textAlign == TextAlignment.RIGHT:
             self._style |= con.ES_RIGHT
 
-        self._bkgBrush = self._bgColor.createHBrush()
+        
 
     def addLine(self, linetext):
         if self._isCreated:
@@ -165,33 +166,49 @@ class TextBox(Control):
 @SUBCLASSPROC
 def tbWndProc(hw, msg, wp, lp, scID, refData):
     # winmsgs.log_msg(msg)
-    tb = tbDict[hw]
     match msg:
         case con.WM_DESTROY:
-            api.DeleteObject(tb._bkgBrush)
+            # api.DeleteObject(tb._bkgBrush)
             api.RemoveWindowSubclass(hw, tbWndProc, scID)
             del tbDict[hw]
 
         # case con.WM_SETFOCUS: tb._gotFocusHandler()
         # case con.WM_KILLFOCUS: tb._lostFocusHandler()
-        case con.WM_LBUTTONDOWN: tb._leftMouseDownHandler(msg, wp, lp)
-        case con.WM_LBUTTONUP: tb._leftMouseUpHandler(msg, wp, lp)
-        case con.WM_RBUTTONDOWN: tb._rightMouseDownHandler(msg, wp, lp)
-        case con.WM_RBUTTONUP: tb._rightMouseUpHandler(msg, wp, lp)
-        case con.WM_MOUSEWHEEL: tb._mouseWheenHandler(msg, wp, lp)
-        case con.WM_MOUSEMOVE: tb._mouseMoveHandler(msg, wp, lp)
-        case con.WM_MOUSELEAVE: tb._mouseLeaveHandler()
+        case con.WM_LBUTTONDOWN: 
+            tb = tbDict[hw]
+            tb._leftMouseDownHandler(msg, wp, lp)
+        case con.WM_LBUTTONUP: 
+            tb = tbDict[hw]
+            tb._leftMouseUpHandler(msg, wp, lp)
+        case con.WM_RBUTTONDOWN: 
+            tb = tbDict[hw]
+            tb._rightMouseDownHandler(msg, wp, lp)
+        case con.WM_RBUTTONUP: 
+            tb = tbDict[hw]
+            tb._rightMouseUpHandler(msg, wp, lp)
+        case con.WM_MOUSEWHEEL: 
+            tb = tbDict[hw]
+            tb._mouseWheenHandler(msg, wp, lp)
+        case con.WM_MOUSEMOVE: 
+            tb = tbDict[hw]
+            tb._mouseMoveHandler(msg, wp, lp)
+        case con.WM_MOUSELEAVE: 
+            tb = tbDict[hw]
+            tb._mouseLeaveHandler()
 
         case MyMessages.CTL_COMMAND:
             ncode = api.HIWORD(wp)
             # print(f"{ncode = }")
             if ncode == con.EN_CHANGE:
+                tb = tbDict[hw]
                 if tb.onTextChanged: tb.onTextChanged(tb, GEA)
 
         case MyMessages.LABEL_COLOR:
+            tb = tbDict[hw]
             return tb._bkgBrush
 
         case MyMessages.EDIT_COLOR:
+            tb = tbDict[hw]
             if tb._drawFlag:
                 if tb._drawFlag & 1: api.SetTextColor(wp, tb._fgColor.ref)
                 if tb._drawFlag & 2: api.SetBkColor(wp, tb._bgColor.ref)

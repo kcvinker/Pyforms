@@ -279,23 +279,42 @@ class GroupBox(Control):
 def gbWndProc(hw, msg, wp, lp, scID, refData):
     # printWinMsg(msg)
     # log_msg(msg)
-    gb = gbDict[hw]
     match msg:
         case con.WM_DESTROY:
+            gb = gbDict[hw]
             api.RemoveWindowSubclass(hw, gbWndProc, scID)
             gb.finalize()
             del gbDict[hw]
 
-        case con.WM_SETFOCUS: gb._gotFocusHandler()
-        case con.WM_KILLFOCUS: gb._lostFocusHandler()
-        case con.WM_LBUTTONDOWN: gb._leftMouseDownHandler(msg, wp, lp)
-        case con.WM_LBUTTONUP: gb._leftMouseUpHandler(msg, wp, lp)
-        case con.WM_RBUTTONDOWN: gb._rightMouseDownHandler(msg, wp, lp)
-        case con.WM_RBUTTONUP: gb._rightMouseUpHandler(msg, wp, lp)
-        case con.WM_MOUSEWHEEL: gb._mouseWheenHandler(msg, wp, lp)
-        case con.WM_MOUSEMOVE: gb._mouseMoveHandler(msg, wp, lp)
-        case con.WM_MOUSELEAVE: gb._mouseLeaveHandler()
+        case con.WM_SETFOCUS: 
+            gb = gbDict[hw]
+            gb._gotFocusHandler()
+        case con.WM_KILLFOCUS: 
+            gb = gbDict[hw]
+            gb._lostFocusHandler()
+        case con.WM_LBUTTONDOWN: 
+            gb = gbDict[hw]
+            gb._leftMouseDownHandler(msg, wp, lp)
+        case con.WM_LBUTTONUP: 
+            gb = gbDict[hw]
+            gb._leftMouseUpHandler(msg, wp, lp)
+        case con.WM_RBUTTONDOWN: 
+            gb = gbDict[hw]
+            gb._rightMouseDownHandler(msg, wp, lp)
+        case con.WM_RBUTTONUP: 
+            gb = gbDict[hw]
+            gb._rightMouseUpHandler(msg, wp, lp)
+        case con.WM_MOUSEWHEEL: 
+            gb = gbDict[hw]
+            gb._mouseWheenHandler(msg, wp, lp)
+        case con.WM_MOUSEMOVE: 
+            gb = gbDict[hw]
+            gb._mouseMoveHandler(msg, wp, lp)
+        case con.WM_MOUSELEAVE: 
+            gb = gbDict[hw]
+            gb._mouseLeaveHandler()
         case con.WM_ERASEBKGND:
+            gb = gbDict[hw]
             return gb.handleWmEraseBKG(wp)
             # if gb._drawFlag:
             #     rc = api.get_client_rect(hw)
@@ -304,6 +323,7 @@ def gbWndProc(hw, msg, wp, lp, scID, refData):
             # NOTE: Do not return anything outside the 'if', as it will make every static control a mess.
         
         case MyMessages.LABEL_COLOR:
+            gb = gbDict[hw]
             if gb._gstyle == GroupBoxStyle.CLASSIC:
                 api.SetBkMode(wp, 1)
                 # SelectObject(wp, cast[HGDIOBJ](gb.mFont.handle))
@@ -312,6 +332,7 @@ def gbWndProc(hw, msg, wp, lp, scID, refData):
             return gb._bkgBrush
 
         case con.WM_PAINT:
+            gb = gbDict[hw]
             if gb._gstyle == GroupBoxStyle.OVERRIDEN:
                 # Let the control do it's painting works.
                 ret = api.DefSubclassProc(hw, msg, wp, lp)
@@ -321,6 +342,7 @@ def gbWndProc(hw, msg, wp, lp, scID, refData):
                 return ret
 
         case con.WM_GETTEXTLENGTH: 
+            gb = gbDict[hw]
             if gb._gstyle == GroupBoxStyle.OVERRIDEN:
                 return 0
 

@@ -477,6 +477,9 @@ class Control:
         elif isinstance(value, Color):
             self._bgColor = value
 
+        if self._bkgBrush != None: 
+            self._bkgBrush = api.CreateSolidBrush(self._bgColor.ref)
+
         if self._drawFlag & 2 != 2: self._drawFlag += 2 # _drawFlag --> 0=no_color, 1=fore_color, 2=back_color
         if self._isCreated and self._hasBrush: self._bkgBrush = self._bgColor.createHBrush()
         self._manageRedraw()

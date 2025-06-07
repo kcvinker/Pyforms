@@ -35,7 +35,6 @@ class ComboBox(Control):
         self._ctlType = ControlType.COMBO_BOX
         self._parent = parent
         self._bgColor = COLOR_WHITE
-        # self._font = parent._font
         self._font.colneFrom(parent._font)
         self._width = width
         self._height = height
@@ -50,7 +49,7 @@ class ComboBox(Control):
         self._oldHwnd = None
         self._enableInput = False
         self._recreated = False
-
+        self._bkgBrush = api.CreateSolidBrush(self._bgColor.ref)
         # Events
         self.onSelectionCancelled = None
         self.onSelectionChanged = None
@@ -100,7 +99,9 @@ class ComboBox(Control):
             self._setFontInternal()
             self._getComboInfo()
             self._insertItems()
-            if self._selIndex > -1: api.SendMessage(self._hwnd, con.CB_SETCURSEL, self._selIndex, 0)
+            if self._selIndex > -1: api.SendMessage(self._hwnd, 
+                                                    con.CB_SETCURSEL, 
+                                                    self._selIndex, 0)
 
     # -region private_funcs
 
@@ -110,7 +111,7 @@ class ComboBox(Control):
             self._style |= con.CBS_DROPDOWN
         else:
             self._style |= con.CBS_DROPDOWNLIST
-        self._bkgBrush = self._bgColor.createHBrush()
+        # self._bkgBrush = self._bgColor.createHBrush()
 
     # Get the combo's internal info from OS
     def _getComboInfo(self):
@@ -268,21 +269,22 @@ class ComboBox(Control):
 @SUBCLASSPROC
 def cmbWndProc(hw, msg, wp, lp, scID, refData):
     # printWinMsg(msg)
-    cmb = cmbDict[hw]
     match msg:
         case con.WM_NCDESTROY:
+            cmb = cmbDict[hw]
             api.RemoveWindowSubclass(hw, cmbWndProc, scID)
             if not cmb._recreated: del cmbDict[hw] # Only remove if this is a natural end
 
         case MyMessages.LIST_COLOR:
+            cmb = cmbDict[hw]
             if cmb._drawFlag:
                 hdc = HDC(wp)
                 if cmb._drawFlag & 1: api.SetTextColor(hdc, cmb._fgColor.ref )
                 if cmb._drawFlag & 2: api.SetBkColor(hdc, cmb._bgColor.ref)
-
             return cmb._bkgBrush
 
         case MyMessages.CTL_COMMAND:
+            cmb = cmbDict[hw]
             ncode = api.HIWORD(wp)
             match ncode:
                 case con.CBN_SELCHANGE:
@@ -300,15 +302,32 @@ def cmbWndProc(hw, msg, wp, lp, scID, refData):
                 case con.CBN_SELENDCANCEL:
                     if cmb.onSelectionCancelled: cmb.onSelectionCancelled(cmb, GEA)
 
-        case con.WM_SETFOCUS: cmb._gotFocusHandler()
-        case con.WM_KILLFOCUS: cmb._lostFocusHandler()
-        case con.WM_LBUTTONDOWN: cmb._leftMouseDownHandler(msg, wp, lp)
-        case con.WM_LBUTTONUP: cmb._leftMouseUpHandler(msg, wp, lp)
-        case con.WM_RBUTTONDOWN: cmb._rightMouseDownHandler(msg, wp, lp)
-        case con.WM_RBUTTONUP: cmb._rightMouseUpHandler(msg, wp, lp)
-        case con.WM_MOUSEWHEEL: cmb._mouseWheenHandler(msg, wp, lp)
-        case con.WM_MOUSEMOVE: cmb._mouseMoveHandler(msg, wp, lp)
+        case con.WM_SETFOCUS: 
+            cmb = cmbDict[hw]
+            cmb._gotFocusHandler()
+        case con.WM_KILLFOCUS: 
+            cmb = cmbDict[hw]
+            cmb._lostFocusHandler()
+        case con.WM_LBUTTONDOWN: 
+            cmb = cmbDict[hw]
+            cmb._leftMouseDownHandler(msg, wp, lp)
+        case con.WM_LBUTTONUP: 
+            cmb = cmbDict[hw]
+            cmb._leftMouseUpHandler(msg, wp, lp)
+        case con.WM_RBUTTONDOWN: 
+            cmb = cmbDict[hw]
+            cmb._rightMouseDownHandler(msg, wp, lp)
+        case con.WM_RBUTTONUP: 
+            cmb = cmbDict[hw]
+            cmb._rightMouseUpHandler(msg, wp, lp)
+        case con.WM_MOUSEWHEEL: 
+            cmb = cmbDict[hw]
+            cmb._mouseWheenHandler(msg, wp, lp)
+        case con.WM_MOUSEMOVE: 
+            cmb = cmbDict[hw]
+            cmb._mouseMoveHandler(msg, wp, lp)
         case con.WM_MOUSELEAVE:
+            cmb = cmbDict[hw]   
             # Here, we need to do a trick. Actually, in a Combobox, when it's
             # text input mode enabled, we get two mouse leave msg & two mouse move msg
             # Because, combo's text area is an edit control. It is surrounded by the combo.
@@ -332,36 +351,56 @@ def cmbWndProc(hw, msg, wp, lp, scID, refData):
 @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
 def cmbEditWndProc(hw, msg, wp, lp, scID, refData):
     # log_msg(msg)
-    cmb = cmbDict[refData]
     match msg:
         case con.WM_NCDESTROY:
             api.RemoveWindowSubclass(hw, cmbEditWndProc, scID)
 
         case MyMessages.EDIT_COLOR:
+            cmb = cmbDict[refData]
             if cmb._drawFlag:
                 hdc = HDC(wp)
                 if cmb._drawFlag & (1 << 0): api.SetTextColor(hdc, cmb._fgColor.ref )
                 api.SetBkColor(hdc, cmb._bgColor.ref)
-                return api.CreateSolidBrush(cmb._bgColor.ref)
+                return cmb._bkgBrush
 
         case MyMessages.LABEL_COLOR: # Not Working
+            cmb = cmbDict[refData]
             if cmb._drawFlag:
                 hdc = HDC(wp)
                 if cmb._drawFlag & (1 << 0): api.SetTextColor(hdc, cmb._fgColor.ref )
                 api.SetBkColor(hdc, cmb._bgColor.ref)
-                return api.CreateSolidBrush(cmb._bgColor.ref)
+                return cmb._bkgBrush
 
 
-        case con.WM_KEYDOWN: cmb._keyDownHandler(wp)
-        case con.WM_KEYUP: cmb._keyUpHandler(wp)
-        case con.WM_CHAR: cmb._keyPressHandler(wp)
-        case con.WM_LBUTTONDOWN: cmb._leftMouseDownHandler(msg, wp, lp)
-        case con.WM_LBUTTONUP: cmb._leftMouseUpHandler(msg, wp, lp)
-        case MyMessages.MOUSE_CLICK: cmb._mouse_click_handler()
-        case con.WM_RBUTTONDOWN: cmb._mouse_click_handler(msg, wp, lp)
-        case con.WM_RBUTTONUP: cmb._mouse_click_handler(msg, wp, lp)
-        case MyMessages.RIGHT_CLICK: cmb._mouse_click_handler()
+        case con.WM_KEYDOWN: 
+            cmb = cmbDict[refData]
+            cmb._keyDownHandler(wp)
+        case con.WM_KEYUP: 
+            cmb = cmbDict[refData]
+            cmb._keyUpHandler(wp)
+        case con.WM_CHAR: 
+            cmb = cmbDict[refData]
+            cmb._keyPressHandler(wp)
+        case con.WM_LBUTTONDOWN: 
+            cmb = cmbDict[refData]
+            cmb._leftMouseDownHandler(msg, wp, lp)
+        case con.WM_LBUTTONUP: 
+            cmb = cmbDict[refData]
+            cmb._leftMouseUpHandler(msg, wp, lp)
+        case MyMessages.MOUSE_CLICK: 
+            cmb = cmbDict[refData]
+            cmb._mouse_click_handler()
+        case con.WM_RBUTTONDOWN: 
+            cmb = cmbDict[refData]
+            cmb._mouse_click_handler(msg, wp, lp)
+        case con.WM_RBUTTONUP: 
+            cmb = cmbDict[refData]
+            cmb._mouse_click_handler(msg, wp, lp)
+        case MyMessages.RIGHT_CLICK: 
+            cmb = cmbDict[refData]
+            cmb._mouse_click_handler()
         case con.WM_MOUSEMOVE:
+            cmb = cmbDict[refData]
             # When mouse pointer moves from combo's rect boundary and get into edit's rect
             # we will continue the mouse move message handling.
             cmb._mouseMoveHandler(msg, wp, lp)

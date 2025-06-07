@@ -129,12 +129,14 @@ class ListView(Control):
 
             if self._columns:
                 for col in self._columns:
-                    api.SendMessage(self._hwnd, con.LVM_INSERTCOLUMNW, col.index, addressof(col.lvc))
+                    api.SendMessage(self._hwnd, con.LVM_INSERTCOLUMNW, 
+                                    col.index, addressof(col.lvc))
 
             self._hdrHwnd = api.SendMessage(self._hwnd, con.LVM_GETHEADER, 0, 0)
-            # hdrDict[self._hdrHwnd] = self # Put ourself inside this dict so that we can appear in hdrWndProc
-            if not self._hdrFont.handle: self._hdrFont.createHandle(self._hdrHwnd)# Making sure header font is ready.
-            #
+            if not self._hdrFont.handle: 
+                # Making sure header font is ready.
+                self._hdrFont.createHandle(self._hdrHwnd)
+
             # We are going to send the list view hwnd with this function. So, we can grab it inside
             # header's wndproc function.
             api.SetWindowSubclass(self._hdrHwnd, hdrWndProc, ListView._count, self._hwnd)
@@ -143,11 +145,9 @@ class ListView(Control):
 
             if self._cbIsLast:
                 ord_list = self._changeColOrder()
-                api.SendMessage(self._hwnd, con.LVM_SETCOLUMNORDERARRAY, len(ord_list), addressof(ord_list))
+                api.SendMessage(self._hwnd, con.LVM_SETCOLUMNORDERARRAY, 
+                                len(ord_list), addressof(ord_list))
                 self._cbIsLast = True
-
-            # print("lv hwnd ", self._hwnd)
-            # print("frm hwnd ", self._parent._hwnd)
 
 
     #End of Create function-----------------------------------------------
@@ -348,14 +348,6 @@ class ListView(Control):
         # api.DrawText(nmcd.hdc, col._wideText, -1, byref(nmcd.rc), col._hdrTxtFlag )
         api.DrawText(nmcd.hdc, col.text, len(col.text), byref(nmcd.rc), col._hdrTxtFlag )
 
-
-    # def _drawHeader2(self, nmcd: LPNMCUSTOMDRAW):
-    #     if nmcd.dwItemSpec != 0: nmcd.rc.left += 1 # Give room for header divider.
-    #     col = self._columns[nmcd.dwItemSpec] # Get our column class
-    #     api.drawHdrD(nmcd, self._hdrBkBrush, self._hdrHotBrush, self._hdrFont.handle,
-    #                     self._hdrFgColor.ref, self._hotHdr, self._hdrClickable,
-    #                     col._wideText, col._hdrTxtFlag)
-    #------------------------------------------End
     # -endregion Private funcs
 
     # -region Properties
@@ -573,7 +565,8 @@ class ListViewItem:
     _slots_ = ("_text", "_bgColor", "_fgColor", "_imgIndex", "_index", "_font", "_subitems")
     _stindex = 0
 
-    def __init__(self, txt: str, bg_color: int = 0xFFFFFF, fg_color: int = 0x000000, imageIndex: int = -1) -> None:
+    def __init__(self, txt: str, bg_color: int = 0xFFFFFF, 
+                 fg_color: int = 0x000000, imageIndex: int = -1) -> None:
         self._text = str(txt)
         self._bgColor = bg_color
         self._fgColor = fg_color
@@ -639,17 +632,19 @@ class ListViewItem:
 @SUBCLASSPROC
 def lvWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     # log_msg(msg)
-    lv = lvDict[hw]
     match msg:
         case con.WM_DESTROY:
             api.RemoveWindowSubclass(hw, lvWndProc, scID)
+            lv = lvDict[hw]
             lv._destroyCount += 1
             if lv._destroyCount == 2: del lvDict[hw]
 
         # case con.WM_MEASUREITEM:
         #     print("msr item lv")
 
-        case con.WM_CONTEXTMENU: lv._wmContextMenuHandler(lp)
+        case con.WM_CONTEXTMENU: 
+            lv = lvDict[hw]
+            lv._wmContextMenuHandler(lp)
 
         case MyMessages.CTRL_NOTIFY:
             nmh = cast(lp, api.LPNMHDR).contents
@@ -679,6 +674,7 @@ def lvWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                             return con.CDRF_NOTIFYITEMDRAW
 
                         case con.CDDS_ITEMPREPAINT:
+                            lv = lvDict[hw]
                             lvcd.clrTextBk = lv._bgColor.ref
                             lvcd.clrText = lv._fgColor.ref
                             return con.CDRF_NEWFONT | con.CDRF_DODEFAULT
@@ -714,20 +710,39 @@ def lvWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                 match nmcd.dwDrawStage:
                     case con.CDDS_PREPAINT: return con.CDRF_NOTIFYITEMDRAW
                     case con.CDDS_ITEMPREPAINT:
+                        lv = lvDict[hw]
     #                   # We are taking the opprtunity to draw the headers from Control
                         lv._drawHeader(nmcd)
                         return con.CDRF_SKIPDEFAULT
 
-        case con.WM_SETFOCUS: lv._gotFocusHandler()
-        case con.WM_KILLFOCUS: lv._lostFocusHandler()
-        case con.WM_LBUTTONDOWN: lv._leftMouseDownHandler(msg, wp, lp)
-        case con.WM_LBUTTONUP: lv._leftMouseUpHandler(msg, wp, lp)
-        case con.WM_RBUTTONDOWN: return lv._rightMouseDownHandler(msg, wp, lp)
+        case con.WM_SETFOCUS: 
+            lv = lvDict[hw]
+            lv._gotFocusHandler()
+        case con.WM_KILLFOCUS: 
+            lv = lvDict[hw]
+            lv._lostFocusHandler()
+        case con.WM_LBUTTONDOWN: 
+            lv = lvDict[hw]
+            lv._leftMouseDownHandler(msg, wp, lp)
+        case con.WM_LBUTTONUP: 
+            lv = lvDict[hw]
+            lv._leftMouseUpHandler(msg, wp, lp)
+        case con.WM_RBUTTONDOWN: 
+            lv = lvDict[hw]
+            return lv._rightMouseDownHandler(msg, wp, lp)
 
-        case con.WM_RBUTTONUP: lv._rightMouseUpHandler(msg, wp, lp)
-        case con.WM_MOUSEWHEEL: lv._mouseWheenHandler(msg, wp, lp)
-        case con.WM_MOUSEMOVE: lv._mouseMoveHandler(msg, wp, lp)
-        case con.WM_MOUSELEAVE: lv._mouseLeaveHandler()
+        case con.WM_RBUTTONUP: 
+            lv = lvDict[hw]
+            lv._rightMouseUpHandler(msg, wp, lp)
+        case con.WM_MOUSEWHEEL: 
+            lv = lvDict[hw]
+            lv._mouseWheenHandler(msg, wp, lp)
+        case con.WM_MOUSEMOVE: 
+            lv = lvDict[hw]
+            lv._mouseMoveHandler(msg, wp, lp)
+        case con.WM_MOUSELEAVE: 
+            lv = lvDict[hw]
+            lv._mouseLeaveHandler()
 
         # case con.WM_COMMAND:
         #     print("WM_COMMAND on LV")
@@ -740,14 +755,15 @@ def lvWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
 @WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
 def hdrWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     # log_msg(msg)
-    lv = lvDict[refData]
     match msg:
         case con.WM_DESTROY:
+            lv = lvDict[refData]
             res = api.RemoveWindowSubclass(hw, hdrWndProc, scID)
             lv._destroyCount += 1
             if lv._destroyCount == 2: del lvDict[lv._hwnd]
 
         case con.HDM_LAYOUT:
+            lv = lvDict[refData]
             if lv._changeHdrHeight:
                 phl = cast(lp, api.LPHDLAYOUT).contents
                 # res = api.DefSubclassProc(hw, msg, wp, lp)
@@ -764,6 +780,7 @@ def hdrWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                 return -1
 
         case con.WM_MOUSEMOVE:
+            lv = lvDict[refData]
             pt = getMousePoints(lp) # Collecting mouse points
             hit = api.HDHITTESTINFO(pt) # Passing it to this struct
 
@@ -772,9 +789,12 @@ def hdrWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             lv._hotHdr = api.SendMessage(hw, con.HDM_HITTEST, 0, addressof(hit) )
 
         # Make the hot index to -1, so that our headers are drawn with normal colors after this.
-        case con.WM_MOUSELEAVE: lv._hotHdr = -1
+        case con.WM_MOUSELEAVE: 
+            lv = lvDict[refData]
+            lv._hotHdr = -1
 
         case con.WM_PAINT:
+            lv = lvDict[refData]
             # First, let the control to do it's necessary drawings.
             api.DefSubclassProc(hw, msg, wp, lp)
 

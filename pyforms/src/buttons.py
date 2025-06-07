@@ -30,7 +30,6 @@ class Button(Control):
         super().__init__()
         self.name = f"Button_{Button._count}"
         self._parent = parent
-        # self._font = parent._font
         self._clsName = "Button"
         self._ctlType = ControlType.BUTTON
         self._width = width
@@ -88,13 +87,15 @@ class Button(Control):
     def _drawforecolor(self, nmcd):
         api.SetTextColor(nmcd.hdc, self._fgColor.ref)
         api.SetBkMode(nmcd.hdc, 1)
-        api.DrawText(nmcd.hdc, self._text, len(self._text), byref(nmcd.rc), txtFlag )
+        api.DrawText(nmcd.hdc, self._text, len(self._text), 
+                     byref(nmcd.rc), txtFlag )
 
 
     def _drawBkgColor(self, nc, hbr, pen):
         api.SelectObject(nc.hdc, hbr)
         api.SelectObject(nc.hdc, pen)
-        api.RoundRect(nc.hdc, nc.rc.left, nc.rc.top, nc.rc.right, nc.rc.bottom, 5, 5)
+        api.RoundRect(nc.hdc, nc.rc.left, nc.rc.top, 
+                      nc.rc.right, nc.rc.bottom, 5, 5)
         api.FillPath(nc.hdc)
 
 
@@ -132,27 +133,36 @@ class Button(Control):
                         if (nmcd.uItemState & 0b1) == 0b1: #--------------mouse click   (plain form clr = -1), (grad form =
                             if self._gdraw.defbrush == None:
                                 # print("going to create gradient brush for mouse click")
-                                self._gdraw.defbrush = _createGradientBrush(nmcd.hdc, nmcd.rc,
-                                                                                self._gdraw.gcDef.c1,
-                                                                                self._gdraw.gcDef.c2, True)
+                                self._gdraw.defbrush = _createGradientBrush(nmcd.hdc, 
+                                                                            nmcd.rc,
+                                                                            self._gdraw.gcDef.c1,
+                                                                            self._gdraw.gcDef.c2, 
+                                                                            True)
 
-                            self._drawBkgColor(nmcd, self._gdraw.defbrush, self._gdraw.defpen)
+                            self._drawBkgColor(nmcd, self._gdraw.defbrush, 
+                                               self._gdraw.defpen)
 
                         elif (nmcd.uItemState & 0b1000000) == 0b1000000: #---mouse over
                             if self._gdraw.hotbrush == None:
-                                self._gdraw.hotbrush = _createGradientBrush(nmcd.hdc, nmcd.rc,
-                                                                                self._gdraw.gcHot.c1,
-                                                                                self._gdraw.gcHot.c2, True)
+                                self._gdraw.hotbrush = _createGradientBrush(nmcd.hdc, 
+                                                                            nmcd.rc,
+                                                                            self._gdraw.gcHot.c1,
+                                                                            self._gdraw.gcHot.c2, 
+                                                                            True)
 
-                            self._drawBkgColor(nmcd, self._gdraw.hotbrush, self._gdraw.hotpen)
+                            self._drawBkgColor(nmcd, self._gdraw.hotbrush, 
+                                               self._gdraw.hotpen)
 
                         else: #--------------------------------------------- Normal button state
                             if self._gdraw.defbrush == None:
-                                self._gdraw.defbrush = _createGradientBrush(nmcd.hdc, nmcd.rc,
-                                                                                self._gdraw.gcDef.c1,
-                                                                                self._gdraw.gcDef.c2, True)
+                                self._gdraw.defbrush = _createGradientBrush(nmcd.hdc, 
+                                                                            nmcd.rc,
+                                                                            self._gdraw.gcDef.c1,
+                                                                            self._gdraw.gcDef.c2, 
+                                                                            True)
 
-                            self._drawBkgColor(nmcd, self._gdraw.defbrush, self._gdraw.defpen)
+                            self._drawBkgColor(nmcd, self._gdraw.defbrush, 
+                                               self._gdraw.defpen)
 
                         if self._drawFlag & 1:
                             self._drawforecolor(nmcd)
@@ -164,11 +174,11 @@ class Button(Control):
 
 
     def finalize(self, scID):
+        api.RemoveWindowSubclass(self._hwnd, btnwndproc, scID)
         match self._drawFlag:
             case 2 | 3: self._fdraw.finalize() # Freeing flat draw resources
             case 4 | 5: self._gdraw.finalize() # Freeing grad draw resources
-
-        api.RemoveWindowSubclass(self._hwnd, btnwndproc, scID)
+        
         del btnDic[self._hwnd]
 
 

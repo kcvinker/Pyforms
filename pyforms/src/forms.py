@@ -50,8 +50,6 @@ def printPoint2(frm, mea):
 @WNDPROC
 def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
     # winmsgs.log_msg(message, "Form")
-    
-
     match message:
         case con.WM_NCDESTROY:
             this = formDict.get(hw, StaticData.currForm)

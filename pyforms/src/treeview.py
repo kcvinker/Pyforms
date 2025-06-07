@@ -395,8 +395,7 @@ class TreeNode:
 @SUBCLASSPROC
 def tvWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
     # log_msg(msg)
-    # with Timing("py obj time : "):
-    tv = tvDict[hw]
+    # with Timing("py obj time : "):    
         # tv = cast(refData, ctp.py_object).value
     match msg:
         case con.WM_DESTROY:
@@ -426,14 +425,30 @@ def tvWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         #         tv._display_value()
         #         if tv.on_value_changed: tv.on_value_changed(np, GEA)
 
-        case con.WM_SETFOCUS: tv._gotFocusHandler()
-        case con.WM_KILLFOCUS: tv._lostFocusHandler()
-        case con.WM_LBUTTONDOWN: tv._leftMouseDownHandler(msg, wp, lp)
-        case con.WM_LBUTTONUP: tv._leftMouseUpHandler(msg, wp, lp)
-        case con.WM_RBUTTONDOWN: tv._rightMouseDownHandler(msg, wp, lp)
-        case con.WM_RBUTTONUP: tv._rightMouseUpHandler(msg, wp, lp)
-        case con.WM_MOUSEWHEEL: tv._mouseWheenHandler(msg, wp, lp)
-        case con.WM_MOUSEMOVE: tv._mouseMoveHandler(msg, wp, lp)
+        case con.WM_SETFOCUS: 
+            tv = tvDict[hw]
+            tv._gotFocusHandler()
+        case con.WM_KILLFOCUS: 
+            tv = tvDict[hw]
+            tv._lostFocusHandler()
+        case con.WM_LBUTTONDOWN: 
+            tv = tvDict[hw]
+            tv._leftMouseDownHandler(msg, wp, lp)
+        case con.WM_LBUTTONUP: 
+            tv = tvDict[hw]
+            tv._leftMouseUpHandler(msg, wp, lp)
+        case con.WM_RBUTTONDOWN: 
+            tv = tvDict[hw]
+            tv._rightMouseDownHandler(msg, wp, lp)
+        case con.WM_RBUTTONUP: 
+            tv = tvDict[hw]
+            tv._rightMouseUpHandler(msg, wp, lp)
+        case con.WM_MOUSEWHEEL: 
+            tv = tvDict[hw]
+            tv._mouseWheenHandler(msg, wp, lp)
+        case con.WM_MOUSEMOVE: 
+            tv = tvDict[hw]
+            tv._mouseMoveHandler(msg, wp, lp)
         # case con.WM_MOUSELEAVE:
         #     if tv._track_mouse_leave:
         #         if not tv._is_mouse_upon_me():

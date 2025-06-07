@@ -21,7 +21,7 @@ def getColorRef(clr: int) -> COLORREF:
     red = clr >> 16
     green = (clr & 0x00ff00) >> 8
     blue = clr & 0x0000ff
-    return int((blue << 16) | (green << 8) | red)
+    return (blue << 16) | (green << 8) | red
 
 
 class RgbColor:
@@ -31,7 +31,7 @@ class RgbColor:
         self.green = (clr & 0x00ff00) >> 8
         self.blue = clr & 0x0000ff
         self.int_color = clr
-        self.ref = int((self.blue << 16) | (self.green << 8) | self.red)
+        self.ref = (self.blue << 16) | (self.green << 8) | self.red
 
     def get_new_shade(self, change_value):
         r = clamp(self.red + (change_value * 8))
@@ -45,7 +45,7 @@ class RgbColor:
         self.green = (clr & 0x00ff00) >> 8
         self.blue = clr & 0x0000ff
         self.int_color = clr
-        self.ref = int((self.blue << 16) | (self.green << 8) | self.red)
+        self.ref = (self.blue << 16) | (self.green << 8) | self.red
 
     def bottom_color(self, adj: int):
         # Buttons and headers are drawing with two colors.
@@ -62,14 +62,14 @@ class RgbColor:
         r = clamp(self.red * adj)
         g = clamp(self.green * adj)
         b = clamp(self.blue * adj)
-        return int((b << 16) | (g << 8) | r)
+        return (b << 16) | (g << 8) | r
 
     def change_shade_rgb(self, adj: float):
         r = RgbColor(0)
         r.red = clamp(self.red * adj)
         r.green = clamp(self.green * adj)
         r.blue = clamp(self.blue * adj)
-        r.ref = int((r.blue << 16) | (r.green << 8) | r.red)
+        r.ref = (r.blue << 16) | (r.green << 8) | r.red
         return r
 
     def is_dark(self):
@@ -111,7 +111,7 @@ class Color:
         self.red = clr >> 16
         self.green = (clr & 0x00ff00) >> 8
         self.blue = clr & 0x0000ff
-        self.ref = int((self.blue << 16) | (self.green << 8) | self.red)
+        self.ref = (self.blue << 16) | (self.green << 8) | self.red
         self.updated = True
 
     def getShadedColor(self, adj: float):
@@ -128,7 +128,7 @@ class Color:
             r1 = clamp(self.red * adj)
             g1 = clamp(self.green * adj)
             b1 = clamp(self.blue * adj)
-            cref = int((b1 << 16) | (g1 << 8) | r1)
+            cref = (b1 << 16) | (g1 << 8) | r1
             return CreateSolidBrush(cref)
 
     def createHPen(self, adj: float = 0, pWidth = 1):
@@ -136,7 +136,7 @@ class Color:
             r1 = clamp(self.red * adj)
             g1 = clamp(self.green * adj)
             b1 = clamp(self.blue * adj)
-            cref = int((b1 << 16) | (g1 << 8) | r1)
+            cref = (b1 << 16) | (g1 << 8) | r1
             return CreatePen(PS_SOLID, pWidth, cref)
         else:
             return CreatePen(PS_SOLID, pWidth, self.ref)
@@ -145,7 +145,7 @@ class Color:
         r1 = clamp(self.red * adj)
         g1 = clamp(self.green * adj)
         b1 = clamp(self.blue * adj)
-        return int((b1 << 16) | (g1 << 8) | r1)
+        return (b1 << 16) | (g1 << 8) | r1
 
     def getCurvedColor(self):
         pass
