@@ -7,12 +7,12 @@ from ctypes import WINFUNCTYPE, byref, addressof, cast, c_wchar_p
 from pyforms.src.control import Control
 
 import pyforms.src.constants as con
-from pyforms.src.commons import Font, MyMessages, getMousePoints
+from pyforms.src.commons import Font, MyMessages, getMousePoints, StaticData
 from pyforms.src.enums import ControlType, TextAlignment, ListViewStyle
 from pyforms.src.apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, LPNMCUSTOMDRAW, LVCOLUMNW
 from pyforms.src.apis import WPARAM, LPARAM, SUBCLASSPROC
 import pyforms.src.apis as api
-from pyforms.src.colors import Color
+from pyforms.src.colors import Color, COLOR_WHITE
 from pyforms.src.winmsgs import log_msg
 # from horology import timed
 # from horology import Timing
@@ -56,17 +56,8 @@ class ListView(Control):
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
                  width: int = 250, height: int = 200, cols = None) -> None:
-        super().__init__()
-
-        self._clsName = "SysListView32"
+        super().__init__(parent, ControlType.LIST_VIEW, width, height)
         self.name = f"ListView_{ListView._count}"
-        self._ctlType = ControlType.LIST_VIEW
-        self._parent = parent
-        self._bgColor = Color(0xFFFFFF)
-        # self._fgColor = Color(0x000000) # Control class is taking care of this
-        self._font.colneFrom(parent._font)
-        self._width = width
-        self._height = height
         self._xpos = xpos
         self._ypos = ypos
         self._isTextable = False
@@ -92,7 +83,7 @@ class ListView(Control):
         self._hdrBgColor = Color(0xb3cccc)
         self._hdrFgColor = Color(0x000000)
         self._hdrClickable = True
-        self._hdrFont = parent._font # Font("Tahoma", 11, FontWeight.BOLD)
+        self._hdrFont = Font(StaticData.defHfont) 
         self._selectable = False
         self._itemIndex = -1
         self._itemDrawn = -1
@@ -103,7 +94,6 @@ class ListView(Control):
         self._colIndex = 0
         self._destroyCount = 0
         self._layCount = 0
-        self._hwnd = None
         parent._controls.append(self)
         # Events
 
@@ -133,14 +123,13 @@ class ListView(Control):
                                     col.index, addressof(col.lvc))
 
             self._hdrHwnd = api.SendMessage(self._hwnd, con.LVM_GETHEADER, 0, 0)
-            if not self._hdrFont.handle: 
-                # Making sure header font is ready.
-                self._hdrFont.createHandle(self._hdrHwnd)
+            if self._hdrFont._handle == 0: 
+                self._hdrFont.createHandle()
 
             # We are going to send the list view hwnd with this function. So, we can grab it inside
             # header's wndproc function.
             api.SetWindowSubclass(self._hdrHwnd, hdrWndProc, ListView._count, self._hwnd)
-            if self._bgColor != self._parent._bgColor:
+            if self._bgColor.value != COLOR_WHITE.value:
                 api.SendMessage(self._hwnd, con.LVM_SETBKCOLOR, 0, self._bgColor.ref)
 
             if self._cbIsLast:
@@ -333,7 +322,7 @@ class ListView(Control):
             else:
                 api.FillRect(nmcd.hdc, byref(nmcd.rc), self._hdrBkBrush)
 
-        api.SelectObject(nmcd.hdc, self._hdrFont.handle)
+        api.SelectObject(nmcd.hdc, self._hdrFont._handle)
         api.SetTextColor(nmcd.hdc, self._hdrFgColor.ref)
         if self._hdrClickable and nmcd.uItemState & con.CDIS_SELECTED:
             # We are mimicing the dotnet listview header's nature here.
@@ -571,7 +560,7 @@ class ListViewItem:
         self._bgColor = bg_color
         self._fgColor = fg_color
         self._imgIndex = imageIndex
-        self._font = Font() # Start with default font Tahoma, 11 point
+        self._font = Font(StaticData.defHfont) # Start with default font Tahoma, 11 point
         self._index = ListViewItem._stindex
         self._subitems = []
         ListViewItem._stindex += 1
@@ -619,7 +608,9 @@ class ListViewItem:
     def font(self): return self._font
 
     @font.setter
-    def font(self, value: Font): self._font = value
+    def font(self, value: Font): 
+        self._font = value
+        self._setFontInternal()
 
 
 

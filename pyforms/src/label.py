@@ -3,7 +3,7 @@
 from ctypes import byref
 from pyforms.src.control import Control
 import pyforms.src.constants as con
-from pyforms.src.commons import MyMessages
+from pyforms.src.commons import MyMessages, StaticData
 from pyforms.src.enums import ControlType, TextAlignment, LabelBorder, LabelAlignment
 from pyforms.src.apis import SIZE, SUBCLASSPROC
 import pyforms.src.apis as api
@@ -19,17 +19,9 @@ class Label(Control):
     __slots__ = ("_autoSize", "_multiLine", "_txtAlign", "_borderStyle", "_dwAlignFlag")
     def __init__(self, parent, txt: str = "", xpos: int = 10, 
                  ypos: int = 10, width: int = 0, height: int = 0 ) -> None:
-        super().__init__()
-        self._clsName = "Static"
+        super().__init__(parent, ControlType.LABEL, width, height)
         self.name = f"Label_{Label._count}"
         self._text = self.name if txt == "" else txt
-        self._ctlType = ControlType.LABEL
-        self._parent = parent
-        self._bgColor = Color(parent._bgColor)
-        # self._font = parent._font
-        self._font.colneFrom(parent._font)
-        self._width = width
-        self._height = height
         self._xpos = xpos
         self._ypos = ypos
         self._isTextable = True
@@ -41,7 +33,8 @@ class Label(Control):
         self._borderStyle = LabelBorder.NONE
         self._dwAlignFlag = 0
         self._hasBrush = True
-        self._hwnd = None
+        self._bkgBrush = StaticData.defBackBrush
+        self._bgColor = Color(parent._bgColor)
         parent._controls.append(self)
         Label._count += 1
         if parent.createChilds: self.createHandle()
@@ -51,7 +44,6 @@ class Label(Control):
     def createHandle(self):
         """Create handle for this label"""
         if self._borderStyle != LabelBorder.NONE: self._adjustBorder()
-        self._bkgBrush = api.CreateSolidBrush(self._bgColor.ref)
         self._isAutoSizeNeeded()
         self._createControl()
         if self._hwnd:

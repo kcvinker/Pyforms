@@ -2,11 +2,11 @@
 
 from ctypes import byref, cast, addressof
 from pyforms.src.control import Control
-from pyforms.src.commons import MyMessages
+from pyforms.src.commons import MyMessages, StaticData
 from pyforms.src.enums import ControlType
 from pyforms.src.apis import LRESULT, LPNMCUSTOMDRAW, SUBCLASSPROC
 import pyforms.src.apis as api
-from pyforms.src.colors import Color
+from pyforms.src.colors import Color, COLOR_BLACK
 import pyforms.src.constants as con
 from pyforms.src.events import GEA
 
@@ -22,28 +22,21 @@ class RadioButton(Control):
 
     def __init__(self, parent, txt: str, xpos: int = 10, ypos: int = 10, 
                  width: int = 120, height: int = 23, check=False) -> None:
-        super().__init__()
-        self._clsName = "Button"
+        super().__init__(parent, ControlType.RADIO_BUTTON, width, height)
         self.name = f"RadioButton_{RadioButton._count}"
-        self._ctlType = ControlType.RADIO_BUTTON
         self._text = self.name if txt == "" else txt
-        self._parent = parent
-        self._font.colneFrom(parent._font)
-        self._width = width
-        self._height = height
         self._xpos = xpos
         self._ypos = ypos
         self._isTextable = True
         self._style = rbStyle
         self._exStyle = con.WS_EX_LTRREADING | con.WS_EX_LEFT
         self._txtStyle = con.DT_SINGLELINE | con.DT_VCENTER
-        self._bgColor = Color(parent._bgColor)
-        self._bkgBrush = self._bgColor.createHBrush()
+        self._bkgBrush = StaticData.defBackBrush
         self._checkOnClick = True
         self._rightAlign = False
         self._isChecked = False
+        self._bgColor = Color(parent._bgColor)
         self.onCheckedChanged = None
-        self._hwnd = None
         self._value = check
         parent._controls.append(self)
         RadioButton._count += 1
@@ -76,7 +69,7 @@ class RadioButton(Control):
     def backColor(self, value):
         """Set back color of radio button."""
         self._bgColor.updateColor(value)
-        self._bkgBrush = api.CreateSolidBrush(self._bgColor.ref)
+        # self._bkgBrush = api.CreateSolidBrush(self._bgColor.ref)
         if not self._drawFlag & (1 << 1): self._drawFlag += 2
 
 

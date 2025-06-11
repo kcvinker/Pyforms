@@ -24,13 +24,9 @@ class GroupBox(Control):
                  "_getWidth", "_themeOff", "_hdc", "_hbmp" )
     def __init__(self, parent, txt: str = "", xpos: int = 10, 
                  ypos: int = 10, width: int = 300, height: int = 300 ) -> None:
-        super().__init__()
-        self._clsName = "Button"
+        super().__init__(parent, ControlType.GROUP_BOX, width, height)
         self.name = f"GroupBox_{GroupBox._count}"
         self._text = self.name if txt == "" else txt
-        self._ctlType = ControlType.GROUP_BOX
-        self._parent = parent
-        self._bgColor = Color(parent._bgColor)
         self._gstyle = GroupBoxStyle.SYSTEM
         self._dbFill = True
         self._getWidth = True
@@ -38,9 +34,6 @@ class GroupBox(Control):
         self._hdc = None
         self._hbmp = None
         self._pen = None
-        self._font.colneFrom(parent._font)
-        self._width = width
-        self._height = height
         self._xpos = xpos
         self._ypos = ypos
         self._isTextable = True
@@ -48,7 +41,7 @@ class GroupBox(Control):
         self._exStyle = gbExStyle
         self._drawFlag = 0
         self._txtWidth = 0
-        self._hwnd = None
+        self._bgColor = Color(parent._bgColor)
         parent._controls.append(self)
         GroupBox._count += 1
         if parent.createChilds: self.createHandle()
@@ -154,7 +147,7 @@ class GroupBox(Control):
     def font(self, value):
         """Set group box font"""
         self._font.colneFrom(value)
-        if value._handle == None:
+        if value._handle == 0:
             self._font.createHandle()
         self.sendMsg(con.WM_SETFONT, self._font._handle, 1)
         self._getWidth = True

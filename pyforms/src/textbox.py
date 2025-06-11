@@ -24,20 +24,13 @@ class TextBox(Control):
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
                  width: int = 120, height: int = 23, txt="", multiLine=False) -> None:
-        super().__init__()
-        self._clsName = "EDIT"
+        super().__init__(parent, ControlType.TEXT_BOX, width, height)
         self.name = f"TextBox_{TextBox._count}"
-        self._ctlType = ControlType.TEXT_BOX
-        self._parent = parent
-        self._font.colneFrom(parent._font)
-        self._width = width
-        self._height = height
         self._xpos = xpos
         self._ypos = ypos
         self._isTextable = True
         self._style = 0x50010080 | con.WS_CLIPCHILDREN
         self._exStyle = 0x00000204
-        self._bgColor = Color(0xFFFFFF)
         self._drawFlag = 0
         self._multiLine = multiLine
         self._hideSel = False
@@ -46,9 +39,9 @@ class TextBox(Control):
         self._textType = TextType.NORMAL
         self._textAlign = TextAlignment.LEFT
         self._text = txt
+        # self._fgColor = Color(0x000000)
         self._cueBanner = ""
         self.onTextChanged = None
-        self._hwnd = None
         self._bkgBrush = self._bgColor.createHBrush()
         parent._controls.append(self)
         TextBox._count += 1

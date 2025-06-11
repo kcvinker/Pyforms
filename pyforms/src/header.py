@@ -81,15 +81,9 @@ class Header(Control):
                 "_hdrStyle", "_cdSet", "_itemIndex", "onDrag", "_drawFunc")
     def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
                  width: int = 0, height: int = 25 ) -> None:
-        super().__init__()
-        self._clsName = "SysHeader32"
+        super().__init__(parent, ControlType.HEADER, width, height)
         self.name = f"Header_{Header._count}"
-        self._ctlType = ControlType.HEADER
-        self._parent = parent
-        self._bgColor = Color(0xe9d8a6) # foreColor is setting in Control's init
-        self._font = parent._font
-        self._width = width
-        self._height = height
+        self._bgColor = Color(0xE9D8A6)
         self._xpos = xpos
         self._ypos = ypos
         self._isTextable = True
@@ -108,12 +102,10 @@ class Header(Control):
         self._hdrStyle = HeaderStyle.FLAT
         self._txtFlag = con.DT_SINGLELINE | con.DT_VCENTER | con.DT_CENTER | con.DT_NOPREFIX
         self._drawFunc = self._drawFlatHeader
-        # self._dividerPen = self._bgColor.createHPen(0.5)
         self.cnt = 1
         self._itemIndex = 0
         # Events
         self.onDrag = None
-        self._hwnd = None
         parent._controls.append(self)
         Header._count += 1
         if parent.createChilds: self.createHandle()

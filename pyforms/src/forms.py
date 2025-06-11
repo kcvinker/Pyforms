@@ -335,17 +335,13 @@ class Form(Control):
                     "_mGt2b", "_timerDic", "createChilds", "_dummyEA" )
 
     def __init__(self, txt = "", width = 500, height = 400, autoCreate = False) -> None:
-        super().__init__()
-        self._classStr = ""
+        super().__init__(None, ControlType.NONE, width, height)
         self.name = f"Form_{Form._count}"
         self._text = self.name if txt == "" else txt
-        self._width = width
-        self._height = height
         self._style = con.WS_OVERLAPPEDWINDOW | con.WS_CLIPCHILDREN | con.WS_VISIBLE
         self._isTextable = True # If this is True, users can get or set text property
-        self._font = Font() # Font handle is not created yet. It's just a font class
-        self._bgColor = Color(StaticData.defWinColor) # Defining a globar window color for all windows
-        self._fgColor = COLOR_BLACK
+        self._font = Font(StaticData.defHfont) 
+        self._bgColor = Color(StaticData.defWinColor)
         self._formPos = FormPosition.CENTER # Defining where to appear on the screen
         self._formStyle = FormStyle.SIZABLE # Defining the style of this form
         self._formState = FormState.NORMAL # Other options are minimize & maximize
@@ -354,7 +350,7 @@ class Form(Control):
         self._minimizeBox = True
         self._mainWinHwnd = None
         self._isMainWindow = False
-        self._isMouseTracking = False # A flag to control mouse tracking in oreder to get the mouse move msg
+        self._isMouseTracking = False # to control mouse tracking 
         self._drawMode = FormDrawMode.NORMAL # Other options are flat color & gradient
         self._isNormalDraw = True
         self.createChilds = False

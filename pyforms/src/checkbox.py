@@ -3,7 +3,7 @@
 
 from ctypes import WINFUNCTYPE, byref, cast, addressof
 from pyforms.src.control import Control
-from pyforms.src.commons import MyMessages
+from pyforms.src.commons import MyMessages, StaticData
 from pyforms.src.enums import ControlType
 from pyforms.src.apis import LRESULT, LPNMCUSTOMDRAW, SUBCLASSPROC
 import pyforms.src.apis as api
@@ -22,29 +22,22 @@ class CheckBox(Control):
 
     def __init__(self, parent, txt: str, xpos: int = 10, 
                  ypos: int = 10, width: int = 0, height: int = 0) -> None:
-        super().__init__()
-        self._clsName = "Button"
+        super().__init__(parent, ControlType.CHECK_BOX, width, height)
         self.name = f"CheckBox_{CheckBox._count}"
-        self._ctlType = ControlType.CHECK_BOX
         self._text = self.name if txt == "" else txt
-        self._parent = parent
-        self._font.colneFrom(parent._font)
-        self._width = width
-        self._height = height
         self._xpos = xpos
         self._ypos = ypos
         self._isTextable = True
         self._style = cb_style
         self._exStyle = con.WS_EX_LTRREADING | con.WS_EX_LEFT
         self._txtStyle = con.DT_SINGLELINE | con.DT_VCENTER
-        self._bgColor = Color(parent._bgColor)
         self._rightAlign = False
         self._isChecked = False
         self._autosize = True
-        self._bkgBrush = self._bgColor.createHBrush()
+        self._bkgBrush = StaticData.defBackBrush # self._bgColor.createHBrush()
+        self._bgColor = Color(parent._bgColor)
         # Events
         self.onCheckedChanged = None
-        self._hwnd = None
         parent._controls.append(self)
         CheckBox._count += 1
         if parent.createChilds: self.createHandle()

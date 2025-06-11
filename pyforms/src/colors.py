@@ -1,21 +1,15 @@
 # Color module - Created on 16-Nov-2022 01:37
-
-from pyforms.src. apis import CreateSolidBrush, CreatePen
+ 
 from pyforms.src. constants import PS_SOLID
 from ctypes import byref
 import ctypes as ct
 from ctypes.wintypes import HDC, COLORREF, HBRUSH
-from pyforms.src.apis import RECT, CreateSolidBrush, FillRect, DeleteObject, DeleteDC
-from pyforms.src.apis import CreatePatternBrush, SelectObject #, gbrushInD
-from pyforms.src.apis import CreateCompatibleDC, CreateCompatibleBitmap
-from horology import timed
-# import sys
-# sys.path.append(r"C:\Users\kcvin\OneDrive\Programming\Python\CFFI\tests")
-# from gbrushcffi import lib, ffi
+from pyforms.src.apis import (
+    RECT, CreateSolidBrush, FillRect, DeleteObject, DeleteDC,
+    CreatePatternBrush, SelectObject, CreateCompatibleDC, 
+    CreateCompatibleBitmap, CreatePen)
+# from horology import timed
 
-# from pyforms.src.
-# from pyforms.src.pywin2 import createGradientBrush
-# from pyforms.src.pyhelper import createGbrushInCython
 
 def getColorRef(clr: int) -> COLORREF:
     red = clr >> 16

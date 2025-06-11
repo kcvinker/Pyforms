@@ -28,15 +28,8 @@ class TreeView(Control):
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
                  width: int = 80, height: int = 24 ) -> None:
-        super().__init__()
-        self._clsName = "SysTreeView32"
+        super().__init__(parent, ControlType.TREE_VIEW, width, height)
         self.name = f"TreeView_{TreeView._count}"
-        self._ctlType = ControlType.TREE_VIEW
-        self._parent = parent
-        self._bgColor = Color(0xFFFFFF)
-        self._font.colneFrom(parent._font)
-        self._width = width
-        self._height = height
         self._xpos = xpos
         self._ypos = ypos
         self._style = tvStyle
@@ -55,7 +48,6 @@ class TreeView(Control):
         self._nxtNodeHwnd = 0
         self._uniqNodeID = 100
         self._nodeDict = {} # This dict will hold all the nodes.
-        self._hwnd = None
         parent._controls.append(self)
         #Events
 

@@ -1,17 +1,17 @@
 # trackbar module - Created on 21-Dec-2022 01:22:20
 
-from ctypes import byref, addressof, cast
+from ctypes import byref, addressof, cast, c_void_p
 # import ctypes as ctp
 from pyforms.src.control import Control
 import pyforms.src.constants as con
-from pyforms.src.commons import MyMessages
+from pyforms.src.commons import MyMessages, StaticData, log_cnt, print_rect
 from pyforms.src.enums import ControlType, TickPosition, ChannelStyle, TrackChange
 from pyforms.src.events import GEA
-from pyforms.src.apis import LRESULT, RECT, LPNMCUSTOMDRAW, SUBCLASSPROC
+from pyforms.src.apis import LRESULT, RECT, LPNMCUSTOMDRAW, SUBCLASSPROC, LPARAM
 import pyforms.src.apis as api
 from pyforms.src.colors import Color
 from pyforms.src.winmsgs import log_msg
-
+from horology import Timing
 trkDict = {}
 trkStyle = con.WS_CHILD | con.WS_VISIBLE | con.TBS_AUTOTICKS | con.WS_CLIPCHILDREN
 
@@ -26,31 +26,31 @@ class TrackBar(Control):
     """TrackBar control """
     Control.icc.initCommCtls(con.ICC_BAR_CLASSES)
     _count = 1
-    __slots__ = ( "_vertical", "_reversed", "_noTics", "_selRange", "_defTics", "_ticColor", "_chanColor",
-                    "_ticWidth",  "_minRange", "_maxRange", "_frequency", "_value", "_ticPos", "_pageSize",
-                    "_lineSIze", "_noThumb", "_tooltip", "_chanPen", "_chanStyle", "_chanRc",
-                    "_thumbRc", "_drawTic", "_ticPen", "_myRect", "_ticLen", "_custDraw", "_mouseOver", "_freeMove",
-                    "_thumbHalf", "_range", "_selColor", "_selBrush", "onValueChanged", "onDragging",
-                    "onDragged", "_trackChange", "_lbDown", "_ticList", "_point1", "_point2" )
+    __slots__ = ( "_vertical", "_reversed", "_noTics", "_selRange", 
+                 "_defTics", "_ticColor", "_chanColor", "_ticWidth",  
+                 "_minRange", "_maxRange", "_frequency", "_value", 
+                 "_ticPos", "_pageSize", "_lineSIze", "_noThumb", 
+                 "_tooltip", "_chanPen", "_chanStyle", "_chanRc",
+                "_thumbRc", "_ticPen", "_myRect", "_chanDraw",
+                "_ticLen", "_custDraw", "_mouseOver", "_freeMove",
+                "_thumbHalf", "_range", "_selColor", "_selBrush", 
+                "tposList", "onValueChanged", "onDragging", 
+                "onDragged", "_trackChange", "_lbDown", 
+                "_ticSpacingPX", "_ticSpacingPY",
+                 "_chanFlag", "_bnpReady","_ticsReady" )
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
-                 width: int = 150, height: int = 25) -> None:
-        super().__init__()
-
-        self._clsName = "msctls_trackbar32"
+                 width: int = 150, height: int = 25, noCreate=False) -> None:
+        super().__init__(parent, ControlType.TRACK_BAR, width, height)
         self.name = f"TrackBar_{TrackBar._count}"
-        self._ctlType = ControlType.TRACK_BAR
-        self._parent = parent
         self._bgColor = Color(parent._bgColor)
-        self._width = width
-        self._height = height
         self._xpos = xpos
         self._ypos = ypos
         self._isTextable = False
         self._style = trkStyle
         self._exStyle = con.WS_EX_RIGHTSCROLLBAR |con.WS_EX_LTRREADING | con.WS_EX_LEFT
         self._text = "track_bar"
-        self._ticPos = TickPosition.DOWN
+        self._ticPos = TickPosition.BOTH #TickPosition.DOWN
         self._vertical = False
         self._reversed = False
         self._noTics = False
@@ -58,6 +58,9 @@ class TrackBar(Control):
         self._defTics = False
         self._noThumb = False
         self._tooltip = False
+        self._bnpReady = False
+        self._ticsReady = False
+        self._chanDraw = False
         self._value = 0
         self._frequency = 10
         self._ticWidth = 1
@@ -65,11 +68,10 @@ class TrackBar(Control):
         self._maxRange = 100
         self._pageSize = self._frequency
         self._lineSIze = 1
-        self._chanStyle = ChannelStyle.DEFAULT
+        self._chanStyle = ChannelStyle.SYSTEM
         self._thumbRc = RECT()
         self._chanRc = RECT()
         self._myRect = RECT()
-        self._drawTic = False
         self._ticLen = 4
         self._custDraw = False
         self._mouseOver = False
@@ -78,18 +80,16 @@ class TrackBar(Control):
         self._range = 0
         self._trackChange = TrackChange.NONE
         self._lbDown = False
-        self._ticList = [] # List of TicData [index, pysical pos, logical pos]
-        self._point1 = 0 # Needed for x or y point of tic.
-        self._point2 = 0 # Needed for x or y point of tic only when TicPosition.BOTH flag on.
         self._selColor = Color(0x99ff33)
         self._chanColor = Color(0xd0d0e1) #(0xc2d6d6) #(0xc2c2d6)
-        self._ticColor = Color(0x3385ff)
-        self._bgColor = Color(parent._bgColor)
+        self._ticColor = Color(0xa5a58d) #Color(0x3385ff)
+        self._bkgBrush = StaticData.defBackBrush
         self._selBrush = None
         self._ticPen = None
         self._chanPen = None
         self._hasBrush = True
-        self._hwnd = None
+        self.tposList = []
+        self._chanFlag = con.BF_RECT | con.BF_ADJUST
         parent._controls.append(self)
 
         # Events
@@ -97,20 +97,27 @@ class TrackBar(Control):
         self.onDragging = None
         self.onDragged = None
         TrackBar._count += 1
-        if parent.createChilds: self.createHandle()
+        if parent.createChilds and not noCreate: self.createHandle()
 
 # -region Public functions
+    def gettics(self):
+        ntc = self._sendMsg(con.TBM_GETNUMTICS, 0, 0) - 2
+        plist = []
+        for i in range(ntc):
+            p = self._sendMsg(con.TBM_GETTICPOS, i, 0)
+            plist.append(p)
+
+        print(plist)
 
     def createHandle(self):
         """Create's TrackBar handle"""
 
-        self._setTrackStyle()
-        if self._custDraw: self._prepareCustDraw()
+        self._setTrackStyle()        
         self._createControl()
         if self._hwnd:
             trkDict[self._hwnd] = self
             self._setSubclass(trkWndProc)
-            if self._custDraw: self._calcTics()
+            # with Timing("tic calc time: "):
             if self._reversed:
                 api.SendMessage(self._hwnd, con.TBM_SETRANGEMIN, 1, (self._maxRange * -1))
                 api.SendMessage(self._hwnd, con.TBM_SETRANGEMAX, 1, self._minRange)
@@ -121,10 +128,22 @@ class TrackBar(Control):
             api.SendMessage(self._hwnd, con.TBM_SETTICFREQ, self._frequency, 0)
             api.SendMessage(self._hwnd, con.TBM_SETPAGESIZE, 0, self._pageSize)
             api.SendMessage(self._hwnd, con.TBM_SETLINESIZE, 0, self._lineSIze)
+            
+            self._calcTics()
+            if self._custDraw: 
+                self._prepareCustDraw()
+            
+            api.GetWindowRect(self._hwnd, byref(self._thumbRc))
+            # print_rect(self._thumbRc)
 
             if self._selRange: # We need to prepare a color and a brush
                 self._selBrush = api.CreateSolidBrush(self._selColor.ref)
-
+        
+        # print("tkb creation finished. Rect ")
+        # ntc = self._sendMsg(con.TBM_GETNUMTICS, 0, 0)
+        # print(f"{ntc=}")
+        # print(self._sendMsg(con.TBM_GETPAGESIZE, 0, 0))
+        # print(f"{self._myRect.left=}, {self._myRect.top=}, {self._myRect.right=}, {self._myRect.bottom=}")
 
     def calsulateSize(self):
         """This function will show you how many points are
@@ -173,6 +192,9 @@ class TrackBar(Control):
         # Setup different trackbar styles as per user's selection
         if self._vertical:
             self._style |= con.TBS_VERT
+            self._reversed = True
+            if self._ticPos in [TickPosition.DOWN, TickPosition.UP]:
+                self._ticPos = TickPosition.LEFT
             match self._ticPos:
                 case TickPosition.LEFT: self._style |= con.TBS_LEFT
                 case TickPosition.RIGHT: self._style |= con.TBS_RIGHT
@@ -183,19 +205,27 @@ class TrackBar(Control):
                 case TickPosition.UP: self._style |= con.TBS_TOP
                 case TickPosition.BOTH: self._style |= con.TBS_BOTH
 
-        if self._selRange: self._style |= con.TBS_ENABLESELRANGE
+        if self._selRange: 
+            self._style |= con.TBS_ENABLESELRANGE
+            self._chanFlag = self._chanFlag | con.BF_FLAT
         if self._reversed: self._style |= con.TBS_REVERSED
         if self._noTics: self._style |= con.TBS_NOTICKS
         if self._noThumb: self._style |= con.TBS_NOTHUMB
         if self._tooltip: self._style |= con.TBS_TOOLTIPS
-        self._bkgBrush = self._bgColor.createHBrush()
+        
 
     # Fill appropriate rects
-    def _collectRects(self):
+    def _getRects(self):
         # We need to keep the rects for different parts of this trackbar
         api.GetClientRect(self._hwnd, byref(self._myRect))
-        api.SendMessage(self._hwnd, con.TBM_GETTHUMBRECT, 0, addressof(self._thumbRc)) # Get the thumb rect
-        api.SendMessage(self._hwnd, con.TBM_GETCHANNELRECT, 0, addressof(self._chanRc)) # Get the channel rect
+        api.SendMessage(self._hwnd, con.TBM_GETTHUMBRECT, 0, 
+                        addressof(self._thumbRc)) # Get the thumb rect
+        api.SendMessage(self._hwnd, con.TBM_GETCHANNELRECT, 0, 
+                        addressof(self._chanRc)) # Get the channel rect
+        if self._vertical:
+            self._thumbHalf = (self._thumbRc.bottom - self._thumbRc.top) // 2
+        else:
+            self._thumbHalf = (self._thumbRc.right - self._thumbRc.left) // 2
 
     # Calculate thumb's hanlf width / height
     def _calcThumbOffset(self):
@@ -206,89 +236,129 @@ class TrackBar(Control):
             tw =  self._thumbRc.right - self._thumbRc.left
         self._thumbHalf = int(tw/2)
 
-    # Draw harizontal tics in down side
-    def _drawHorizTics(self, hdc, px, py):
-        api.MoveToEx(hdc, px, py, None)
-        api.LineTo(hdc, px, py + self._ticLen)
-
-    # Draw harizontal tics in up side
-    def _drawHorizTicsUpper(self, hdc, px, py):
-        api.MoveToEx(hdc, px, py, None)
-        api.LineTo(hdc, px, py - self._ticLen)
-
-    # Draw vertical tics
-    def _drawVertTics(self, hdc, px, py):
-        api.MoveToEx(hdc, px, py, None)
-        api.LineTo(hdc, px + self._ticLen, py)
+    
 
     # Get the rect for thumb
     def _getThumbRect(self): # Useless ?
         rc = RECT()
         api.SendMessage(self._hwnd, con.TBM_GETTHUMBRECT, 0, addressof(rc))
         return rc
+    
+    def _drawHorizontalTics(self, hdc): # NEW===========
+        # print("draw tics ")
+        offset = -15
+        hOld = api.SelectObject(hdc, self._ticPen)
+        for i in self.tposList:    
+            # Draw upper tic
+            if self._ticPos in [TickPosition.UP, TickPosition.BOTH]:
+                api.MoveToEx(hdc, i, self._chanRc.top + offset, None)
+                api.LineTo(hdc, i, self._chanRc.top + offset + self._ticLen)  
 
-    # Internal function for drawing tics
-    def _drawTics(self, hdc):
-        # This function get called inside the custom draw part.
-        api.SelectObject(hdc, self._ticPen)
-        if self._vertical:
-            match self._ticPos:
-                case TickPosition.RIGHT | TickPosition.LEFT:
-                    for p in self._ticList:
-                        self._drawVertTics(hdc, self._point1, p.phy_point)
-                case TickPosition.BOTH:
-                    for p in self._ticList:
-                        self._drawVertTics(hdc, self._point1, p.phy_point)
-                        self._drawVertTics(hdc, self._point2, p.phy_point)
+            # Draw lower tic
+            if self._ticPos in [TickPosition.DOWN, TickPosition.BOTH]:
+                api.MoveToEx(hdc, i, self._chanRc.bottom - offset, None)
+                api.LineTo(hdc, i, self._chanRc.bottom - offset - self._ticLen)
 
-        else:
-            match self._ticPos:
-                case TickPosition.UP | TickPosition.DOWN:
-                    for p in self._ticList:
-                        self._drawHorizTics(hdc, p.phy_point, self._point1)
-                case TickPosition.BOTH:
-                    for p in self._ticList:
-                        self._drawHorizTics(hdc, p.phy_point, self._point1)
-                        self._drawHorizTicsUpper(hdc, p.phy_point, self._point2)
+        api.SelectObject(hdc, hOld)
+        return con.CDRF_SKIPDEFAULT
+    
+
+    def _drawVerticalTics(self, hdc): # NEW===========
+        
+        thumb_width = self._thumbRc.bottom - self._thumbRc.top
+        thumb_len = self._thumbRc.right - self._thumbRc.left
+        hOld = api.SelectObject(hdc, self._ticPen)                
+            
+        #     # Draw left tic
+        if self._ticPos in [TickPosition.LEFT, TickPosition.BOTH]:
+            x1 = self._myRect.left + 4
+            x2 = x1 + self._ticLen  
+            for yps in self.tposList:
+                api.MoveToEx(hdc, x1, yps, None)
+                api.LineTo(hdc, x2, yps)  
+
+        #Draw right tic
+        if self._ticPos in [TickPosition.RIGHT, TickPosition.BOTH]:
+            x1 = self._myRect.right - 27
+            x2 = self._myRect.right - 27 + self._ticLen
+            for yps in self.tposList:
+                api.MoveToEx(hdc, x1, yps, None)
+                api.LineTo(hdc, x2, yps)
+        
+        # print(f"{thumb_len=}, {thumb_width=}")
+        api.SelectObject(hdc, hOld)
+        return con.CDRF_SKIPDEFAULT
+    
+
+    def _calcVertTics(self):
+        self._getRects() 
+        channel_height = self._chanRc.right - self._chanRc.left
+        thumb_width = self._thumbRc.right - self._thumbRc.left
+        stpos = self._chanRc.right - thumb_width
+        enpos = channel_height - thumb_width
+        
+
 
     # Calculated the distants for drawing tics
     def _calcTics(self):
         # Calculating logical & physical positions for tics.
-        self._collectRects()
-        self._calcThumbOffset()
-        self._range = self._maxRange - self._minRange
-        api.SendMessage(self._hwnd, con.TBM_SETLINESIZE, 0, self._frequency)
-
-        numtics = self._range // self._frequency
-        if self._range % self._frequency == 0: numtics -= 1
-        stpos = self._chanRc.left + self._thumbHalf
-        enpos = self._chanRc.right - self._thumbHalf
-        channel_len = enpos - stpos
-        pfactor = channel_len / self._range
-
-        tic = self._minRange + self._frequency
-        self._ticList.append(TicData( stpos, 0))
-        for i in range(numtics):
-            # print(f"{tic * pfactor = }, {tic = }")
-            self._ticList.append(TicData(int(tic * pfactor) + stpos, tic))
-            tic += self._frequency
-
-        self._ticList.append(TicData(enpos, self._range))
-        # print("P factor ", pfactor)
+        self._getRects() 
         if self._vertical:
-            match self._ticPos:
-                case TickPosition.LEFT: self._point1 = self._thumbRc.left - 5
-                case TickPosition.RIGHT: self._point1 = self._thumbRc.right + 2
-                case TickPosition.BOTH:
-                    self._point1 = self._thumbRc.right + 2
-                    self._point2 = self._thumbRc.left - 5
+            channel_height = self._chanRc.right - self._chanRc.left
+            thumb_width = self._thumbRc.right - self._thumbRc.left
+            stpos = self._myRect.top + 14 
+            enpos = self._myRect.bottom - 14 
+        else:      
+            stpos = self._chanRc.left + self._thumbHalf
+            enpos = self._chanRc.right - self._thumbHalf
+                 
+        if stpos == enpos or self._frequency <= 0:
+            return []
+
+        step = (enpos - stpos) / (self._frequency)
+        reminder = (enpos - stpos) % (self._frequency)
+        istep = int(step)
+        # print(f"{step=}, {stpos=} {enpos=}, {channel_height=} {thumb_width=}")
+        # print_rect(self._chanRc)
+        # print_rect(self._myRect)
+        if not step.is_integer():
+            enpos = stpos + istep * (self._frequency)
+    
+        self.tposList = [round(stpos + istep * i) for i in range(1, self._frequency )]
+        self.tposList.insert(0, stpos)
+        self.tposList.append(enpos)
+        self._pageSize = self._frequency 
+        api.SendMessage(self._hwnd, con.TBM_SETTICFREQ, self._frequency, 0)
+        api.SendMessage(self._hwnd, con.TBM_SETPAGESIZE, 0, self._pageSize)
+        # print(self.tposList)
+        # Let's adjust trackbar size if reminder is a thing.       
+        if reminder > 5:
+            if self._vertical:
+                self._height += reminder
+            else:
+                self._width += reminder
         else:
-            match self._ticPos:
-                case TickPosition.DOWN: self._point1 = self._thumbRc.bottom + 1
-                case TickPosition.UP: self._point1 = self._thumbRc.top - 4
-                case TickPosition.BOTH:
-                    self._point1 = self._thumbRc.bottom + 1
-                    self._point2 = self._thumbRc.top - 3
+            if self._vertical:
+                self._height -= reminder
+            else:
+                self._width -= reminder
+
+        self.setPosInternal(con.SWP_NOMOVE)
+        
+
+    def _findNerarestTic(self):
+        tpos = self._sendMsg(con.TBM_GETPOS, 0, 0)
+        num_tics = len(self.tposList)
+        cltic = None
+        mindist = float("inf")
+
+        for i in self.tposList:
+            distance = abs(i - tpos)
+            if distance < mindist:
+                mindist = distance
+                cltic = i
+
+        return cltic
 
     # Filling channel rect with selection color.
     def _fillChannelRect(self, nm, trc):
@@ -322,50 +392,18 @@ class TrackBar(Control):
 
     # Internal function for set value
     def _setValueInternal(self, val):
-        self._value = (U16_MAX - val) if self._reversed else val
+        # self._value = (U16_MAX - val) if self._reversed else val
+        
+        self._value = abs(val) if self._reversed else val
+
+        print(f"{val=}")
 
 
     # Preparing for custom draw
     def _prepareCustDraw(self):
         self._chanPen = self._chanColor.createHPen()
         self._ticPen = api.CreatePen(con.PS_SOLID, self._ticWidth, self._ticColor.ref)
-
-    # Handling wm_notify message
-    def _wmNotifyHandler(self, lp):
-        nmh = cast(lp, api.LPNMHDR).contents
-        match nmh.code:
-            case con.NM_CUSTOMDRAW:
-                if self._custDraw:
-                    nmcd = cast(lp, LPNMCUSTOMDRAW).contents
-                    match nmcd.dwDrawStage:
-                        case con.CDDS_PREPAINT: return con.CDRF_NOTIFYITEMDRAW
-                        case con.CDDS_ITEMPREPAINT:
-                            # print(f"{nmcd.dwItemSpec = }, {con.TBCD_TICS = }, {con.TBCD_CHANNEL = }")
-                            if nmcd.dwItemSpec == con.TBCD_TICS:
-                                if not self._noTics: self._drawTics(nmcd.hdc)
-                                # return con.CDRF_SKIPDEFAULT
-
-                            elif nmcd.dwItemSpec == con.TBCD_CHANNEL:
-                                if self._chanStyle == ChannelStyle.CLASSIC:
-                                    api.DrawEdge(nmcd.hdc, byref(nmcd.rc), con.EDGE_SUNKEN, con.BF_RECT | con.BF_ADJUST) # 1 style
-                                else:
-                                    api.SelectObject(nmcd.hdc, self._chanPen)
-                                    api.Rectangle(nmcd.hdc, nmcd.rc.left, nmcd.rc.top, nmcd.rc.right, nmcd.rc.bottom )
-
-                                if self._selRange: # Fill the selection range
-                                    rc = self._getThumbRect()
-                                    if self._fillChannelRect(nmcd, rc):
-                                        api.InvalidateRect(self._hwnd, byref(nmcd.rc), False)
-                                return con.CDRF_SKIPDEFAULT
-                            else:
-                                return con.CDRF_DODEFAULT
-                    return con.CDRF_DODEFAULT
-                else:
-                    return con.CDRF_DODEFAULT # We don't need to use custom draw
-            case 4294967280: # con.TRBN_THUMBPOSCHANGING:
-                self._trackChange = TrackChange.MOUSE_CLICK
-                return con.CDRF_DODEFAULT
-
+        self._bnpReady = True
 
     # -endregion Private funcs
 
@@ -555,8 +593,13 @@ class TrackBar(Control):
     def ticColor(self, value: int):
         """Set or get the color for tic marks of trackbar"""
         self._ticColor = Color(value)
-        if value and not self._custDraw:
+        if self._ticPen: api.DeleteObject(self._ticPen)
+        self._ticPen = api.CreatePen(con.PS_SOLID, self._ticWidth, self._ticColor.ref)
+        if not self._custDraw:
             self._custDraw = True
+            self._sendMsg(con.TBM_SETTICFREQ, self._frequency, 0)
+         
+        # if self._vertical: self._calcVertTics()
     # #------------------------------------------------------------------------15 TIC COLOR
 
     @property
@@ -664,27 +707,28 @@ def trkWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             trk = trkDict[hw]
             match lwp:
                 case con.TB_THUMBPOSITION:
-                    # Thumb dragging finished. Let's collect the value
-                    trk._setValueInternal(api.HIWORD(wp))
-
+                    # Thumb dragging finished. Let's collect the value                    
+                    tpos = (U16_MAX - api.HIWORD(wp)) if trk._reversed else api.HIWORD(wp)
+        
                     # if freeMove property is false, we need to adjust the thumb on nearest tic.
-                    if not trk._freeMove: #Improve
-                        pos = trk._value
-                        half = trk._frequency // 2
-                        diff = trk._value % trk._frequency
-                        if diff >= half:
-                            pos = (trk._frequency - diff) + trk._value
-                        elif diff < half:
-                            pos =  trk._value - diff
-                        if trk._reversed:
-                            api.SendMessage(trk._hwnd, con.TBM_SETPOS, True, (pos * -1))
+                    if trk._freeMove: #Improve
+                        trk._value = tpos
+                    else:
+                        if tpos < trk._frequency:
+                            newpos = 1 if tpos < 6 else trk._frequency
                         else:
-                            api.SendMessage(trk._hwnd, con.TBM_SETPOS, True, pos)
-
-                        trk._value = pos
+                            rmr = tpos % trk._frequency
+                            if rmr > 5: 
+                                newpos = (trk._frequency - rmr) + tpos
+                            else:
+                                newpos = tpos - rmr
+                            trk._value = newpos
+                            
+                        trk._sendMsg(con.TBM_SETPOS, True, newpos)
+                      
 
                     # We need to refresh Trackbar in order to display our new drawings.
-                    api.InvalidateRect(hw, byref(trk._chanRc), False)
+                    # api.InvalidateRect(hw, byref(trk._chanRc), False)
 
                     trk._trackChange = TrackChange.MOUSE_DRAG
                     if trk.onDragged: trk.onDragged(trk, GEA)
@@ -706,10 +750,8 @@ def trkWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
 
                 case con.THUMB_PAGE_HIGH:
                     trk._setValueInternal(api.SendMessage(hw, con.TBM_GETPOS, 0, 0))
-                    # print("value ", trk._value)
                     if not trk._lbDown:
                         trk._trackChange = TrackChange.PAGE_HIGH
-                        # print(trk._trackChange, " 458 ")
 
                     if trk.onValueChanged:
                         trk.onValueChanged(trk, GEA)
@@ -725,50 +767,70 @@ def trkWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
                     trk._setValueInternal(api.HIWORD(wp))
                     # api.InvalidateRect(hw, byref(trk._chanRc), False)
                     if trk.onDragging: trk.onDragging(trk, GEA)
-
+            return 0
         case MyMessages.LABEL_COLOR:
             # api.SetBkColor(wp, trk._bgColor.ref)
             trk = trkDict[hw]
             return trk._bkgBrush
 
         case MyMessages.CTRL_NOTIFY:
+            
             nmh = cast(lp, api.LPNMHDR)[0]
-            trk = trkDict[hw]
-            match nmh.code:
-                case con.NM_CUSTOMDRAW:
-                    if trk._custDraw:
-                        nmcd = cast(lp, LPNMCUSTOMDRAW)[0]
-                        match nmcd.dwDrawStage:
-                            case con.CDDS_PREPAINT: return con.CDRF_NOTIFYITEMDRAW
-                            case con.CDDS_ITEMPREPAINT:
-                                # print(f"{nmcd.dwItemSpec = }, {con.TBCD_TICS = }, {con.TBCD_CHANNEL = }")
-                                if nmcd.dwItemSpec == con.TBCD_CHANNEL:
-                                    if trk._chanStyle == ChannelStyle.CLASSIC:
-                                        api.DrawEdge(nmcd.hdc, byref(nmcd.rc), con.EDGE_SUNKEN, con.BF_RECT | con.BF_ADJUST) # 1 style
-                                    elif trk._chanStyle == ChannelStyle.OUTLINE:
-                                        api.SelectObject(nmcd.hdc, trk._chanPen)
-                                        api.Rectangle(nmcd.hdc, nmcd.rc.left, nmcd.rc.top, nmcd.rc.right, nmcd.rc.bottom )
-                                    else:
-                                        return con.CDRF_DODEFAULT
+            # print(f"klj {nmh.code=}, {con.TRBN_THUMBPOSCHANGING=}, {con.NM_CUSTOMDRAW=}")
+            trk = trkDict[hw]            
+            if trk._custDraw and nmh.code == con.NM_CUSTOMDRAW:  
+                                              
+                nmcd = cast(lp, LPNMCUSTOMDRAW)[0]
+                # log_cnt(f"NMCUST here {nmcd.uItemState =}, {nmcd.lItemParam =}")
+                if nmcd.dwDrawStage == con.CDDS_PREPAINT: 
+                    # log_cnt(f"{con.CDDS_PREPAINT=}")
+                    return con.CDRF_NOTIFYITEMDRAW
+                elif nmcd.dwDrawStage == con.CDDS_ITEMPREPAINT:
+                    # log_cnt(f"{con.CDDS_ITEMPREPAINT=}, {nmcd.dwItemSpec=}, {con.TBCD_TICS=}")
+                    # log_cnt(f"trackbar notify-{trk._custDraw}")
+                    if nmcd.dwItemSpec == con.TBCD_TICS:
 
-                                    if trk._selRange: # Fill the selection range
-                                        rc = trk._getThumbRect()
-                                        if trk._fillChannelRect(nmcd, rc):
-                                            api.InvalidateRect(hw, byref(nmcd.rc), False)
-                                    return con.CDRF_SKIPDEFAULT
+                        if not trk._noTics:
+                            if trk._vertical:
+                                return trk._drawVerticalTics(nmcd.hdc)
+                                return con.CDRF_SKIPDEFAULT
+                            else:
+                                return trk._drawHorizontalTics(nmcd.hdc)                            
 
-                                if nmcd.dwItemSpec == con.TBCD_TICS:
+                    # print(f"{nmcd.dwItemSpec = }, {con.TBCD_TICS = }, {con.TBCD_CHANNEL = }")
+                    elif nmcd.dwItemSpec == con.TBCD_CHANNEL:
+                        if trk._chanDraw:
+                            if trk._chanStyle == ChannelStyle.CLASSIC:
+                                api.DrawEdge(nmcd.hdc, byref(nmcd.rc), 
+                                            con.BDR_SUNKENOUTER, trk._chanFlag) # 1 style
+                            else: # trk._chanStyle == ChannelStyle.OUTLINE:
+                                # print("outline")
+                                api.SelectObject(nmcd.hdc, trk._chanPen)
+                                api.Rectangle(nmcd.hdc, nmcd.rc.left, 
+                                            nmcd.rc.top, nmcd.rc.right, nmcd.rc.bottom )
+                        else:
+                            return con.CDRF_DODEFAULT
 
-                                    if not trk._noTics:
-                                        trk._drawTics(nmcd.hdc)
-                                        return con.CDRF_SKIPDEFAULT
-                                    else: con.CDRF_DODEFAULT
+                        if trk._selRange: # Fill the selection range
+                            rc = trk._getThumbRect()
+                            if trk._fillChannelRect(nmcd, rc):
+                                api.InvalidateRect(hw, byref(nmcd.rc), False)
+                        
+                        return con.CDRF_SKIPDEFAULT
 
-                        return con.CDRF_DODEFAULT
-
-                case 4294967280: # con.TRBN_THUMBPOSCHANGING:
-                    trk._trackChange = TrackChange.MOUSE_CLICK
+                elif nmcd.dwDrawStage == -1502: # con.TRBN_THUMBPOSCHANGING:
+                    # trk._trackChange = TrackChange.MOUSE_CLICK
+                    print("klj")
                     return con.CDRF_DODEFAULT
+                else:
+                    return con.CDRF_DODEFAULT
+
+            # else: # nmh.code == con.TRBN_THUMBPOSCHANGING:
+                # ttpc = cast(lp, api.LP_TRB_THUMB_POS_CHANGING)[0]
+                # print(f"thumb changing {nmh.code =}")
+            # else:
+            #     print(f"klj {nmh.code=}, {con.TRBN_THUMBPOSCHANGING=}")
+            #         # return con.CDRF_DODEFAULT
             return 0 #api.DefSubclassProc(hw, msg, wp, lp)
 
         case con.WM_SETFOCUS: 

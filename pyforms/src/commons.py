@@ -1,6 +1,6 @@
 # Common module - Created on
 from ctypes import c_int, cast, windll, byref, sizeof, py_object
-from pyforms.src.enums import FontWeight
+from pyforms.src.enums import FontWeight, FontOwner
 import pyforms.src.apis as api
 from pyforms.src.colors import Color
 from pyforms.src.apis import RECT, LOGFONT, POINT
@@ -8,6 +8,7 @@ import pyforms.src.constants as con
 from enum import Enum, IntEnum
 # from pyforms.src.forms import globalScaleFactor, globalSysDPI
 import datetime
+# from collections import defaultdict
 
 INT_MIN   =  -2147483647 - 1
 INT_MAX  =     2147483647
@@ -15,8 +16,26 @@ TRANSPARENT = 0x00000001
 OPAQUE = 0x00000002
 menuTxtFlag = con.DT_LEFT | con.DT_SINGLELINE | con.DT_VCENTER
 
-globalScaleFactor = 0.0
-globalSysDPI = 0
+globalScaleFactor = 1.25
+globalSysDPI = 96
+
+def createDefFont():
+    fnsz = int(globalScaleFactor * 11.0)
+    iHeight = -api.MulDiv(fnsz, globalSysDPI, 72)
+    lf = LOGFONT()
+    lf.lfFaceName = "Tahoma"
+    lf.lfHeight = iHeight
+    lf.lfWidth = 0
+    lf.lfWeight = 400
+    lf.lfItalic = 0
+    lf.lfUnderline = 0
+    lf.lfCharSet = con.DEFAULT_CHARSET
+    lf.lfOutPrecision = con.OUT_STRING_PRECIS
+    lf.lfClipPrecision = con.CLIP_DEFAULT_PRECIS
+    lf.lfQuality = con.PROOF_QUALITY
+    lf.lfPitchAndFamily = 1
+    return api.CreateFontIndirect(byref(lf))
+
 
 class StaticData: # A singleton object which used to hold essential data for a form to start
     hInstance = 0
@@ -25,8 +44,11 @@ class StaticData: # A singleton object which used to hold essential data for a f
     screenWidth = api.GetSystemMetrics(0) # Need to calculate the form position
     screenHeight = api.GetSystemMetrics(1)
     defWinColor = Color(0xf0f0f0)# Color.from_RGB(230, 230, 230)
+    defBackBrush = api.CreateSolidBrush(0x00F0F0F0)
+    defHfont = createDefFont()
     currForm = None
     trayHandles = [] # A list to hold any TrayIcon hidden window handles.
+    grayBrush = api.CreateSolidBrush(0x00DAD4CE)
 
     @staticmethod
     def registerMsgWinClass(clsname, wndproc):
@@ -36,7 +58,9 @@ class StaticData: # A singleton object which used to hold essential data for a f
         wc.hInstance = StaticData.hInstance
         wc.lpszClassName = clsname
         api.RegisterClassEx(byref(wc))
-        
+
+    
+      
 
     @staticmethod
     def finalize():
@@ -45,6 +69,9 @@ class StaticData: # A singleton object which used to hold essential data for a f
                 if hw != None: 
                     api.DestroyWindow(hw)
                     # print("destroy tray icon")
+        api.DeleteObject(StaticData.defHfont)
+        api.DeleteObject(StaticData.grayBrush)
+        api.DeleteObject(StaticData.defBackBrush)
         print("Pyforms closed...")
 
 
@@ -65,36 +92,53 @@ def getMousePosOnMsg():
 
 def pointInRect(rct, pt): return api.PtInRect(byref(rct), pt)
 
+    
 
 class Font:
-    __slots__ = ("_name", "_size", "_weight", "_italics", "_underLine", "_handle")
+    # userDict = defaultdict(list)
+    __slots__ = ("_name", "_size", "_weight", "_italics", 
+                 "_underLine", "_handle", "_ownership")
 
-    def __init__(   self, name: str = "Tahoma",
+    def __init__(   self, nameOrHandle,
                     size: int = 11,
                     weight: FontWeight = FontWeight.NORMAL,
                     italics: bool = False,
                     underLine: bool = False) -> None:
-        self._name = name
         self._size = size
         self._weight = weight
         self._italics = italics
         self._underLine = underLine
-        self._handle = 0
+        if isinstance(nameOrHandle, str):
+            self._name = nameOrHandle
+            self._handle = 0
+            self._ownership = FontOwner.NONE
+        else:
+            self._name = "Tahoma"
+            self._handle = nameOrHandle
+            self._ownership = FontOwner.USER
 
-    def createHandle(self):       
+
+    def createHandle(self):   
+        if self._handle > 0 and self._ownership == FontOwner.OWNER:
+            api.DeleteObject(self._handle)
+
         fnsz = int(globalScaleFactor * float(self._size))
         iHeight = -api.MulDiv(fnsz, globalSysDPI, 72)
 
         lf = LOGFONT()
         lf.lfFaceName = self._name
         lf.lfHeight = iHeight
-        lf.lfWeight = self._weight.value
+        lf.lfWeight = self._weight
+        lf.lfItalic = self._italics
+        lf.lfUnderline = self._underLine
         lf.lfCharSet = con.DEFAULT_CHARSET
         lf.lfOutPrecision = con.OUT_STRING_PRECIS
         lf.lfClipPrecision = con.CLIP_DEFAULT_PRECIS
         lf.lfQuality = con.PROOF_QUALITY
         lf.lfPitchAndFamily = 1
         self._handle = api.CreateFontIndirect(byref(lf))
+        self._ownership = FontOwner.OWNER
+
 
     def colneFrom(self, srcFont):   
         self._name = srcFont._name
@@ -107,11 +151,12 @@ class Font:
             x = api.GetObject(srcFont._handle, sizeof(LOGFONT), byref(lf))
             if x :
                 self._handle = api.CreateFontIndirect(byref(lf))
+                self._ownership = FontOwner.OWNER
             else:
                 print("Font handle error, line 77, commons.py")
 
     
-
+    
 
 
     @property
@@ -156,6 +201,7 @@ class Font:
     def handle(self, value: bool): self._handle = value
 #-----------------End of Font Class----------------------------
 
+
 class Timing:
     def __init__(self, msg: str) -> None:
         self.message = msg
@@ -178,6 +224,11 @@ class Area:
         self.width = w
         self.height = h
 
+rpc = 1
+def print_rect(rc):
+    global rpc
+    print(f"[{rpc}] Left:{rc.left}, Top:{rc.top}, Right:{rc.right}, Bottom:{rc.bottom}")
+    rpc += 1
 
 msgCounter = 1
 def printWinMsg(ms):
@@ -185,6 +236,11 @@ def printWinMsg(ms):
     print(f"[{msgCounter}] Message - {ms}")
     msgCounter += 1
 
+y = 1
+def log_cnt(msg):
+	global y
+	print(f"[{y}] {msg}")
+	y += 1
 
 
 WM_APP = 0x8000
@@ -209,6 +265,7 @@ class MyMessages(IntEnum):
     MM_TRAY_MSG       = WM_APP + 17
     THREAD_MSG        = WM_APP + 18
     MM_MENUITEM_NOTIFY  = WM_APP + 19
+    HFONT_NOTIFY  = WM_APP + 20
 
 
 

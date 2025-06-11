@@ -8,7 +8,7 @@ from pyforms.src.enums import ControlType
 from pyforms.src.events import GEA
 from pyforms.src.apis import LRESULT, SUBCLASSPROC
 import pyforms.src.apis as api
-from pyforms.src.colors import COLOR_WHITE
+from pyforms.src.colors import Color
 
 lbxDict = {}
 lbxStyle = con.WS_CHILD | con.WS_VISIBLE | con.WS_BORDER  | con.LBS_NOTIFY | con.LBS_HASSTRINGS
@@ -23,16 +23,8 @@ class ListBox(Control):
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
                  width: int = 150, height: int = 200) -> None:
-        super().__init__()
-
-        self._clsName = "LISTBOX"
+        super().__init__(parent, ControlType.LIST_BOX, width, height)
         self.name = f"ListBox_{ListBox._count}"
-        self._ctlType = ControlType.LIST_BOX
-        self._parent = parent
-        self._bgColor = COLOR_WHITE
-        self._font.colneFrom(parent._font)
-        self._width = width
-        self._height = height
         self._xpos = xpos
         self._ypos = ypos
         self._isTextable = False
@@ -52,7 +44,6 @@ class ListBox(Control):
         # Events
         self.onSelectionChanged = None
         self.onDoubleClick = None
-        self._hwnd = None
         self._bkgBrush = api.CreateSolidBrush(self._bgColor.ref)
         parent._controls.append(self)
         ListBox._count += 1

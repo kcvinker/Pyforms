@@ -27,13 +27,8 @@ class Button(Control):
 
     def __init__(self, parent, txt: str = "", xpos = 20, ypos = 20, 
                  width = 120, height = 33, onclick = None ) -> None:
-        super().__init__()
-        self.name = f"Button_{Button._count}"
-        self._parent = parent
-        self._clsName = "Button"
-        self._ctlType = ControlType.BUTTON
-        self._width = width
-        self._height = height
+        super().__init__(parent, ControlType.BUTTON, width, height)
+        self.name = f"Button_{Button._count}"     
         self._xpos = xpos
         self._ypos = ypos
         self._isTextable = True
@@ -42,13 +37,11 @@ class Button(Control):
         self._exStyle = 0x00000004
         self._fdraw = None
         self._gdraw = None
-        self._hwnd = None
-        self._font.colneFrom(parent._font)
         parent._controls.append(self)
         if onclick: self.onClick = onclick
         Button._count += 1
         if parent.createChilds: self.createHandle()
-        # print(f"btn style {self._style}")
+        
 
     def createHandle(self):
         self._createControl()

@@ -32,15 +32,8 @@ class NumberPicker(Control):
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
                  width: int = 70, height: int = 24 ) -> None:
-        super().__init__()
-        self._clsName = "msctls_updown32"
+        super().__init__(parent, ControlType.NUM_PICKER, width, height)
         self.name = f"NumberPicker_{NumberPicker._count}"
-        self._ctlType = ControlType.NUM_PICKER
-        self._parent = parent
-        self._bgColor = Color(0xFFFFFF)
-        self._font.colneFrom(parent._font)
-        self._width = width
-        self._height = height
         self._xpos = xpos
         self._ypos = ypos
         self._style = numpStyle
@@ -67,7 +60,6 @@ class NumberPicker(Control):
         self._hideCaret = False
         self._linex = 0
         self._destroyCount = 0
-        self._hwnd = None
         self._bkgBrush = api.CreateSolidBrush(self._bgColor.ref)
         parent._controls.append(self)
 
@@ -114,17 +106,24 @@ class NumberPicker(Control):
             if self._buddyHwnd:
                 self._isCreated = True
                 Control._ctl_id += 1
-                api.SetWindowSubclass(self._buddyHwnd, buddyWndProc, self._buddySubclsID, self._hwnd)
-                api.SendMessage(self._buddyHwnd, con.WM_SETFONT, self.font.handle, 1)
-                old_buddy = api.SendMessage(self._hwnd, con.UDM_SETBUDDY, self._buddyHwnd, 0)
-                api.SendMessage(self._hwnd, con.UDM_SETRANGE32, int(self._minRange), int(self._maxRange))
+                api.SetWindowSubclass(self._buddyHwnd, buddyWndProc, 
+                                      self._buddySubclsID, self._hwnd)
+                api.SendMessage(self._buddyHwnd, con.WM_SETFONT, 
+                                self.font._handle, 1)
+                old_buddy = api.SendMessage(self._hwnd, con.UDM_SETBUDDY, 
+                                            self._buddyHwnd, 0)
+                api.SendMessage(self._hwnd, con.UDM_SETRANGE32, 
+                                int(self._minRange), int(self._maxRange))
 
                 api.GetClientRect(self._buddyHwnd, byref(self._buddyRect))
                 api.GetClientRect(self._hwnd, byref(self._udRect))
-                api.SetRect(byref(self._myRect), self._xpos, self._ypos, (self._xpos + self._width), (self._ypos + self._height))
+                api.SetRect(byref(self._myRect), self._xpos, self._ypos, 
+                                    (self._xpos + self._width), 
+                                    (self._ypos + self._height))
                 self._displayValue()
                 self._resizeBuddy()
-                if old_buddy: api.SendMessage(old_buddy, MyMessages.BUDDY_RESET, 0, 0)
+                if old_buddy: api.SendMessage(old_buddy, 
+                                              MyMessages.BUDDY_RESET, 0, 0)
 
     # -endregion Public funcs
 

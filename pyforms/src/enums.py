@@ -1,6 +1,11 @@
 # Created on 09-Nov-2022 12:15:29
 from enum import IntEnum, IntFlag
 
+class FontOwner(IntEnum):
+    NONE = 0
+    USER = 1
+    OWNER = 2
+
 class FormPosition(IntEnum):
     CENTER = 0
     TOP_LEFT = 1
@@ -167,7 +172,7 @@ class TickPosition(IntEnum): # For TrackBar
     BOTH = 5
 
 class ChannelStyle(IntEnum):
-    DEFAULT = 0
+    SYSTEM = 0
     CLASSIC = 1
     OUTLINE = 2
 

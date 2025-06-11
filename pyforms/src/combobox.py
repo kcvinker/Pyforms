@@ -9,7 +9,7 @@ from pyforms.src.enums import ControlType
 from pyforms.src.events import GEA
 from pyforms.src.apis import LRESULT, UINT_PTR, DWORD_PTR, RECT, COMBOBOXINFO, WPARAM, LPARAM, SUBCLASSPROC
 import pyforms.src.apis as api
-from pyforms.src.colors import COLOR_WHITE
+from pyforms.src.colors import Color
 # from .winmsgs import log_msg
 # from horology import Timing
 
@@ -29,15 +29,8 @@ class ComboBox(Control):
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
                  width: int = 150, height: int = 30, items = None) -> None:
-        super().__init__()
-        self._clsName = "ComboBox"
+        super().__init__(parent, ControlType.COMBO_BOX, width, height)
         self.name = f"ComboBox_{ComboBox._count}"
-        self._ctlType = ControlType.COMBO_BOX
-        self._parent = parent
-        self._bgColor = COLOR_WHITE
-        self._font.colneFrom(parent._font)
-        self._width = width
-        self._height = height
         self._xpos = xpos
         self._ypos = ypos
         self._style = cmbStyle
@@ -58,7 +51,6 @@ class ComboBox(Control):
         self.onListOpened = None
         self.onListClosed = None
         self.onSelectionCommitted = None
-        self._hwnd = None
         parent._controls.append(self)
 
         ComboBox._count += 1

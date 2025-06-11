@@ -4,7 +4,7 @@
 from ctypes.wintypes import UINT, HWND
 from ctypes import create_unicode_buffer, byref, sizeof, cast, addressof
 from pyforms.src.enums import ControlType
-from pyforms.src.commons import Font, MyMessages
+from pyforms.src.commons import Font, MyMessages, StaticData, FontOwner
 from pyforms.src.apis import (
     MapWindowPoints, LPPOINT, INITCOMMONCONTROLSEX, DWORD)
 import pyforms.src.apis as api
@@ -12,7 +12,7 @@ import pyforms.src.constants as con
 from pyforms.src.events import (
     MouseEventArgs, KeyEventArgs, 
     KeyPressEventArgs, GEA)
-from pyforms.src.colors import Color, COLOR_BLACK
+from pyforms.src.colors import Color
 import datetime
 # from horology import Timing
 
@@ -101,6 +101,25 @@ class CommonBuffer:
         """Return the string in the buffer"""
         return self.buffer.value
     
+CLSNAME_DICT = {
+    0: StaticData.className,
+    1: "Button",              # BUTTON
+    2: "SysMonthCal32",       # CALENDAR_BOX
+    3: "Button",              # CHECK_BOX
+    4: "ComboBox",            # COMBO_BOX
+    5: "SysDateTimePick32",   # DATE_TIME_PICKER
+    6: "Button",              # GROUP_BOX
+    7: "SysHeader32",         # HEADER
+    8: "Static",              # LABEL
+    9: "ListBox",             # LIST_BOX
+    10: "SysListView32",      # LIST_VIEW
+    11: "msctls_updown32",    # NUM_PICKER
+    12: "msctls_progress32",  # PROGRESS_BAR
+    13: "Button",             # RADIO_BUTTON
+    14: "Edit",               # TEXT_BOX
+    15: "msctls_trackbar32",  # TRACK_BAR
+    16: "SysTreeView32",      # TREE_VIEW
+}
 
 class Control:
     """
@@ -126,28 +145,26 @@ class Control:
                   "onKeyDown", "onKeyUp", "onKeyPress", "onPaint", 
                   "onGotFocus", "onLostFocus", "onClick")
 
-    def __init__(self) -> None:
+    def __init__(self, parent, ctyp, w=0, h=0) -> None:
         self.name = ""
         self._hwnd = 0
         self._text = ""
-        self._width = 0
-        self._height = 0
+        self._width = w
+        self._height = h
         self._style = 0
         self._exStyle = 0
         self._hInst = 0
         self._visible = True
-        self._clsName = ""
+        self._clsName = CLSNAME_DICT[ctyp]
         self._xpos = 0
         self._ypos = 0
-        self._parent = 0
+        self._parent = parent
         self._isCreated = False
         self._cmenuUsed = False
         self._isTextable = False
-        self._lBtnDown = False
-        self._rBtnDown = False
         self._isMouseEntered = False
-        self._ctlType = ControlType.NONE
-        self._font = Font()
+        self._ctlType = ctyp
+        self._font = Font(StaticData.defHfont)
         self._fgColor = Color(0x000000)
         self._bgColor = Color(0xFFFFFF)
         self._bkgBrush = None
@@ -156,7 +173,6 @@ class Control:
         self._contextMenu = None
         self._keyMod = 0
         self._disable = False
-
 
         # Events
         self.onMouseEnter = None
@@ -180,7 +196,7 @@ class Control:
 
 
     def __del__(self):
-        if self._font._handle:
+        if self._font._ownership == FontOwner.OWNER:
             api.DeleteObject(self._font._handle)
             # print("Font handle deleted")
         if self._bkgBrush:
@@ -212,7 +228,7 @@ class Control:
             api.SetWindowPos(self._hwnd, None, self._xpos, self._ypos, self._width, self._height, con.SWP_NOZORDER)
 
     def setPosInternal(self, flag = con.SWP_NOZORDER):
-        api.SetWindowPos(self._handle, None, self._xpos, self._ypos, 
+        api.SetWindowPos(self._hwnd, None, self._xpos, self._ypos, 
                          self._width, self._height, flag)
 
 
@@ -249,7 +265,7 @@ class Control:
 
     # Internal function to set the control IDs
     def _sendMsg(self, m, w, l ):
-        api.SendMessage(self._hwnd, m, w, l)
+        return api.SendMessage(self._hwnd, m, w, l)
 
         
 
@@ -301,9 +317,9 @@ class Control:
         return buffer.value
 
     # Internal function to invalidate controls if needed
-    def _manageRedraw(self):
+    def _manageRedraw(self, flag = False):
         """If this control is created, send a command to redraw it"""
-        if self._isCreated: api.InvalidateRect(self._hwnd, None, False)
+        if self._isCreated: api.InvalidateRect(self._hwnd, None, flag)
 
 
     # Internal function to convert date time class to systime.
@@ -381,7 +397,9 @@ class Control:
         """
         self._font = value
         if self._isCreated:
-            pass
+            if self._font._handle == 0:
+                self._font.createHandle()
+            self._sendMsg(con.WM_SETFONT, self._font._handle, 1)
     #-------------------------------------------------FONT
 
     @property

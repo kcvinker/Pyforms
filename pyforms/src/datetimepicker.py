@@ -30,16 +30,8 @@ class DateTimePicker(Control):
 
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10) -> None:
-        super().__init__()
-
-        self._clsName = "SysDateTimePick32"
+        super().__init__(parent, ControlType.DATE_TIME_PICKER )
         self.name = f"DateTimePicker{DateTimePicker._count}"
-        self._ctlType = ControlType.DATE_TIME_PICKER
-        self._parent = parent
-        self._bgColor = Color(0xFFFFFF)
-        self._font.colneFrom(parent._font)
-        self._width = 0
-        self._height = 0
         self._xpos = xpos
         self._ypos = ypos
         self._style = dtpStyle
@@ -63,7 +55,6 @@ class DateTimePicker(Control):
         self.onValueChanged = None
         self.onCalendarOpened = None
         self.onCalendarClosed = None
-        self._hwnd = None
         parent._controls.append(self)
         DateTimePicker._count += 1
         if parent.createChilds: self.createHandle()

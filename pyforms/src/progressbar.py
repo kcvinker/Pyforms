@@ -7,7 +7,7 @@ from pyforms.src.commons import MyMessages
 from pyforms.src.enums import ControlType, ProgressBarStyle, ProgressBarState
 from pyforms.src.apis import SUBCLASSPROC
 import pyforms.src.apis as api
-from pyforms.src.colors import Color
+from pyforms.src.colors import Color, COLOR_BLACK
 # from .winmsgs import log_msg
 
 pgbDict = {}
@@ -22,14 +22,8 @@ class ProgressBar(Control):
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10,
                  width: int = 180, height: int = 25, perc = False ) -> None:
-        super().__init__()
-        self._clsName = "msctls_progress32"
+        super().__init__(parent, ControlType.PROGRESS_BAR, width, height)
         self.name = f"ProgressBar_{ProgressBar._count}"
-        self._ctlType = ControlType.PROGRESS_BAR
-        self._parent = parent
-        self._font.colneFrom(parent._font)
-        self._width = width
-        self._height = height
         self._xpos = xpos
         self._ypos = ypos
         self._isTextable = False
@@ -47,7 +41,7 @@ class ProgressBar(Control):
         self._percentage = perc
         self._strPrec = ""
         self._deciPrec = 0
-        self._hwnd = None
+        self._fgColor = COLOR_BLACK
         parent._controls.append(self)
         ProgressBar._count += 1
         if parent.createChilds: self.createHandle()

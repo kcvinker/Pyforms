@@ -31,15 +31,8 @@ class CalendarBox(Control):
                      "onViewChanged", "onSelectionChanged", "onValueChanged"  )
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10) -> None:
-        super().__init__()
-
-        self._clsName = "SysMonthCal32"
+        super().__init__(parent, ControlType.CALENDAR_BOX)
         self.name = f"CalendarBox_{CalendarBox._count}"
-        self._ctlType = ControlType.CALENDAR_BOX
-        self._parent = parent
-        self._bgColor = Color(parent._bgColor)
-        self._width = 0
-        self._height = 0
         self._xpos = xpos
         self._ypos = ypos
         self._style = calStyle
@@ -52,12 +45,11 @@ class CalendarBox(Control):
         self._value = 0
         self._viewMode = ViewMode.MONTH_VIEW
         self._oldView = 0
-
+        self._bgColor = Color(parent._bgColor)
         # Events
         self.onValueChanged = 0
         self.onViewChanged = 0
         self.onSelectionChanged = 0
-        self._hwnd = None
         parent._controls.append(self)
 
         CalendarBox._count += 1

@@ -548,6 +548,14 @@ class NOTIFYICONDATA(Structure):
         ("dwInfoFlags", DWORD),       # Flags for the balloon tooltip icon.
     ]
 LPNOTIFYICONDATA = POINTER(NOTIFYICONDATA)
+
+class TRBTHUMBPOSCHANGING(Structure):
+    _fields_ = [
+        ("hdr", NMHDR),    # Notification message header
+        ("dwPos", DWORD),  # Position of the thumb (DWORD)
+        ("nReason", INT)   # Reason for position change (int)
+    ]
+LP_TRB_THUMB_POS_CHANGING = POINTER(TRBTHUMBPOSCHANGING)
 # -endregion Structures
 
 
@@ -658,6 +666,11 @@ SendMessage = windll.user32.SendMessageW
 """ [HWND, UINT, WPARAM, LPARAM] -> LRESULT"""
 SendMessage.argtypes = [HWND, UINT, WPARAM, LPARAM]
 SendMessage.restype = LRESULT
+
+PostMessage = windll.user32.PostMessageW
+""" [HWND, UINT, WPARAM, LPARAM] -> LRESULT"""
+PostMessage.argtypes = [HWND, UINT, WPARAM, LPARAM]
+PostMessage.restype = LRESULT
 
 SendNotifyMessage = windll.user32.SendNotifyMessageW
 """ [HWND, UINT, WPARAM, LPARAM] -> LRESULT"""
@@ -1081,6 +1094,13 @@ BitBlt = windll.gdi32.BitBlt
 BitBlt.argtypes = [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD]
 BitBlt.restype = BOOL
 
+SetDCPenColor = windll.gdi32.SetDCPenColor
+SetDCPenColor.argtypes = [HDC, COLORREF]
+SetDCPenColor.restype = COLORREF
+
+Ellipse = windll.gdi32.Ellipse
+Ellipse.argtypes = [HDC, INT, INT, INT, INT]
+Ellipse.restype = BOOL
 
 
 # -endregion GDI32 Functions

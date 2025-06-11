@@ -130,20 +130,21 @@ class MenuBar(MenuBase):
     __slots__ = ("_grayBrush", "_grayCref", "_defBgBrush", "_font", 
                   "_hotBgBrush", "_font", "_frameBrush", "_style",
                    "_isCreated" )
+    
 
     def __init__(self, parent, style = MenuStyle.SYSTEM) -> None:
         super().__init__()
         self._handle = CreateMenu()
         self._formHwnd = parent._hwnd
-        self._font = Font()
-        self._font.colneFrom(parent._font)
+        self._font = Font(StaticData.defHfont)
+        #self._font.colneFrom(parent._font)
         self._style = style
         self._isCreated = False
         parent._menubar = self
 
         # We need this brush & colorref for drawing a disabled menu.
-        self._grayBrush = Color(0xced4da).createHBrush()
-        self._grayCref = Color(0x979dac).ref
+        self._grayBrush = StaticData.grayBrush #Color(0xced4da).createHBrush()
+        self._grayCref = 0x00AC9D97 #Color(0x979dac).ref
         self._defBgBrush = None
         self._hotBgBrush = None
         self._frameBrush = None
@@ -161,9 +162,9 @@ class MenuBar(MenuBase):
 
 
     def create(self):
-        self._defBgBrush = Color(0xe9ecef).createHBrush()
-        self._hotBgBrush = Color(0x90e0ef).createHBrush()
-        self._frameBrush = Color(0x0077b6).createHBrush()        
+        self._defBgBrush = api.CreateSolidBrush(0x00EFECE9) # Color(0xe9ecef).createHBrush()
+        self._hotBgBrush = api.CreateSolidBrush(0x00EFE090) # Color(0x90e0ef).createHBrush()
+        self._frameBrush = api.CreateSolidBrush(0x00B67700) # Color(0x0077b6).createHBrush()        
         if len(self.menus):
             hdc = None
             owner_draw = False
@@ -183,6 +184,10 @@ class MenuBar(MenuBase):
         if len(self._menus):
             for menu in self._menus.values(): menu.finalize()
 
+        api.DeleteObject(self._defBgBrush)
+        api.DeleteObject(self._hotBgBrush)
+        api.DeleteObject(self._frameBrush)
+        
         if self._handle: 
             api.DestroyMenu(self._handle)
             # print("Bar: destroyed for MenuBar")
@@ -216,6 +221,8 @@ class MenuItem(MenuBase):
                 "_isCreated", "_isEnabled", "onClick", 
                 "onPopup", "onCloseup", "onFocus", "_childCount", 
                 "_popup", "_formMenu", "_getTxtSize", "_txtSize")
+    
+    
 
     def __init__(self, txt: str, typ: MenuType, parentHmenu, indexNum) -> None:
         super().__init__()
@@ -442,7 +449,7 @@ def cmenuWndProc(hw, msg, wp, lp):
             SetBkMode(dis.hDC, con.TRANSPARENT)
             dis.rcItem.left += 20
             api.SetTextColor(dis.hDC, txtClrRef)
-            api.SelectObject(dis.hDC, this._font.handle)
+            api.SelectObject(dis.hDC, this._font._handle)
             DrawText(dis.hDC, mi._text, len(mi._text), byref(dis.rcItem), menuTxtFlag)
             return 0
 
@@ -494,7 +501,7 @@ class ContextMenu(MenuBase):
         self._handle = CreatePopupMenu()
         self._width = 120
         self._height = 25
-        self._font = Font()
+        self._font = Font(StaticData.defHfont)
         self.onMenuClose = None
         self.onMenuShown = None
         self._defBgBrush = Color(0xe9ecef).createHBrush()
