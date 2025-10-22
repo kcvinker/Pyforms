@@ -14,25 +14,28 @@ from horology import Timing
 import sys
 import datetime as dt
 
+# import sysconfig
+
 is_main_module = __name__ == '__main__'
 
 def loadtest(c, e):
     print("I am loaded")
 
 
-
+frm = None
 def main():
-    global frm, tk, pgb
-    def menu_click(m, e): print("Clicked menu - ", m._text)
+    global frm #, tk, pgb
+    # def menu_click(m, e): print("Clicked menu - ", m._text)
 
     frm = Form("PyForms Window in Python", 800, 500)
     frm.createHandle()
+    
     frm.createChilds = True
-    # frm.onLoad = loadtest
-    # frm.on_activate = lambda f, e: print("Activated ", f.text)
+#     # frm.onLoad = loadtest
+#     # frm.on_activate = lambda f, e: print("Activated ", f.text)
     frm.onMouseDown = lambda f, e: frm.printPoint(e)
 
-    tmr = frm.addTimer(1000, lambda f, e: print("Timer ticked..."))
+#     tmr = frm.addTimer(1000, lambda f, e: print("Timer ticked..."))
 
     b1 = Button(frm, "Normal", 10, 10)
     b2 = Button(frm, "Flat Color", b1.right + 20, 10)
@@ -40,10 +43,10 @@ def main():
     b3 = Button(frm, "Gradient", b2.right + 20, 10)
     b3.setGradientColor(0x55a630, 0xeeef20)
 
-    # hdr = Header(frm, 340, 5)
-    # hdr.addItem("Manage", 70)
-    # hdr.addItem("Report", 70)
-    # hdr.addItem("Action", 70)
+#     # hdr = Header(frm, 340, 5)
+#     # hdr.addItem("Manage", 70)
+#     # hdr.addItem("Report", 70)
+#     # hdr.addItem("Action", 70)
 
     cmb = ComboBox(frm, b3.right + 20, 10, items = ["Windows", "Linux", "ReactOS"])
     cmb.selectedIndex = 0
@@ -78,13 +81,20 @@ def main():
     lv.addRow("Win8", "Catalina", "Debian")
     lv.addRow("Win10", "Big Sur", "Kali")
 
+    
+
     cal = CalendarBox(frm, gb.right + 20, lv.bottom + 20)
 
-    tk = TrackBar(frm, 20, np2.bottom + 10, 150, 40)
-    tk.ticColor = 0xFF0012
-    tk.channelStyle = ChannelStyle.OUTLINE
+    tk = TrackBar(frm, cal.right + 30, 237, 60, 160, noCreate=True  )#20, np2.bottom + 10, 160, 40)
+    tk.ticColor = 0xd90429
+    tk.vertical = True
+    tk.onMouseDown = lambda x, y: print(f"{y.xpos=}, {y.ypos=}")
+    tk.createHandle()
+    # tk.gettics()
+    
+    # tk.channelStyle = ChannelStyle.OUTLINE
 
-    pgb = ProgressBar(frm, lv.right + 10, cmb.bottom + 20, 200, perc=True)
+    pgb = ProgressBar(frm, lv.right + 20, cmb.bottom + 20, 200, perc=True)
 
 
     cmenu = ContextMenu("Give Work", "Add Work", "Finish Work", "_", "Send Work")
@@ -95,12 +105,12 @@ def main():
 
 
 
-    tv = TreeView(frm, lv.right + 10, pgb.bottom + 10, 200, 175)
+    tv = TreeView(frm, lv.right + 20, pgb.bottom + 10, 200, 175)
     tv.addNodeWithChilds("Windows", "Vista", "Win7", "Win8", "Win10", "Win11")
     tv.addNodeWithChilds("MacOS", "Mountain Lion", "Mavericks", "Catalina", "Big Sur", "Monterey")
     tv.addNodeWithChilds("Linux", "RedHat", "Mint", "Ubuntu", "Debian", "Kali")
 
-    lbx = ListBox(frm, lv.right + 10, tv.bottom + 10, 200, 150)
+    lbx = ListBox(frm, tk.right + 10, tv.bottom + 10, 200, 150)
     lbx.addItems("Windows", "Linux", "ReactOS")
 
     tb = TextBox(frm, gb2.right + 20, cal.bottom + 10, cal.width)
@@ -120,59 +130,64 @@ def main():
     dlt = mbar.menus["Edit"].addMenu("Delete")
     dlt.addMenu("Test")
 
-    stMenu.onClick = menu_click
+    # stMenu.onClick = menu_click
     mbar.style = MenuStyle.CUSTOM
     fmt.state = MenuState.DISABLED
     # mbar.create()
     dlt.onFocus = lambda c, e: print("delete menu focused")
 
     ticon = TrayIcon("PyForms Tray")
-    ticon.addContextMenu("Windows", "Linux", "ReactOS")
+    ticon.addContextMenu(["Windows", "Linux", "ReactOS"])
 
 
-    @connect(b1, "onClick")
-    def on_b1_click(b, e):
-        trayBalloon("PyForms Balloon", "You have activated TrayIcon Balloon", 3)
-        # # tb.text = "Sample"
-        # # fod = FolderBrowserDialog("Open a folder", initDir="D:\\Work\\Shashikumar\\2023\\Jack Ryan")
-        # fod = FileOpenDialog("Select files", initDir="D:\\Work\\Shashikumar\\2023\\Jack Ryan", filterStr= "PDF files\0*.pdf\0")
-        # # fod = FileSaveDialog("Open a folder", initDir="D:\\Work\\Shashikumar\\2023\\Jack Ryan")
-        # # fod.filter = ".pdf"
-        # fod.multiSelection = True
-        # fod.showDialog(frm.handle)
-        # # print(fod.selectedFile)
-        # print(fod.fileNames)
-        # # print(fod._extStart)
+#     @b1.connect("onClick")
+#     def on_b1_click(b, e):
+#         trayBalloon("PyForms Balloon", "You have activated TrayIcon Balloon", 10)
+#         # # tb.text = "Sample"
+#         # # fod = FolderBrowserDialog("Open a folder", initDir="D:\\Work\\Shashikumar\\2023\\Jack Ryan")
+#         # fod = FileOpenDialog("Select files", initDir="D:\\Work\\Shashikumar\\2023\\Jack Ryan", filterStr= "PDF files\0*.pdf\0")
+#         # # fod = FileSaveDialog("Open a folder", initDir="D:\\Work\\Shashikumar\\2023\\Jack Ryan")
+#         # # fod.filter = ".pdf"
+#         # fod.multiSelection = True
+#         # fod.showDialog(frm.handle)
+#         # # print(fod.selectedFile)
+#         # print(fod.fileNames)
+#         # # print(fod._extStart)
 
-    @connect(b2, "onClick")
-    def onB2Click(b, e):
-        print("Timer is going to start")
-        tmr.start()
+#     @b2.connect("onClick")
+#     def onB2Click(b, e):
+#         print("Timer is going to start")
+#         tmr.start()
 
-    def KeyDownfunc(f, e):
-        print(f"{e.keyCode} key down: {e.shiftPressed = }, {e.ctrlPressed = }, {e.altPressed = } ")
-    def KeyUpfunc(f, e):
-        print(f"{e.keyCode} key up: {e.shiftPressed = }, {e.ctrlPressed = }, {e.altPressed = } ")
+#     def KeyDownfunc(f, e):
+#         print(f"{e.keyCode} key down: {e.shiftPressed = }, {e.ctrlPressed = }, {e.altPressed = } ")
+#     def KeyUpfunc(f, e):
+#         print(f"{e.keyCode} key up: {e.shiftPressed = }, {e.ctrlPressed = }, {e.altPressed = } ")
 
-    frm.onKeyDown = KeyDownfunc
-    frm.onKeyUp = KeyUpfunc
+#     frm.onKeyDown = KeyDownfunc
+#     frm.onKeyUp = KeyUpfunc
+
+    
 
 
 
-
-
-def on_form_display(f, e):
-    print(f.text)
+# def on_form_display(f, e):
+#     print(f.text)
 
 if is_main_module :
     with Timing("Total time for forms and controls: "):
         main()
-    @connect(tk, "onValueChanged")
-    def onTrackChanged(c, e):
-        pgb.value = tk.value
-    
-    
+
     frm.display()
+#         # print(sysconfig.get_config_var("CC"))
+#     @tk.connect("onValueChanged")
+#     def onTrackChanged(c, e):
+#         pgb.value = tk.value
+    
+    
+    
+    
+    
 
 
 #
