@@ -247,12 +247,10 @@ def wndProcMain(hw, message, wParam, lParam) -> LRESULT:
             return 0
 
         case MyMessages.MM_FONT_CHANGED:
-            # User changed any font property. We need to recreate the hfont.
+            # User changed any font property. We need to recreate the font handle.
             this = formDict.get(hw, StaticData.currForm)
-            if this._font._handle != 0:
-                api.DeleteObject(self._font._handle)
-                this._font.createHandle()
-                api.SendMessage(self._hwnd, con.WM_SETFONT, self._font._handle, True)
+            this.updateFontInternal()
+            return 0
 
 
         # case con.WM_ENTERMENULOOP:
@@ -380,7 +378,7 @@ class Form(Control):
         self._text = self.name if txt == "" else txt
         self._style = con.WS_OVERLAPPEDWINDOW | con.WS_CLIPCHILDREN | con.WS_VISIBLE
         self._isTextable = True # If this is True, users can get or set text property
-        # self._font = Font(StaticData.defHfont) 
+        self._font = Font(StaticData.defFont) 
         self._bgColor = Color(StaticData.defWinColor)
         self._formPos = FormPosition.CENTER # Defining where to appear on the screen
         self._formStyle = FormStyle.SIZABLE # Defining the style of this form
@@ -471,8 +469,7 @@ class Form(Control):
             self._isCreated = True
             self._font._pHwnd = self._hwnd
             self._setFontInternal()
-            StaticData.currForm = None
-            print(f"Form font size {self._font._size}, handle {self._font._handle}")
+            StaticData.currForm = None            
         else:
             print("window creation failed")
 

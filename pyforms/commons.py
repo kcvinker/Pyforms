@@ -61,7 +61,7 @@ class StaticData: # A singleton object which used to hold essential data for a f
         StaticData.screenHeight = api.GetSystemMetrics(1)
         StaticData.defWinColor = Color(0xf0f0f0)# Color.from_RGB(230, 230, 230)
         StaticData.defBackBrush = api.CreateSolidBrush(0x00F0F0F0)
-        StaticData.defFont = Font("Tahoma")
+        StaticData.defFont = Font("Tahoma", autoc=True)
         StaticData.grayBrush = api.CreateSolidBrush(0x00DAD4CE)
 
     @staticmethod
@@ -115,33 +115,42 @@ class Font:
     __slots__ = ("_name", "_size", "_weight", "_italics", 
                  "_underLine", "_handle", "_ownership", "_pHwnd")
 
-    def __init__(   self, nameOrHandle,
+    def __init__(   self, nameOrFont,
                     size: int = 11,
                     weight: FontWeight = FontWeight.NORMAL,
                     italics: bool = False,
-                    underLine: bool = False) -> None:
+                    underLine: bool = False,
+                    autoc: bool = False) -> None:
         
         self._pHwnd = None
-        if isinstance(nameOrHandle, str):
-            self._name = nameOrHandle
-            self._handle = 0
-            self._size = size
+        self._handle = None
+        self._size = size
+        self._ownership = FontOwner.NONE
+        if isinstance(nameOrFont, str):
+            self._name = nameOrFont            
             self._weight = weight
             self._italics = italics
             self._underLine = underLine
             self._ownership = FontOwner.NONE
-        elif isinstance(nameOrHandle, Font):
-            self._name = nameOrHandle._name  
-            self._handle = nameOrHandle._handle
-            self._size = nameOrHandle._size
-            self._weight = nameOrHandle._weight
-            self._italics = nameOrHandle._italics
-            self._underLine = nameOrHandle._underLine
+        elif isinstance(nameOrFont, Font):
+            self._name = nameOrFont._name  
+            self._handle = nameOrFont._handle
+            self._size = nameOrFont._size
+            self._weight = nameOrFont._weight
+            self._italics = nameOrFont._italics
+            self._underLine = nameOrFont._underLine
             self._ownership = FontOwner.USER
+        if autoc:
+            self.createHandle()
+
+    def __del__(self):
+        if self._ownership == FontOwner.OWNER:
+            api.DeleteObject(self._handle)
+            print("Font handle deleted")
 
 
     def createHandle(self):   
-        if self._handle > 0 and self._ownership == FontOwner.OWNER:
+        if self._handle != None and self._ownership == FontOwner.OWNER:
             api.DeleteObject(self._handle)
 
         fnsz = int(globalScaleFactor * float(self._size))
@@ -175,8 +184,8 @@ class Font:
             if x :
                 self._handle = api.CreateFontIndirect(byref(lf))
                 self._ownership = FontOwner.OWNER
-            else:
-                print("Font handle error, line 77, commons.py")
+            # else:
+            #     print("Font handle error, line 77, commons.py")
 
     def notifyParent(self):
         if self._pHwnd is None:

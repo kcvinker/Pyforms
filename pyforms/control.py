@@ -237,7 +237,16 @@ class Control:
         api.SetWindowPos(self._hwnd, None, self._xpos, self._ypos, 
                          self._width, self._height, flag)
 
-    # def setNextControlFocus(self):
+    def updateFontInternal(self):
+        if self._font._handle != None:
+            if self._font._ownership == FontOwner.OWNER:
+                api.DeleteObject(self._font._handle)
+            else:
+                self._font._handle = None
+
+        self._font.createHandle()
+        api.SendMessage(self._hwnd, con.WM_SETFONT, self._font._handle, True)
+    #------------------------------------------------------------------------------
         
 
     def focus(self):

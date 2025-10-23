@@ -107,7 +107,7 @@ class TrackBar(Control):
             p = self._sendMsg(con.TBM_GETTICPOS, i, 0)
             plist.append(p)
 
-        print(plist)
+        # print(plist)
 
     def createHandle(self):
         """Create's TrackBar handle"""
@@ -395,8 +395,6 @@ class TrackBar(Control):
         # self._value = (U16_MAX - val) if self._reversed else val
         
         self._value = abs(val) if self._reversed else val
-
-        print(f"{val=}")
 
 
     # Preparing for custom draw
@@ -820,7 +818,7 @@ def trkWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
 
                 elif nmcd.dwDrawStage == -1502: # con.TRBN_THUMBPOSCHANGING:
                     # trk._trackChange = TrackChange.MOUSE_CLICK
-                    print("klj")
+                    # print("klj")
                     return con.CDRF_DODEFAULT
                 else:
                     return con.CDRF_DODEFAULT

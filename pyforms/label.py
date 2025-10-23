@@ -53,8 +53,7 @@ class Label(Control):
         parent._controls.append(self)
         Label._count += 1
         if parent.createChilds: self.createHandle()
-        if Label._count == 2:
-            print(f"{self._font._size =}, {self._parent._font._handle =}")
+        
 
 
     # -region Public funcs
@@ -315,6 +314,12 @@ def lbWndProc(hw, msg, wp, lp, scID, refData):
             lb.backColor = lb._mLeaveClr
             if lb._onMouseLeave: 
                 lb._onMouseLeave(lb, GEA)
+
+        case MyMessages.MM_FONT_CHANGED:
+            # User changed any font property. We need to recreate the font handle.
+            lb = lbDict[hw]
+            lb.updateFontInternal()
+            return 0
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 

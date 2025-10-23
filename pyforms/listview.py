@@ -101,7 +101,7 @@ class ListView(Control):
         self._hdrBgColor = Color(0xb3cccc)
         self._hdrFgColor = Color(0x000000)
         self._hdrClickable = True
-        self._hdrFont = Font(StaticData.defHfont) 
+        self._hdrFont = Font(StaticData.defFont) 
         self._selectable = False
         self._itemIndex = 0
         self._itemDrawn = -1
@@ -148,7 +148,7 @@ class ListView(Control):
                                     col.index, addressof(col.lvc))
 
             self._hdrHwnd = api.SendMessage(self._hwnd, con.LVM_GETHEADER, 0, 0)
-            if self._hdrFont._handle == 0: 
+            if self._hdrFont._handle == None: 
                 self._hdrFont.createHandle()
 
             # We are going to send the list view hwnd with this function. So, we can grab it inside
