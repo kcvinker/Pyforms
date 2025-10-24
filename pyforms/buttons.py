@@ -316,6 +316,13 @@ def btnwndproc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             this = btnDic[hw]
             if this._gDraw:
                 this._gDraw.finalize()
+
+        case MyMessages.MM_FONT_CHANGED:
+            # User changed any font property. We need to recreate the font handle.
+            btn = btnDict[hw]
+            btn.updateFontInternal()
+            return 0
+
         # We are using pre prepared gradient brushes for drawing gradient button background
         # So, whenever, we get a wm_size message, we need to set the brushes to zero value.
         # Otherwise, brushes will remain old button size and we get a weird background drawing.

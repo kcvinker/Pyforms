@@ -105,27 +105,35 @@ def rbWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         case con.WM_SETFOCUS: 
             rb = rbDict[hw]
             rb._gotFocusHandler()
+            
         case con.WM_KILLFOCUS: 
             rb = rbDict[hw]
             rb._lostFocusHandler()
+
         case con.WM_LBUTTONDOWN: 
             rb = rbDict[hw]
             rb._leftMouseDownHandler(msg, wp, lp)
+
         case con.WM_LBUTTONUP: 
             rb = rbDict[hw]
             rb._leftMouseUpHandler(msg, wp, lp)
+
         case con.WM_RBUTTONDOWN: 
             rb = rbDict[hw]
             rb._rightMouseDownHandler(msg, wp, lp)
+
         case con.WM_RBUTTONUP: 
             rb = rbDict[hw]
             rb._rightMouseUpHandler(msg, wp, lp)
+
         case con.WM_MOUSEWHEEL: 
             rb = rbDict[hw]
             rb._mouseWheenHandler(msg, wp, lp)
+
         case con.WM_MOUSEMOVE: 
             rb = rbDict[hw]
             rb._mouseMoveHandler(msg, wp, lp)
+
         case con.WM_MOUSELEAVE: 
             rb = rbDict[hw]
             rb._mouseLeaveHandler()
@@ -156,6 +164,12 @@ def rbWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             rb = rbDict[hw]
             # print(f"Radio {rb.text = }, {rb._isChecked = }")
             if rb.onCheckedChanged: rb.onCheckedChanged(rb, GEA )
+
+        case MyMessages.MM_FONT_CHANGED:
+            # User changed any font property. We need to recreate the font handle.
+            rb = rbDict[hw]
+            rb.updateFontInternal()
+            return 0
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 

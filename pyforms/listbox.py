@@ -321,37 +321,53 @@ def lbxWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             ncode = api.HIWORD(wp)
             match ncode:
                 case con.LBN_DBLCLK:
-                    if lbx.onDoubleClick: lbx.onDoubleClick(lbx, GEA)
+                    if lbx.onDoubleClick: 
+                        lbx.onDoubleClick(lbx, GEA)
+                        
                 case con.LBN_SELCHANGE:
-
-                    if lbx.onSelectionChanged: lbx.onSelectionChanged(lbx, GEA)
+                    if lbx.onSelectionChanged: 
+                        lbx.onSelectionChanged(lbx, GEA)
 
         case con.WM_SETFOCUS: 
             lbx = lbxDict[hw]
             lbx._gotFocusHandler()
+
         case con.WM_KILLFOCUS: 
             lbx = lbxDict[hw]
             lbx._lostFocusHandler()
+
         case con.WM_LBUTTONDOWN: 
             lbx = lbxDict[hw]
             lbx._leftMouseDownHandler(msg, wp, lp)
+
         case con.WM_LBUTTONUP: 
             lbx = lbxDict[hw]
             lbx._leftMouseUpHandler(msg, wp, lp)
+
         case con.WM_RBUTTONDOWN: 
             lbx = lbxDict[hw]
             lbx._rightMouseDownHandler(msg, wp, lp)
+
         case con.WM_RBUTTONUP: 
             lbx = lbxDict[hw]
             lbx._rightMouseUpHandler(msg, wp, lp)
+
         case con.WM_MOUSEWHEEL: 
             lbx = lbxDict[hw]
             lbx._mouseWheenHandler(msg, wp, lp)
+
         case con.WM_MOUSEMOVE: 
             lbx = lbxDict[hw]
             lbx._mouseMoveHandler(msg, wp, lp)
+
         case con.WM_MOUSELEAVE: 
             lbx = lbxDict[hw]
             lbx._mouseLeaveHandler()
+
+        case MyMessages.MM_FONT_CHANGED:
+            # User changed any font property. We need to recreate the font handle.
+            lbx = lbxDict[hw]
+            lbx.updateFontInternal()
+            return 0
 
     return api.DefSubclassProc(hw, msg, wp, lp)

@@ -176,21 +176,27 @@ def tbWndProc(hw, msg, wp, lp, scID, refData):
         case con.WM_LBUTTONDOWN: 
             tb = tbDict[hw]
             tb._leftMouseDownHandler(msg, wp, lp)
+            
         case con.WM_LBUTTONUP: 
             tb = tbDict[hw]
             tb._leftMouseUpHandler(msg, wp, lp)
+
         case con.WM_RBUTTONDOWN: 
             tb = tbDict[hw]
             tb._rightMouseDownHandler(msg, wp, lp)
+
         case con.WM_RBUTTONUP: 
             tb = tbDict[hw]
             tb._rightMouseUpHandler(msg, wp, lp)
+
         case con.WM_MOUSEWHEEL: 
             tb = tbDict[hw]
             tb._mouseWheenHandler(msg, wp, lp)
+
         case con.WM_MOUSEMOVE: 
             tb = tbDict[hw]
             tb._mouseMoveHandler(msg, wp, lp)
+
         case con.WM_MOUSELEAVE: 
             tb = tbDict[hw]
             tb._mouseLeaveHandler()
@@ -224,6 +230,12 @@ def tbWndProc(hw, msg, wp, lp, scID, refData):
                 if tb._drawFlag & 2: api.SetBkColor(wp, tb._bgColor.ref)
 
             return tb._bkgBrush
+
+        case MyMessages.MM_FONT_CHANGED:
+            # User changed any font property. We need to recreate the font handle.
+            tb = tbDict[hw]
+            tb.updateFontInternal()
+            return 0
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 

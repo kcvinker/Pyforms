@@ -155,7 +155,7 @@ class Font:
 
         fnsz = int(globalScaleFactor * float(self._size))
         iHeight = -api.MulDiv(fnsz, globalSysDPI, 72)
-
+        print(f"{iHeight = }")
         lf = LOGFONT()
         lf.lfFaceName = self._name
         lf.lfHeight = iHeight

@@ -382,38 +382,52 @@ def cmbEditWndProc(hw, msg, wp, lp, scID, refData):
                 api.SetBkColor(hdc, cmb._bgColor.ref)
                 return cmb._bkgBrush
 
-
         case con.WM_KEYDOWN: 
             cmb = cmbDict[refData]
             cmb._keyDownHandler(wp)
+
         case con.WM_KEYUP: 
             cmb = cmbDict[refData]
             cmb._keyUpHandler(wp)
+
         case con.WM_CHAR: 
             cmb = cmbDict[refData]
             cmb._keyPressHandler(wp)
+
         case con.WM_LBUTTONDOWN: 
             cmb = cmbDict[refData]
             cmb._leftMouseDownHandler(msg, wp, lp)
+
         case con.WM_LBUTTONUP: 
             cmb = cmbDict[refData]
             cmb._leftMouseUpHandler(msg, wp, lp)
+
         case MyMessages.MOUSE_CLICK: 
             cmb = cmbDict[refData]
             cmb._mouse_click_handler()
+
         case con.WM_RBUTTONDOWN: 
             cmb = cmbDict[refData]
             cmb._mouse_click_handler(msg, wp, lp)
+
         case con.WM_RBUTTONUP: 
             cmb = cmbDict[refData]
             cmb._mouse_click_handler(msg, wp, lp)
+
         case MyMessages.RIGHT_CLICK: 
             cmb = cmbDict[refData]
             cmb._mouse_click_handler()
+
         case con.WM_MOUSEMOVE:
             cmb = cmbDict[refData]
             # When mouse pointer moves from combo's rect boundary and get into edit's rect
             # we will continue the mouse move message handling.
             cmb._mouseMoveHandler(msg, wp, lp)
+
+        case MyMessages.MM_FONT_CHANGED:
+            # User changed any font property. We need to recreate the font handle.
+            cnb = cmbDict[hw]
+            cnb.updateFontInternal()
+            return 0
 
     return api.DefSubclassProc(hw, msg, wp, lp)

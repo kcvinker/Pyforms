@@ -420,32 +420,40 @@ def tvWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         case con.WM_SETFOCUS: 
             tv = tvDict[hw]
             tv._gotFocusHandler()
+
         case con.WM_KILLFOCUS: 
             tv = tvDict[hw]
             tv._lostFocusHandler()
+
         case con.WM_LBUTTONDOWN: 
             tv = tvDict[hw]
             tv._leftMouseDownHandler(msg, wp, lp)
+
         case con.WM_LBUTTONUP: 
             tv = tvDict[hw]
             tv._leftMouseUpHandler(msg, wp, lp)
+
         case con.WM_RBUTTONDOWN: 
             tv = tvDict[hw]
             tv._rightMouseDownHandler(msg, wp, lp)
+
         case con.WM_RBUTTONUP: 
             tv = tvDict[hw]
             tv._rightMouseUpHandler(msg, wp, lp)
+
         case con.WM_MOUSEWHEEL: 
             tv = tvDict[hw]
             tv._mouseWheenHandler(msg, wp, lp)
+
         case con.WM_MOUSEMOVE: 
             tv = tvDict[hw]
             tv._mouseMoveHandler(msg, wp, lp)
-        # case con.WM_MOUSELEAVE:
-        #     if tv._track_mouse_leave:
-        #         if not tv._is_mouse_upon_me():
-        #             tv._isMouseEntered = False
-        #             if tv.on_mouse_leave: tv.on_mouse_leave(np, GEA)
+
+        case MyMessages.MM_FONT_CHANGED:
+            # User changed any font property. We need to recreate the font handle.
+            tv = tvDict[hw]
+            tv.updateFontInternal()
+            return 0
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 

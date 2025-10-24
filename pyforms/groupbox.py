@@ -282,30 +282,39 @@ def gbWndProc(hw, msg, wp, lp, scID, refData):
         case con.WM_SETFOCUS: 
             gb = gbDict[hw]
             gb._gotFocusHandler()
+            
         case con.WM_KILLFOCUS: 
             gb = gbDict[hw]
             gb._lostFocusHandler()
+
         case con.WM_LBUTTONDOWN: 
             gb = gbDict[hw]
             gb._leftMouseDownHandler(msg, wp, lp)
+
         case con.WM_LBUTTONUP: 
             gb = gbDict[hw]
             gb._leftMouseUpHandler(msg, wp, lp)
+
         case con.WM_RBUTTONDOWN: 
             gb = gbDict[hw]
             gb._rightMouseDownHandler(msg, wp, lp)
+
         case con.WM_RBUTTONUP: 
             gb = gbDict[hw]
             gb._rightMouseUpHandler(msg, wp, lp)
+
         case con.WM_MOUSEWHEEL: 
             gb = gbDict[hw]
             gb._mouseWheenHandler(msg, wp, lp)
+
         case con.WM_MOUSEMOVE: 
             gb = gbDict[hw]
             gb._mouseMoveHandler(msg, wp, lp)
+
         case con.WM_MOUSELEAVE: 
             gb = gbDict[hw]
             gb._mouseLeaveHandler()
+
         case con.WM_ERASEBKGND:
             gb = gbDict[hw]
             return gb.handleWmEraseBKG(wp)
@@ -338,6 +347,12 @@ def gbWndProc(hw, msg, wp, lp, scID, refData):
             gb = gbDict[hw]
             if gb._gstyle == GroupBoxStyle.OVERRIDEN:
                 return 0
+
+        case MyMessages.MM_FONT_CHANGED:
+            # User changed any font property. We need to recreate the font handle.
+            gb = gbDict[hw]
+            gb.updateFontInternal()
+            return 0
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 

@@ -316,29 +316,43 @@ def dtpWndProc(hw, msg, wp, lp, scID, refData):
         case con.WM_SETFOCUS: 
             dtp = dtpDict[hw]
             dtp._gotFocusHandler()
+            
         case con.WM_KILLFOCUS: 
             dtp = dtpDict[hw]
             dtp._lostFocusHandler()
+
         case con.WM_LBUTTONDOWN: 
             dtp = dtpDict[hw]
             dtp._leftMouseDownHandler(msg, wp, lp)
+
         case con.WM_LBUTTONUP: 
             dtp = dtpDict[hw]
             dtp._leftMouseUpHandler(msg, wp, lp)
+
         case con.WM_RBUTTONDOWN: 
             dtp = dtpDict[hw]
             dtp._rightMouseDownHandler(msg, wp, lp)
+
         case con.WM_RBUTTONUP: 
             dtp = dtpDict[hw]
             dtp._rightMouseUpHandler(msg, wp, lp)
+
         case con.WM_MOUSEWHEEL: 
             dtp = dtpDict[hw]
             dtp._mouseWheenHandler(msg, wp, lp)
+
         case con.WM_MOUSEMOVE: 
             dtp = dtpDict[hw]
             dtp._mouseMoveHandler(msg, wp, lp)
+
         case con.WM_MOUSELEAVE: 
             dtp = dtpDict[hw]
             dtp._mouseLeaveHandler()
+
+        case MyMessages.MM_FONT_CHANGED:
+            # User changed any font property. We need to recreate the font handle.
+            dtp = dtpDict[hw]
+            dtp.updateFontInternal()
+            return 0
 
     return api.DefSubclassProc(hw, msg, wp, lp)

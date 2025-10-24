@@ -887,15 +887,19 @@ def lvWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         case con.WM_SETFOCUS: 
             lv = lvDict[hw]
             lv._gotFocusHandler()
+
         case con.WM_KILLFOCUS: 
             lv = lvDict[hw]
             lv._lostFocusHandler()
+
         case con.WM_LBUTTONDOWN: 
             lv = lvDict[hw]
             lv._leftMouseDownHandler(msg, wp, lp)
+
         case con.WM_LBUTTONUP: 
             lv = lvDict[hw]
             lv._leftMouseUpHandler(msg, wp, lp)
+
         case con.WM_RBUTTONDOWN: 
             lv = lvDict[hw]
             return lv._rightMouseDownHandler(msg, wp, lp)
@@ -903,18 +907,24 @@ def lvWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         case con.WM_RBUTTONUP: 
             lv = lvDict[hw]
             lv._rightMouseUpHandler(msg, wp, lp)
+
         case con.WM_MOUSEWHEEL: 
             lv = lvDict[hw]
             lv._mouseWheenHandler(msg, wp, lp)
+
         case con.WM_MOUSEMOVE: 
             lv = lvDict[hw]
             lv._mouseMoveHandler(msg, wp, lp)
+
         case con.WM_MOUSELEAVE: 
             lv = lvDict[hw]
             lv._mouseLeaveHandler()
 
-        # case con.WM_COMMAND:
-        #     print("WM_COMMAND on LV")
+        case MyMessages.MM_FONT_CHANGED:
+            # User changed any font property. We need to recreate the font handle.
+            lv = lvDict[hw]
+            lv.updateFontInternal()
+            return 0
 
     return api.DefSubclassProc(hw, msg, wp, lp)
 

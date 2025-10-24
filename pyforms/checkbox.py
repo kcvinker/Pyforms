@@ -162,5 +162,11 @@ def cbWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             cb._isChecked = bool(api.SendMessage(hw, con.BM_GETCHECK, 0, 0))
             if cb.onCheckedChanged: cb.onCheckedChanged(cb, GEA )
 
+        case MyMessages.MM_FONT_CHANGED:
+            # User changed any font property. We need to recreate the font handle.
+            cb = cb_dict[hw]
+            cb.updateFontInternal()
+            return 0
+
     return api.DefSubclassProc(hw, msg, wp, lp)
 

@@ -440,12 +440,15 @@ def buddyWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
         case con.WM_KEYUP: 
             np = numpDict[refData]
             np._keyUpHandler(wp)
+
         case con.WM_CHAR: 
             np = numpDict[refData]
             np._keyPressHandler(wp)
+
         case con.WM_SETFOCUS: 
             np = numpDict[refData]
             np._gotFocusHandler()
+
         case con.WM_KILLFOCUS:  
             np = numpDict[refData]
             # When user manually enter numbers, we need to check that value
@@ -465,15 +468,19 @@ def buddyWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             # api.RedrawWindow(hw, None, None, con.RDW_INTERNALPAINT)
             np = numpDict[refData]
             np._leftMouseDownHandler(msg, wp, lp)
+
         case con.WM_LBUTTONUP: 
             np = numpDict[refData]
             np._leftMouseUpHandler(msg, wp, lp)
+
         case con.WM_RBUTTONDOWN: 
             np = numpDict[refData]
             np._rightMouseDownHandler(msg, wp, lp)
+
         case con.WM_RBUTTONUP: 
             np = numpDict[refData]
             np._rightMouseUpHandler(msg, wp, lp)
+
         case con.WM_MOUSEWHEEL: 
             np = numpDict[refData]
             np._mouseWheenHandler(msg, wp, lp)
@@ -498,8 +505,15 @@ def buddyWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             api.ReleaseDC(hw, hdc)
             api.DeleteObject(fpen)
             return 1
+
         case MyMessages.BUDDY_RESET:
             np = numpDict[refData]
             np._resizeBuddy()
+
+        case MyMessages.MM_FONT_CHANGED:
+            # User changed any font property. We need to recreate the font handle.
+            nump = numpDict[hw]
+            nump.updateFontInternal()
+            return 0
 
     return api.DefSubclassProc(hw, msg, wp, lp)
