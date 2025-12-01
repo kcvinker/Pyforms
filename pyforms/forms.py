@@ -591,6 +591,8 @@ class Form(Control):
 			        btns: MessageButtons = MessageButtons.OKAY,
 			        icon: MessageIcons = MessageIcons.NONE ):
         return MessageBox(0, msg, title, btns.value | icon.value)
+    
+    
 
     def addTimer(self, tickInterval = 100, tickHandler = None):
         timer = Timer(self._hwnd, tickInterval, tickHandler)

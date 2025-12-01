@@ -16,11 +16,13 @@ tbDict = {}
 tbExStyle = con.WS_EX_LEFT | con.WS_EX_LTRREADING | con.WS_EX_CLIENTEDGE
 
 
+
 class TextBox(Control):
 
     _count = 1
     _buffer = CommonBuffer() # start with 64 chars
-    __slots__ = ( "_multiLine", "_hideSel", "_readOnly", "_textCase", "_textType", "_textAlign", "_cueBanner", "onTextChanged")
+    __slots__ = ( "_multiLine", "_hideSel", "_readOnly", "_textCase", "_textType", 
+                 "_textAlign", "_cueBanner", "onTextChanged", "_onEnterPressed" )
 
     def __init__(self, parent, xpos: int = 10, ypos: int = 10, 
                  width: int = 120, height: int = 23, txt="", multiLine=False) -> None:
@@ -39,6 +41,7 @@ class TextBox(Control):
         self._textType = TextType.NORMAL
         self._textAlign = TextAlignment.LEFT
         self._text = txt
+        self._onEnterPressed = None
         # self._fgColor = Color(0x000000)
         self._cueBanner = ""
         self.onTextChanged = None
@@ -91,6 +94,10 @@ class TextBox(Control):
         elif self._textAlign == TextAlignment.RIGHT:
             self._style |= con.ES_RIGHT
 
+
+    def _handleEnterPressed(self, c, e): 
+        if e.keyCode == 0x0D: # Enter key
+            self._onEnterPressed(c, e)
         
 
     def addLine(self, linetext):
@@ -160,6 +167,16 @@ class TextBox(Control):
     @readOnly.setter
     def readOnly(self, value: bool) : self._readOnly = value
 
+    @property
+    def onEnterPressed(self):
+        return self._onEnterPressed 
+    
+    @onEnterPressed.setter
+    def onEnterPressed(self, func: callable):
+        self._onEnterPressed = func
+        self.onKeyDown = self._handleEnterPressed
+
+
 #End TextBox
 
 @SUBCLASSPROC
@@ -202,15 +219,18 @@ def tbWndProc(hw, msg, wp, lp, scID, refData):
             tb._mouseLeaveHandler()
 
         case con.WM_KEYDOWN:
-            if wp == 0x09:
-                tb = tbDict[hw]
-                # shift = (api.GetKeyState(0x10) & 0x8000) != 0
-                # x = api.SendMessage(tb._parent._hwnd, 0x0028, int(shift), 0)
-                # print(f"{x=}, {shift=}")
+            tb = tbDict[hw]
+            if wp == 0x09:                                
                 if tb._tabOrderHwnd: 
                     x = api.SetFocus(tb._tabOrderHwnd)
-                    # print(f"{x=}")
-                return 0
+                    
+            tb._keyDownHandler(wp)
+            return 0
+        
+        case con.WM_KEYUP:
+            tb = tbDict[hw]
+            tb._keyUpHandler(wp)
+            return 0
 
         case MyMessages.CTL_COMMAND:
             ncode = api.HIWORD(wp)

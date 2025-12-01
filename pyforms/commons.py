@@ -146,7 +146,7 @@ class Font:
     def __del__(self):
         if self._ownership == FontOwner.OWNER:
             api.DeleteObject(self._handle)
-            print("Font handle deleted")
+            # print("Font handle deleted")
 
 
     def createHandle(self):   
@@ -154,8 +154,7 @@ class Font:
             api.DeleteObject(self._handle)
 
         fnsz = int(globalScaleFactor * float(self._size))
-        iHeight = -api.MulDiv(fnsz, globalSysDPI, 72)
-        print(f"{iHeight = }")
+        iHeight = -api.MulDiv(fnsz, globalSysDPI, 72)        
         lf = LOGFONT()
         lf.lfFaceName = self._name
         lf.lfHeight = iHeight

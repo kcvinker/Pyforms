@@ -73,7 +73,7 @@ class DialogBase:
 # 3. hwnd - HWND (A window handle)
 def _showDialogHelper(obj, isOpen, hwnd):
     if isOpen and obj._multiSel:
-        maxArrSize = 32768 + 256 * 100 + 1
+        maxArrSize = 65535
     else:
         maxArrSize = MAX_PATH + 1
     

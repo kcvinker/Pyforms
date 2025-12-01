@@ -220,7 +220,7 @@ class Label(Control):
 
         self._font = value
         if self._isCreated:
-            if self._font._handle == 0:
+            if self._font._handle is None:
                 self._font.createHandle()
             self._sendMsg(con.WM_SETFONT, self._font._handle, 1)
             if self._autoSize: self._setAutoSize(True)

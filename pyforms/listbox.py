@@ -299,11 +299,17 @@ def lbxWndProc(hw, msg, wp, lp, scID, refData) -> LRESULT:
             del lbxDict[hw]
 
         case con.WM_KEYDOWN:
-            if wp == 0x09: # Tab key
-                this = lbxDict[hw]
+            this = lbxDict[hw]
+            if wp == 0x09: # Tab key                
                 if this._tabOrderHwnd: 
                     api.SetFocus(this._tabOrderHwnd)                    
-                return 0
+            this._keyDownHandler(wp)    
+            # return 0
+
+        case con.WM_KEYUP:
+            this = lbxDict[hw]
+            this._keyUpHandler(wp)
+            # return 0
 
         case MyMessages.LIST_COLOR:
             lbx = lbxDict[hw]

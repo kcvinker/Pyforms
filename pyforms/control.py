@@ -438,7 +438,7 @@ class Control:
         """
         self._font = value
         if self._isCreated:
-            if self._font._handle == 0:
+            if self._font._handle is None:
                 self._font.createHandle()
             self._sendMsg(con.WM_SETFONT, self._font._handle, 1)
     #-------------------------------------------------FONT
@@ -544,9 +544,7 @@ class Control:
             self._bkgBrush = api.CreateSolidBrush(self._bgColor.ref)
 
         if self._drawFlag & 2 != 2: self._drawFlag += 2 # _drawFlag --> 0=no_color, 1=fore_color, 2=back_color
-        if self._isCreated and self._hasBrush:
-        #     if self._bkgBrush != None: 
-        #         api.DeleteObject(self._bkgBrush) 
+        if self._isCreated and self._hasBrush:         
             self._bkgBrush = self._bgColor.createHBrush()
         self._manageRedraw()
     #--------------------------------------------BACKCOLOR
@@ -649,7 +647,6 @@ class Control:
         if self.onMouseWheel: self.onMouseWheel(self, MouseEventArgs(msg, wpm, lpm))
 
 
-
     def _mouseMoveHandler(self, msg, wpm, lpm):
         if self._isMouseEntered:
             if self.onMouseMove: self.onMouseMove(self, MouseEventArgs(msg, wpm, lpm))
@@ -658,11 +655,9 @@ class Control:
             if self._onMouseEnter: self._onMouseEnter(self, GEA)
 
 
-
     def _mouseLeaveHandler(self):
         self._isMouseEntered = False
         if self._onMouseLeave: self._onMouseLeave(self, GEA)
-
 
 
     def _keyDownHandler(self, wpm):
