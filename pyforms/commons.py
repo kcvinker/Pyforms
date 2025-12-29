@@ -18,25 +18,24 @@ TRANSPARENT = 0x00000001
 OPAQUE = 0x00000002
 menuTxtFlag = con.DT_LEFT | con.DT_SINGLELINE | con.DT_VCENTER
 
-globalScaleFactor = 1.25
-globalSysDPI = 96
+# globalScaleFactor = 1.25
+# globalSysDPI = 96
 
-def createDefFont():
-    fnsz = int(globalScaleFactor * 11.0)
-    iHeight = -api.MulDiv(fnsz, globalSysDPI, 72)
-    lf = LOGFONT()
-    lf.lfFaceName = "Tahoma"
-    lf.lfHeight = iHeight
-    lf.lfWidth = 0
-    lf.lfWeight = 400
-    lf.lfItalic = 0
-    lf.lfUnderline = 0
-    lf.lfCharSet = con.DEFAULT_CHARSET
-    lf.lfOutPrecision = con.OUT_STRING_PRECIS
-    lf.lfClipPrecision = con.CLIP_DEFAULT_PRECIS
-    lf.lfQuality = con.PROOF_QUALITY
-    lf.lfPitchAndFamily = 1
-    return api.CreateFontIndirect(byref(lf))
+# def createDefFont():
+#     iHeight = api.MulDiv(fnsz, globalSysDPI, 72)
+#     lf = LOGFONT()
+#     lf.lfFaceName = "Tahoma"
+#     lf.lfHeight = iHeight
+#     lf.lfWidth = 0
+#     lf.lfWeight = 400
+#     lf.lfItalic = 0
+#     lf.lfUnderline = 0
+#     lf.lfCharSet = con.DEFAULT_CHARSET
+#     lf.lfOutPrecision = con.OUT_STRING_PRECIS
+#     lf.lfClipPrecision = con.CLIP_DEFAULT_PRECIS
+#     lf.lfQuality = con.PROOF_QUALITY
+#     lf.lfPitchAndFamily = 1
+#     return api.CreateFontIndirect(byref(lf))
 
 
 class StaticData: # A singleton object which used to hold essential data for a form to start
@@ -52,17 +51,19 @@ class StaticData: # A singleton object which used to hold essential data for a f
     currForm = None
     trayHandles = [] # A list to hold any TrayIcon hidden window handles.
     grayBrush = None
+    sysDPI = 0
 
     @staticmethod
     def pfInit():
         """Initializing members required by pyforms gui lib."""
         StaticData.hInstance = api.GetModuleHandle(LPCWSTR(0))
+        StaticData.sysDPI = api.GetDpiForSystem()
         StaticData.screenWidth = api.GetSystemMetrics(0) # Need to calculate the form position
         StaticData.screenHeight = api.GetSystemMetrics(1)
         StaticData.defWinColor = Color(0xf0f0f0)# Color.from_RGB(230, 230, 230)
-        StaticData.defBackBrush = api.CreateSolidBrush(0x00F0F0F0)
+        StaticData.defBackBrush = api.CreateSolidBrush(0x00F0F0F0)        
+        StaticData.grayBrush = api.CreateSolidBrush(0x00DAD4CE)        
         StaticData.defFont = Font("Tahoma", autoc=True)
-        StaticData.grayBrush = api.CreateSolidBrush(0x00DAD4CE)
 
     @staticmethod
     def registerMsgWinClass(clsname, wndproc):
@@ -90,14 +91,14 @@ class StaticData: # A singleton object which used to hold essential data for a f
 def screenSize():
     return StaticData.screenWidth, StaticData.screenHeight
 
-def getSystemDPI():
-    global globalScaleFactor
-    global globalSysDPI
-    hdc = api.GetDC(None)
-    globalSysDPI = api.GetDeviceCaps(hdc, con.LOGPIXELSY)
-    api.ReleaseDC(None, hdc)
-    scaleF = api.GetScaleFactorForDevice(0)
-    globalScaleFactor = scaleF / 100.0
+# def getSystemDPI():
+#     global globalScaleFactor
+#     global globalSysDPI
+#     hdc = api.GetDC(None)
+#     globalSysDPI = api.GetDeviceCaps(hdc, con.LOGPIXELSY)
+#     api.ReleaseDC(None, hdc)
+#     scaleF = api.GetScaleFactorForDevice(0)
+#     globalScaleFactor = scaleF / 100.0
 
 def getMousePosOnMsg():
     dw_value = windll.user32.GetMessagePos()
@@ -116,7 +117,7 @@ class Font:
                  "_underLine", "_handle", "_ownership", "_pHwnd")
 
     def __init__(   self, nameOrFont,
-                    size: int = 11,
+                    size: int = 12,
                     weight: FontWeight = FontWeight.NORMAL,
                     italics: bool = False,
                     underLine: bool = False,
@@ -153,8 +154,7 @@ class Font:
         if self._handle != None and self._ownership == FontOwner.OWNER:
             api.DeleteObject(self._handle)
 
-        fnsz = int(globalScaleFactor * float(self._size))
-        iHeight = -api.MulDiv(fnsz, globalSysDPI, 72)        
+        iHeight = api.MulDiv(self._size, StaticData.sysDPI, 72)        
         lf = LOGFONT()
         lf.lfFaceName = self._name
         lf.lfHeight = iHeight

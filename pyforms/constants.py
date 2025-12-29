@@ -1,7 +1,7 @@
 
 # Created on 16-Nov-2022 23:06
 from ctypes.wintypes import HWND
-from pyforms.apis import ULONG_PTR
+from pyforms.apis import ULONG_PTR, DPI_AWARENESS_CONTEXT
 
 UINT_MAX = 1 << 32
 ULONG_MAX = 1 << 64
@@ -25,6 +25,8 @@ SRCCOPY = 0x00CC0020
 
 DWL_MSGRESULT = 0
 DWLP_MSGRESULT = 0
+
+DPI_AWARENESS_CONTEXT_SYSTEM_AWARE = DPI_AWARENESS_CONTEXT(-2)
 
 ICC_STANDARD_CLASSES = 0x00004000
 ICC_LISTVIEW_CLASSES = 0x00000001# listview, header

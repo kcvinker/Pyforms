@@ -16,7 +16,7 @@ from pyforms.enums import (FormPosition, FormStyle,
                                ControlType, Keys)
 from pyforms.commons import (
             Font, MyMessages, getMouseXpoint, getMouseYpoint, 
-            menuTxtFlag, getMousePoints, getSystemDPI,
+            menuTxtFlag, getMousePoints,
             StaticData, log_cnt)
 from pyforms.events import (
     EventArgs, MouseEventArgs, SizeEventArgs, GEA)
@@ -302,7 +302,7 @@ def getPyformsIcon():
     return api.LoadImage(None, icofile, con.IMAGE_ICON, 0, 0, con.LR_LOADFROMFILE | con.LR_DEFAULTSIZE)
 
 def make_window_class(proc):
-    getSystemDPI()
+    api.SetProcessDpiAwarenessContext(con.DPI_AWARENESS_CONTEXT_SYSTEM_AWARE)
     StaticData.pfInit()
     wc = WNDCLASSEX()
     wc.cbSize = sizeof(WNDCLASSEX)

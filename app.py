@@ -27,7 +27,7 @@ def main():
     global frm #, tk, pgb
     # def menu_click(m, e): print("Clicked menu - ", m._text)
 
-    frm = Form("PyForms Window in Python", 800, 500)
+    frm = Form("PyForms Window in Python", 800, 600)
     frm.createHandle()
     
     frm.createChilds = True

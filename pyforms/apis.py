@@ -25,6 +25,7 @@ WPARAM = UINT_PTR
 LPARAM = LONG_PTR
 PUINT = POINTER(UINT)
 HTREEITEM = HANDLE
+DPI_AWARENESS_CONTEXT = HANDLE
 
 WNDPROC = WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM)
 SUBCLASSPROC = WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR)
@@ -595,6 +596,13 @@ LPCOPYDATA = POINTER(COPYDATASTRUCT)
 # -region Functions
 
 # -region USER32 Functions
+
+SetProcessDpiAwarenessContext = windll.user32.SetProcessDpiAwarenessContext
+SetProcessDpiAwarenessContext.argtypes = [DPI_AWARENESS_CONTEXT]
+SetProcessDpiAwarenessContext.restype = BOOL
+
+GetDpiForSystem = windll.user32.GetDpiForSystem
+GetDpiForSystem.restype = UINT
 
 MessageBox = windll.user32.MessageBoxW
 MessageBox.argtypes = [HWND, LPCWSTR, LPCWSTR, UINT]
