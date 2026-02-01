@@ -198,7 +198,8 @@ class ListBox(Control):
         """Get the selected index from list box"""
         if self._isCreated and not self._multiSel:
             sel_ind = api.SendMessage(self._hwnd, con.LB_GETCURSEL, 0, 0)
-            return sel_ind if sel_ind else -1
+            # print(f"lbx: {sel_ind}")
+            return sel_ind #if sel_ind > -1 else -1
         return -1
 
 

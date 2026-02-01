@@ -77,6 +77,13 @@ class Button(Control):
         if not self._drawFlag & 4: self._drawFlag += 4
         self._manageRedraw()
 
+    def setColors(self, fgc: int, bgc1: int, bgc2: int = -1):
+        self._fgColor.updateColor(fgc)
+        if not self._drawFlag & 1: self._drawFlag += 1 # Fore color drawing
+        if bgc2 == -1:
+            self.backColor = bgc1
+        else:
+            self.setGradientColor(bgc1, bgc2)   
 
     # Drawing text color in wm_notify message.
     def _drawforecolor(self, nmcd):
